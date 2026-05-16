@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code (local-only overrides; keep .claude/settings.json shareable)
+.claude/settings.local.json
+.claude/worktrees/

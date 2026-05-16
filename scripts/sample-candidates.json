@@ -1,0 +1,50 @@
+[
+  {
+    "asin": "B0C1ABCD01",
+    "title": "国産ホエイプロテイン 1kg バニラ",
+    "category": "Health & Personal Care / Sports Nutrition",
+    "keepa": { "bsr": 1820, "priceJpy": 4980, "stockEstimate": 480, "reviewCount": 1230 },
+    "sellersprite": { "monthlySalesJpy": 6800000, "competitorCount": 18, "avgRating": 4.4 },
+    "perplexity": { "domesticDemandTrend": "rising", "regulatoryRisk": "low", "summary": "国内プロテイン市場は健康志向で拡大中。" }
+  },
+  {
+    "asin": "B0C1ABCD02",
+    "title": "高吸収マグネシウム サプリ 60粒",
+    "category": "Health & Personal Care / Vitamins & Supplements",
+    "keepa": { "bsr": 8400, "priceJpy": 2480, "stockEstimate": 220, "reviewCount": 412 },
+    "sellersprite": { "monthlySalesJpy": 2400000, "competitorCount": 9, "avgRating": 4.3 },
+    "perplexity": { "domesticDemandTrend": "rising", "regulatoryRisk": "medium", "summary": "睡眠・リカバリー文脈で需要上昇。表現規制に注意。" }
+  },
+  {
+    "asin": "B0C1ABCD03",
+    "title": "ペット用消臭スプレー 詰替セット",
+    "category": "Pet Supplies / Cleaning",
+    "keepa": { "bsr": 28000, "priceJpy": 1980, "stockEstimate": 130, "reviewCount": 96 },
+    "sellersprite": { "monthlySalesJpy": 720000, "competitorCount": 7, "avgRating": 4.1 },
+    "perplexity": { "domesticDemandTrend": "flat", "regulatoryRisk": "low", "summary": "ペット用品はEC比率が高くリピート需要が安定。" }
+  },
+  {
+    "asin": "B0C1ABCD04",
+    "title": "海外ノーブランド ダイエットティー 30包",
+    "category": "Health & Personal Care",
+    "keepa": { "bsr": 14500, "priceJpy": 3580, "stockEstimate": 60, "reviewCount": 220 },
+    "sellersprite": { "monthlySalesJpy": 1100000, "competitorCount": 26, "avgRating": 3.6 },
+    "perplexity": { "domesticDemandTrend": "rising", "regulatoryRisk": "high", "summary": "薬機法・景表法でNGになりやすい表現が頻出。輸入元未確認。" }
+  },
+  {
+    "asin": "B0C1ABCD05",
+    "title": "汎用スマホスタンド 折りたたみ式",
+    "category": "Electronics / Phone Accessories",
+    "keepa": { "bsr": 142000, "priceJpy": 980, "stockEstimate": 800, "reviewCount": 1502 },
+    "sellersprite": { "monthlySalesJpy": 380000, "competitorCount": 34, "avgRating": 4.0 },
+    "perplexity": { "domesticDemandTrend": "declining", "regulatoryRisk": "low", "summary": "コモディティ化が進み価格競争が激化。" }
+  },
+  {
+    "asin": "B0C1ABCD06",
+    "title": "国産シルクパジャマ レディースM",
+    "category": "Apparel / Sleepwear",
+    "keepa": { "bsr": 4200, "priceJpy": 12800, "stockEstimate": 70, "reviewCount": 88 },
+    "sellersprite": { "monthlySalesJpy": 3100000, "competitorCount": 4, "avgRating": 4.7 },
+    "perplexity": { "domesticDemandTrend": "rising", "regulatoryRisk": "low", "summary": "ギフト需要+セルフリワード需要で安定上昇。" }
+  }
+]

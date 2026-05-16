@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FASRings Agent Operating System Brief</title>
+    <style>
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #151515;
+        background: #ecebea;
+        font-family:
+          Inter, "Helvetica Neue", Arial, "Hiragino Sans", "Yu Gothic",
+          "YuGothic", Meiryo, sans-serif;
+        letter-spacing: 0;
+      }
+
+      .deck {
+        width: 297mm;
+        margin: 0 auto;
+      }
+
+      .slide {
+        position: relative;
+        width: 297mm;
+        min-height: 210mm;
+        padding: 15mm 17mm 13mm;
+        overflow: hidden;
+        page-break-after: always;
+        background: #fafafa;
+      }
+
+      .slide.dark {
+        color: #f6f3ed;
+        background:
+          linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(21, 21, 21, 0.98)),
+          url("brief-assets/screenshots/01-inbox.png") center / cover;
+      }
+
+      .slide.dark::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.58);
+        z-index: 0;
+      }
+
+      .slide > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .kicker {
+        margin-bottom: 7mm;
+        color: #6b6b6b;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .dark .kicker {
+        color: #c9c5bc;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 240mm;
+        font-size: 52px;
+        line-height: 1.04;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        max-width: 205mm;
+        font-size: 33px;
+        line-height: 1.18;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        font-size: 18px;
+        line-height: 1.35;
+      }
+
+      .lead {
+        max-width: 185mm;
+        margin-top: 8mm;
+        color: #4f4f4f;
+        font-size: 17px;
+        line-height: 1.72;
+      }
+
+      .dark .lead {
+        color: #e8e1d6;
+      }
+
+      .muted {
+        color: #6f6f6f;
+      }
+
+      .dark .muted {
+        color: #c9c5bc;
+      }
+
+      .meta {
+        position: absolute;
+        right: 17mm;
+        bottom: 12mm;
+        color: #6a6a6a;
+        font-size: 11px;
+      }
+
+      .dark .meta {
+        color: #d7d0c3;
+      }
+
+      .grid {
+        display: grid;
+        gap: 5mm;
+      }
+
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .grid.four {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .card {
+        border: 1px solid #ddd9d2;
+        border-radius: 8px;
+        background: #fff;
+        padding: 6mm;
+      }
+
+      .card.compact {
+        padding: 4.5mm;
+      }
+
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2mm;
+        min-height: 28mm;
+      }
+
+      .stat strong {
+        font-size: 31px;
+        line-height: 1;
+      }
+
+      .stat span {
+        color: #6f6f6f;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .body-text {
+        color: #3c3c3c;
+        font-size: 14px;
+        line-height: 1.75;
+      }
+
+      .body-text strong {
+        color: #151515;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2mm;
+        margin-top: 5mm;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 7mm;
+        border: 1px solid #d6d0c7;
+        border-radius: 999px;
+        padding: 1.4mm 3mm;
+        background: #fff;
+        color: #292929;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 3mm;
+        margin-top: 10mm;
+      }
+
+      .flow-card {
+        position: relative;
+        min-height: 38mm;
+        border: 1px solid #d7d2ca;
+        border-radius: 8px;
+        background: #fff;
+        padding: 4mm;
+      }
+
+      .flow-card::after {
+        content: "→";
+        position: absolute;
+        top: 15mm;
+        right: -5mm;
+        color: #6a6a6a;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .flow-card:last-child::after {
+        content: "";
+      }
+
+      .flow-card .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 7mm;
+        height: 7mm;
+        margin-bottom: 3mm;
+        border-radius: 999px;
+        background: #171717;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .flow-card h3 {
+        font-size: 15px;
+      }
+
+      .flow-card p {
+        margin-top: 2mm;
+        color: #5b5b5b;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .agent-map {
+        display: grid;
+        grid-template-columns: 42mm 1fr 1fr 1fr 1fr;
+        gap: 2.8mm;
+        margin-top: 8mm;
+      }
+
+      .agent-system {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 23mm;
+        border: 1px solid #cfc8bc;
+        border-radius: 8px;
+        background: #181818;
+        color: #fff;
+        padding: 4mm;
+        text-align: center;
+        font-weight: 800;
+      }
+
+      .agent {
+        min-height: 23mm;
+        border: 1px solid #ded9d2;
+        border-radius: 8px;
+        background: #fff;
+        padding: 3.5mm;
+      }
+
+      .agent b {
+        display: block;
+        margin-bottom: 1.5mm;
+        font-size: 12px;
+      }
+
+      .agent span {
+        display: block;
+        color: #666;
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .screenshot {
+        width: 100%;
+        border: 1px solid #d5d0c7;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(20, 20, 20, 0.08);
+      }
+
+      .caption {
+        margin-top: 3mm;
+        color: #656565;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 108mm 1fr;
+        gap: 8mm;
+        align-items: start;
+        margin-top: 9mm;
+      }
+
+      .split.reverse {
+        grid-template-columns: 1fr 116mm;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 5mm;
+      }
+
+      li {
+        margin-bottom: 2.2mm;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid #d8d3ca;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+
+      .table th,
+      .table td {
+        border-bottom: 1px solid #e7e2da;
+        padding: 3.1mm 3mm;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .table th {
+        background: #efebe4;
+        font-weight: 800;
+      }
+
+      .table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4mm;
+        margin-top: 9mm;
+      }
+
+      .phase {
+        border: 1px solid #d8d2c8;
+        border-radius: 8px;
+        background: #fff;
+        padding: 5mm;
+      }
+
+      .phase .label {
+        color: #6a6a6a;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .phase h3 {
+        margin-top: 2mm;
+      }
+
+      .phase p {
+        margin-top: 3mm;
+        color: #555;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .money-loop {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 5mm;
+        margin-top: 9mm;
+      }
+
+      .money-card {
+        border: 1px solid #d6d1c9;
+        border-radius: 8px;
+        background: #fff;
+        padding: 6mm;
+      }
+
+      .money-card h3 {
+        margin-bottom: 3mm;
+      }
+
+      .money-card p {
+        color: #555;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .footer-mark {
+        position: absolute;
+        left: 17mm;
+        bottom: 12mm;
+        color: #8a867f;
+        font-size: 11px;
+      }
+
+      .one-liner {
+        max-width: 188mm;
+        margin-top: 11mm;
+        padding: 5mm 6mm;
+        border-left: 4px solid #161616;
+        background: #f0ede7;
+        font-size: 17px;
+        line-height: 1.62;
+      }
+
+      .mini-note {
+        margin-top: 4mm;
+        color: #666;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      @media screen {
+        .slide {
+          margin: 8mm 0;
+          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="slide dark">
+        <div class="kicker">FASRings Agent Operating System</div>
+        <h1>商品発掘から販売運用までを、AIエージェントで回す商流システム</h1>
+        <p class="lead">
+          候補商品の収集、国内市場チェック、LP/広告/メーカー連絡/CS返信の下書き、人間承認、実行ログ、コスト管理までを1つの運用画面に集約する。
+        </p>
+        <div class="tag-row">
+          <span class="tag">越境CF → EC</span>
+          <span class="tag">Human-in-the-loop</span>
+          <span class="tag">24/7 Agent Workers</span>
+          <span class="tag">Supabase / Next.js</span>
+          <span class="tag">Mac mini常駐予定</span>
+        </div>
+        <div class="meta">2026-05-09 現在</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">What This System Does</div>
+        <h2>FASRingsは、少人数で複数の商品案件を同時に進めるための運用OSです。</h2>
+        <p class="lead">
+          商品ビジネスで最も重いのは「候補を見る」「売れる理由を言語化する」「出す前に危険を潰す」「公開後に回す」という人間の判断作業です。
+          このシステムでは、AIエージェントが判断材料と下書きを作り、人間が採否・公開・送信だけを高速に決める形へ寄せます。
+        </p>
+        <div class="grid four" style="margin-top: 11mm">
+          <div class="card stat">
+            <strong>17</strong>
+            <span>初期登録済みエージェント。Scout / LP / Ad / Outreach / CS の各工程を担当。</span>
+          </div>
+          <div class="card stat">
+            <strong>5</strong>
+            <span>現在の主要画面。Inbox、Pipeline、Agents、Runs、Cost。</span>
+          </div>
+          <div class="card stat">
+            <strong>24/7</strong>
+            <span>Mac mini到着後、収集・生成・監視ワーカーを常時稼働させる想定。</span>
+          </div>
+          <div class="card stat">
+            <strong>HITL</strong>
+            <span>Human-in-the-loop。AIの実行を、人間の承認ゲートで制御。</span>
+          </div>
+        </div>
+        <div class="one-liner">
+          目的は「AIで全部自動化する」ことではなく、売上に近い判断だけに人間の時間を集中させ、候補探索から販売開始までの回転数を上げることです。
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Money Conversion Loop</div>
+        <h2>このシステムで、商品候補を売上に変える流れ</h2>
+        <div class="flow">
+          <div class="flow-card">
+            <div class="num">1</div>
+            <h3>候補発掘</h3>
+            <p>海外CF、ECデータ、国内需要をエージェントが収集。候補を自動でDB化。</p>
+          </div>
+          <div class="flow-card">
+            <div class="num">2</div>
+            <h3>採算・リスク判定</h3>
+            <p>競合価格、粗利、法規制、壊れやすさ、販売訴求をスコア化。</p>
+          </div>
+          <div class="flow-card">
+            <div class="num">3</div>
+            <h3>人間レビュー</h3>
+            <p>Inboxで採用/保留/却下を判断。無駄な調査や制作を早めに止める。</p>
+          </div>
+          <div class="flow-card">
+            <div class="num">4</div>
+            <h3>販売素材生成</h3>
+            <p>LP、FAQ、広告コピー、画像方針、メーカー連絡文をAIが下書き。</p>
+          </div>
+          <div class="flow-card">
+            <div class="num">5</div>
+            <h3>CF公開・広告運用</h3>
+            <p>Makuake等で初期需要を検証し、広告・CSを回しながら改善。</p>
+          </div>
+          <div class="flow-card">
+            <div class="num">6</div>
+            <h3>EC継続販売</h3>
+            <p>反応が良い商品をShopify等へ展開。レビューとCSを次の商品選定へ戻す。</p>
+          </div>
+        </div>
+        <div class="money-loop">
+          <div class="money-card">
+            <h3>探索コストを下げる</h3>
+            <p>人間が一つずつ調べる前に、エージェントが候補を絞る。低粗利・競合過多・規制リスクのある商品を早く落とします。</p>
+          </div>
+          <div class="money-card">
+            <h3>販売準備を速める</h3>
+            <p>LP、広告、FAQ、連絡文面を同時生成し、レビュー待ちへ集約。商品が決まってから公開準備までの待ち時間を縮めます。</p>
+          </div>
+          <div class="money-card">
+            <h3>勝ち筋を再利用する</h3>
+            <p>承認/却下、広告反応、CS理由を蓄積し、次の候補選定・訴求・仕入れ交渉に戻すことで学習する運用にします。</p>
+          </div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Agent Role Map</div>
+        <h2>どのエージェントが何を担当するか</h2>
+        <p class="lead">
+          現在は17のエージェント定義を登録済みです。まずはサンプルデータでUIとワークフローを通し、次に本エージェントを接続して実データを流します。
+        </p>
+        <div class="agent-map">
+          <div class="agent-system">System 1<br />Scout</div>
+          <div class="agent"><b>Keepa Monitor</b><span>価格、ランキング、在庫を監視</span></div>
+          <div class="agent"><b>SellerSprite Research</b><span>国内需要と競合の強さを確認</span></div>
+          <div class="agent"><b>Perplexity JP Market</b><span>国内市場・規制・トレンド調査</span></div>
+          <div class="agent"><b>Scoring</b><span>採用候補をスコア化してInboxへ</span></div>
+
+          <div class="agent-system">System 2<br />LP</div>
+          <div class="agent"><b>Copy Writer</b><span>LP見出し、訴求、CTAを生成</span></div>
+          <div class="agent"><b>Image Curator</b><span>画像方針と生成プロンプトを提案</span></div>
+          <div class="agent"><b>FAQ Generator</b><span>購入前不安をFAQ化</span></div>
+          <div class="agent"><b>Compliance Check</b><span>薬機法・景表法リスクを検出</span></div>
+
+          <div class="agent-system">System 3<br />Ad</div>
+          <div class="agent"><b>Headline Writer</b><span>広告コピーを複数案で生成</span></div>
+          <div class="agent"><b>Audience Research</b><span>ターゲット・除外条件を提案</span></div>
+          <div class="agent"><b>Budget Optimizer</b><span>反応に応じて予算配分を提案</span></div>
+          <div class="agent"><b>Creative QA</b><span>今後追加。表現・整合性を確認</span></div>
+
+          <div class="agent-system">System 4<br />Outreach</div>
+          <div class="agent"><b>Supplier Finder</b><span>メーカー/仕入れ先候補を探索</span></div>
+          <div class="agent"><b>Message Drafter</b><span>英文打診・条件提示文を作成</span></div>
+          <div class="agent"><b>Follow-up Tracker</b><span>未返信先と次の一手を抽出</span></div>
+          <div class="agent"><b>Send Gate</b><span>今後追加。送信前承認を強制</span></div>
+
+          <div class="agent-system">System 5<br />CS</div>
+          <div class="agent"><b>Inquiry Classifier</b><span>問い合わせを分類し優先度付け</span></div>
+          <div class="agent"><b>Response Drafter</b><span>返信テンプレを作成</span></div>
+          <div class="agent"><b>Escalation Detector</b><span>返金・法務・炎上リスクを検知</span></div>
+          <div class="agent"><b>Review Feedback</b><span>今後追加。顧客の不満を商品改善へ</span></div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Current Product State</div>
+        <h2>現在のフロントには、サンプル運用データを入れて実際の流れを再現しています。</h2>
+        <div class="split reverse">
+          <div>
+            <p class="body-text">
+              `Agent Command Center` は、AIエージェントから上がる判断待ちを1つのInboxに集約します。
+              ここで人間が「担当する」「承認」「却下」を行い、次工程へ進めるか止めるかを決めます。
+            </p>
+            <br />
+            <table class="table">
+              <tr><th>表示されているもの</th><th>意味</th></tr>
+              <tr><td>翻訳イヤホン / 浄水ボトル</td><td>Scoutが発掘し、採用判断待ちの商品候補</td></tr>
+              <tr><td>LumaStand / AirPack</td><td>LPや広告案のレビュー待ち</td></tr>
+              <tr><td>PocketPure / AquaMate</td><td>メーカー連絡・CS対応のレビュー待ち</td></tr>
+              <tr><td>優先度</td><td>高いものから人間が処理するための順番</td></tr>
+            </table>
+          </div>
+          <div>
+            <img class="screenshot" src="brief-assets/screenshots/01-inbox.png" alt="FASRings Inbox screenshot" />
+            <p class="caption">承認待ちInbox。AIが出した候補や生成物を、人間の承認ゲートへ集約する。</p>
+          </div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Pipeline Control</div>
+        <h2>商品はステージごとに進み、止めるべき案件は早く止めます。</h2>
+        <div class="split">
+          <div>
+            <img class="screenshot" src="brief-assets/screenshots/02-pipeline.png" alt="FASRings pipeline screenshot" />
+            <p class="caption">商品パイプライン。Scout、LP、Ad、Outreach、CS、Archived の各ステージを一覧する。</p>
+          </div>
+          <div>
+            <p class="body-text">
+              この画面は、FASRingsが「今どの商品に時間とお金を使っているか」を見る場所です。
+              売れそうな候補だけを次工程に流し、粗利が低い・競合が強い・リスクが大きいものはArchivedへ落とします。
+            </p>
+            <br />
+            <div class="grid two">
+              <div class="card compact"><h3>Scout</h3><p class="body-text">商品発掘・一次スコア</p></div>
+              <div class="card compact"><h3>LP</h3><p class="body-text">訴求・FAQ・表現確認</p></div>
+              <div class="card compact"><h3>Ad</h3><p class="body-text">広告コピー・ターゲット</p></div>
+              <div class="card compact"><h3>Outreach</h3><p class="body-text">仕入れ先開拓・交渉文面</p></div>
+              <div class="card compact"><h3>CS</h3><p class="body-text">問い合わせ・交換・返金対応</p></div>
+              <div class="card compact"><h3>Archived</h3><p class="body-text">見送り理由を残して再利用</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Agent Operations</div>
+        <h2>エージェントの稼働数、失敗数、実行コストを見ながら増やします。</h2>
+        <div class="grid two" style="margin-top: 8mm">
+          <div>
+            <img class="screenshot" src="brief-assets/screenshots/03-agents.png" alt="FASRings agents screenshot" />
+            <p class="caption">登録済みエージェントの一覧。どの工程に何体いるか、24時間で動いたかを確認する。</p>
+          </div>
+          <div>
+            <img class="screenshot" src="brief-assets/screenshots/04-runs.png" alt="FASRings runs screenshot" />
+            <p class="caption">実行ログ。どの商品に、どのエージェントが、いくら使って、何を出したかを追う。</p>
+          </div>
+        </div>
+        <div class="one-liner">
+          本エージェントを接続した後は、候補収集、国内調査、LP生成、広告生成、メーカー連絡、CS返信をそれぞれ独立ジョブとして常時回し、失敗・コスト・承認待ちをこの画面へ集約します。
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Cost Discipline</div>
+        <h2>AIを使うほど、コストを見える化する必要があります。</h2>
+        <div class="split">
+          <div>
+            <img class="screenshot" src="brief-assets/screenshots/05-cost.png" alt="FASRings cost screenshot" />
+            <p class="caption">コスト画面。現状は `agent_runs` の推計コストを集計。今後provider別に分解する。</p>
+          </div>
+          <div>
+            <p class="body-text">
+              候補探索の件数を増やすほど、Claude、Perplexity、Keepa、SellerSprite、Apify、Make.comなどの利用費が積み上がります。
+              そのため、FASRingsでは「商品1件を次の判断まで進めるのにいくらかかったか」を見えるようにします。
+            </p>
+            <br />
+            <table class="table">
+              <tr><th>管理したいコスト</th><th>目的</th></tr>
+              <tr><td>調査コスト</td><td>候補1件あたりの発掘・国内調査費を把握</td></tr>
+              <tr><td>生成コスト</td><td>LP/広告/CS生成に使ったトークンとAPI費を把握</td></tr>
+              <tr><td>外部API費</td><td>Keepa、SellerSprite、Perplexity、Apify等をprovider別に把握</td></tr>
+              <tr><td>案件別コスト</td><td>商品ごとの粗利見込みと事前調査費のバランスを見る</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Implementation Plan</div>
+        <h2>この後の実装予定: サンプル運用から、本エージェント稼働へ</h2>
+        <div class="timeline">
+          <div class="phase">
+            <div class="label">STEP 1 / 現在</div>
+            <h3>UIとDBの土台</h3>
+            <p>Next.js管理画面、Supabase Auth、Drizzle schema、サンプル運用データ、17 agents定義を用意済み。</p>
+          </div>
+          <div class="phase">
+            <div class="label">STEP 2 / 直近</div>
+            <h3>本エージェント接続</h3>
+            <p>Scout、国内調査、LP、Ad、Outreach、CSの実ジョブを `agent_runs` と `approval_queue` に書き込ませる。</p>
+          </div>
+          <div class="phase">
+            <div class="label">STEP 3 / Mac mini</div>
+            <h3>24/7常駐</h3>
+            <p>Mac miniでワーカーを常駐。定期巡回、生成、通知、失敗リトライ、ログ保存を回す。</p>
+          </div>
+          <div class="phase">
+            <div class="label">STEP 4 / 運用拡張</div>
+            <h3>Lark / Make連携</h3>
+            <p>Lark Baseを人間の台帳に、Postgresを実行ログに分け、Make.comや各APIとの接続を増やす。</p>
+          </div>
+        </div>
+        <div class="grid three" style="margin-top: 9mm">
+          <div class="card compact">
+            <h3>まず入れるデータ</h3>
+            <p class="body-text">商品候補、国内競合、粗利、規制リスク、メーカー候補、LP/広告下書き、CS問い合わせ。</p>
+          </div>
+          <div class="card compact">
+            <h3>人間が見る場所</h3>
+            <p class="body-text">採用判断、LP採択、広告採択、メーカー送信、返金/交換/法務リスク対応。</p>
+          </div>
+          <div class="card compact">
+            <h3>自動化する場所</h3>
+            <p class="body-text">収集、要約、比較、下書き、リマインド、ログ保存、コスト集計、通知。</p>
+          </div>
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Daily Operating Rhythm</div>
+        <h2>日次運用は、Inboxを処理するだけで次工程が動く形に寄せます。</h2>
+        <div class="grid three" style="margin-top: 9mm">
+          <div class="card">
+            <h3>朝: 候補を見る</h3>
+            <p class="body-text">Scoutが夜間に拾った候補を確認。高スコア商品だけ採用し、低粗利や規制リスクはすぐ落とす。</p>
+          </div>
+          <div class="card">
+            <h3>昼: 素材を決める</h3>
+            <p class="body-text">LP案、広告案、FAQ、画像方針をレビュー。採用された案だけを制作・公開準備へ進める。</p>
+          </div>
+          <div class="card">
+            <h3>夕方: 外部連絡とCS</h3>
+            <p class="body-text">メーカー打診文、フォローアップ、CS返信案を確認。送信前の人間承認を必ず挟む。</p>
+          </div>
+        </div>
+        <div class="grid two" style="margin-top: 8mm">
+          <div class="card">
+            <h3>週次で見るもの</h3>
+            <p class="body-text">採用率、Archived理由、案件別コスト、LP/広告の採択理由、メーカー返信率、CSの問い合わせ傾向。</p>
+          </div>
+          <div class="card">
+            <h3>月次で見るもの</h3>
+            <p class="body-text">候補数、採用案件数、公開準備中案件、CF/EC売上、粗利見込み、AI/API/広告前コストの回収状況。</p>
+          </div>
+        </div>
+        <div class="one-liner">
+          人間の仕事は「作ること」ではなく、「進める/止める/直す」を判断することへ寄せていきます。
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Current State & Next Gates</div>
+        <h2>現状と、この後に越えるべきゲート</h2>
+        <table class="table" style="margin-top: 9mm">
+          <tr>
+            <th>領域</th>
+            <th>現状</th>
+            <th>次にやること</th>
+            <th>完了条件</th>
+          </tr>
+          <tr>
+            <td>フロント</td>
+            <td>Inbox / Pipeline / Agents / Runs / Cost を実装済み</td>
+            <td>商品詳細、根拠表示、承認後の次工程遷移を追加</td>
+            <td>1商品を採用してLP/広告/Outreachへ流せる</td>
+          </tr>
+          <tr>
+            <td>データ</td>
+            <td>サンプルデータで運用フローを再現</td>
+            <td>実商品候補、国内競合、粗利、規制リスクを投入</td>
+            <td>実データがInboxとPipelineに出る</td>
+          </tr>
+          <tr>
+            <td>エージェント</td>
+            <td>17 agents定義を登録済み</td>
+            <td>本エージェントを `agent_runs` / `approval_queue` に接続</td>
+            <td>夜間に候補が増え、朝Inboxに並ぶ</td>
+          </tr>
+          <tr>
+            <td>常時稼働</td>
+            <td>ローカル開発環境で検証</td>
+            <td>Mac miniでpm2/launchd常駐、ログ監視</td>
+            <td>24時間稼働し、失敗ログが見える</td>
+          </tr>
+          <tr>
+            <td>外部連携</td>
+            <td>Supabase中心。Lark/Makeは追加予定</td>
+            <td>Lark Base同期、Make.com、Keepa、SellerSprite、Perplexity等</td>
+            <td>人間台帳とAI実行ログが同期する</td>
+          </tr>
+        </table>
+        <div class="mini-note">
+          補足: 現在のSupabase DB接続文字列は再確認が必要です。Auth APIは到達確認済みですが、DB direct/pooler はMac miniセットアップ時にDashboardから取り直します。
+        </div>
+        <div class="footer-mark">FASRings</div>
+      </section>
+
+      <section class="slide">
+        <div class="kicker">Summary</div>
+        <h2>FASRingsは、商品ビジネスの「判断待ち」を1つの画面へ集め、回転数を上げる仕組みです。</h2>
+        <div class="grid three" style="margin-top: 11mm">
+          <div class="card">
+            <h3>現状</h3>
+            <p class="body-text">管理画面、DBスキーマ、認証、サンプル運用データ、17 agents定義、スクショ取得まで完了。</p>
+          </div>
+          <div class="card">
+            <h3>次の実装</h3>
+            <p class="body-text">本エージェントを接続し、実商品候補を夜間に収集、朝にはInboxで採否判断できる状態へ進める。</p>
+          </div>
+          <div class="card">
+            <h3>収益への変換</h3>
+            <p class="body-text">勝てる候補だけに制作・仕入れ・広告前コストを集中し、CF公開とEC継続販売へつなげる。</p>
+          </div>
+        </div>
+        <div class="one-liner">
+          少人数でも、商品探索・販売準備・顧客対応を並列に進められる状態を作り、FASRingsの案件創出スピードを上げていきます。
+        </div>
+        <div class="meta">FASRings Agent Operating System</div>
+      </section>
+    </main>
+  </body>
+</html>

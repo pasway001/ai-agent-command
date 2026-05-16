@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Command Center 運用マニュアル</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #171717;
+        background: #f4f4f2;
+        font-family:
+          "Helvetica Neue", Arial, "Hiragino Sans", "Yu Gothic", YuGothic,
+          Meiryo, sans-serif;
+        letter-spacing: 0;
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+      }
+
+      section {
+        padding: 42px 54px;
+        border-bottom: 1px solid #e6e1d8;
+        break-inside: avoid;
+      }
+
+      .cover {
+        min-height: 520px;
+        color: #f8f6f0;
+        background:
+          linear-gradient(135deg, rgba(14, 18, 28, 0.92), rgba(25, 25, 22, 0.82)),
+          url("screenshots/02-inbox.png") center / cover;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .kicker {
+        color: #756f66;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .cover .kicker,
+      .cover .meta,
+      .cover .lead {
+        color: #e9e2d8;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin-top: 14px;
+        font-size: 46px;
+        line-height: 1.08;
+      }
+
+      h2 {
+        margin-top: 8px;
+        font-size: 28px;
+        line-height: 1.22;
+      }
+
+      h3 {
+        margin: 22px 0 8px;
+        font-size: 18px;
+        line-height: 1.4;
+      }
+
+      p,
+      li,
+      td,
+      th {
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .lead {
+        max-width: 760px;
+        margin-top: 18px;
+        color: #4f4b46;
+        font-size: 16px;
+        line-height: 1.9;
+      }
+
+      .meta {
+        color: #6b665f;
+        font-size: 12px;
+        line-height: 1.8;
+      }
+
+      .note {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border: 1px solid #d9d2c6;
+        border-left: 4px solid #2563eb;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .warn {
+        border-left-color: #d97706;
+        background: #fffbeb;
+      }
+
+      .ok {
+        border-left-color: #059669;
+        background: #ecfdf5;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .card {
+        border: 1px solid #e6e1d8;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fff;
+      }
+
+      .card h3 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 14px;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid #e2ded6;
+        border-radius: 8px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e9e4dc;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        width: 28%;
+        background: #f7f4ef;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      tr:last-child td,
+      tr:last-child th {
+        border-bottom: 0;
+      }
+
+      ul,
+      ol {
+        margin: 10px 0 0 20px;
+        padding: 0;
+      }
+
+      code,
+      pre {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      code {
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: #f1f1ef;
+        font-size: 0.92em;
+      }
+
+      pre {
+        overflow: auto;
+        margin: 14px 0 0;
+        padding: 14px 16px;
+        border-radius: 8px;
+        color: #f4f4f5;
+        background: #18181b;
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+
+      figure {
+        margin: 20px 0 0;
+        break-inside: avoid;
+      }
+
+      img {
+        width: 100%;
+        border: 1px solid #ded8ce;
+        border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      figcaption {
+        margin-top: 8px;
+        color: #6f6a63;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .toc {
+        columns: 2;
+      }
+
+      .toc li {
+        break-inside: avoid;
+      }
+
+      .badge {
+        display: inline-block;
+        margin: 0 6px 6px 0;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #eeeae2;
+        color: #34312d;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        main {
+          max-width: none;
+          box-shadow: none;
+        }
+
+        section {
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="cover">
+        <div>
+          <div class="kicker">Operation Manual</div>
+          <h1>Agent Command Center 運用マニュアル</h1>
+          <p class="lead">
+            System 1〜5 のAIエージェント運用を、人間レビュー・稼働監視・コスト管理まで含めて引き継ぐための手順書です。
+          </p>
+        </div>
+        <p class="meta">
+          作成日: 2026-05-10<br />
+          対象フォルダ: <code>agent-command-center</code><br />
+          画面確認: <code>http://localhost:3000</code><br />
+          確認環境: Node.js 22.14.0 / pnpm 10.33.0 / Next.js 16.2.6
+        </p>
+      </section>
+
+      <section>
+        <div class="kicker">Summary</div>
+        <h2>先に結論</h2>
+        <div class="note ok">
+          <p>
+            フロントUIとしてサーバーへ上げる対象は、基本的に
+            <code>agent-command-center</code> フォルダだけで足ります。ただし、フォルダ単体では運用できません。
+            Supabase、環境変数、DBマイグレーション、Authユーザー、常駐プロセス設定が別途必要です。
+          </p>
+        </div>
+        <table>
+          <tr>
+            <th>今回見た環境</th>
+            <td><code>http://localhost:3000</code> の稼働中Next.js dev server。</td>
+          </tr>
+          <tr>
+            <th>現データ</th>
+            <td>
+              承認待ち8件、商品24件、登録エージェント20件、スキル12件、実行ログ79件。
+              スクリーンショットはこの現環境から撮り直しています。
+            </td>
+          </tr>
+        </table>
+        <table>
+          <tr>
+            <th>フォルダに含めるもの</th>
+            <td>
+              <code>src</code>、<code>public</code>、<code>drizzle</code>、<code>scripts</code>、
+              <code>package.json</code>、<code>pnpm-lock.yaml</code>、<code>next.config.ts</code>、
+              <code>drizzle.config.ts</code>、<code>tsconfig.json</code>、<code>components.json</code>。
+            </td>
+          </tr>
+          <tr>
+            <th>フォルダ外で必要なもの</th>
+            <td>
+              Supabaseプロジェクト、Postgres接続文字列、Supabase Authユーザー、サービスロールキー、APIキー原本、PM2またはlaunchdなどの常駐設定。
+            </td>
+          </tr>
+          <tr>
+            <th>上げないもの</th>
+            <td>
+              <code>node_modules</code>、<code>.next</code>、<code>.env.local</code>、ログ、個人PC固有のキャッシュ。
+              秘密情報はサーバー側の環境変数として設定します。
+            </td>
+          </tr>
+          <tr>
+            <th>注意</th>
+            <td>
+              24/7のエージェントワーカー本体は、現状このUIとは別プロセスとして設計する前提です。
+              UIは人間レビューと監視の司令塔で、定期実行キューはまだBullMQ/Redis等で常駐化する余地があります。
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <div class="kicker">Contents</div>
+        <h2>目次</h2>
+        <ol class="toc">
+          <li>システム全体像</li>
+          <li>初回セットアップ</li>
+          <li>サーバー常駐化</li>
+          <li>ログインと日常オペレーション</li>
+          <li>承認待ちInbox</li>
+          <li>商品パイプライン</li>
+          <li>エージェント管理</li>
+          <li>プロンプトとスキル管理</li>
+          <li>スキル管理</li>
+          <li>実行ログとコスト確認</li>
+          <li>障害時の確認手順</li>
+          <li>引き継ぎチェックリスト</li>
+        </ol>
+      </section>
+
+      <section>
+        <div class="kicker">System</div>
+        <h2>システム全体像</h2>
+        <p>
+          Agent Command Center は、候補商品の発掘からLP、広告、仕入れ連絡、CS返信までをAIが下書きし、
+          人間が承認・却下するための管理UIです。AIは調査・生成・一次判定を担当し、人間は公開判断、送信判断、例外対応を担当します。
+        </p>
+        <table>
+          <tr>
+            <th>System 1 Scout</th>
+            <td>商品候補の収集、Keepa/SellerSprite/市場調査、スコアリング。</td>
+          </tr>
+          <tr>
+            <th>System 2 LP</th>
+            <td>LPコピー、FAQ、画像案、コンプライアンス確認。</td>
+          </tr>
+          <tr>
+            <th>System 3 Ad</th>
+            <td>広告見出し、説明文、訴求軸の生成。</td>
+          </tr>
+          <tr>
+            <th>System 4 Outreach</th>
+            <td>海外メーカー・仕入れ先への連絡文面作成。</td>
+          </tr>
+          <tr>
+            <th>System 5 CS</th>
+            <td>問い合わせ分類、返信テンプレ、エスカレーション案。</td>
+          </tr>
+          <tr>
+            <th>Command Center</th>
+            <td>承認キュー、商品ステージ、稼働状況、実行ログ、コストを一元管理。</td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <div class="kicker">Initial Setup</div>
+        <h2>初回セットアップ</h2>
+        <h3>1. 必要ソフト</h3>
+        <ul>
+          <li>Node.js 22系、またはNext.js 16が対応するNode.js 20.9以上</li>
+          <li>pnpm 10系</li>
+          <li>Git</li>
+          <li>Supabaseプロジェクト</li>
+        </ul>
+        <h3>2. 依存関係を入れる</h3>
+        <pre>cd agent-command-center
+pnpm install</pre>
+        <h3>3. 環境変数を設定する</h3>
+        <p>
+          サーバーでは <code>.env.local</code> を直接共有せず、ホスティング環境またはサーバーの環境変数に設定します。
+        </p>
+        <pre>NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+DATABASE_URL=...
+DATABASE_POOL_URL=...
+LLM_PROVIDER=mock</pre>
+        <div class="note warn">
+          <p>
+            <code>DATABASE_URL</code> はマイグレーション用のDirect接続、<code>DATABASE_POOL_URL</code>
+            はNext.js実行時のPooler接続に使います。Supabase Dashboardの最新表示を正としてください。
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="kicker">Database</div>
+        <h2>DB初期化とユーザー作成</h2>
+        <h3>1. スキーマ反映</h3>
+        <pre>pnpm db:push</pre>
+        <p>
+          本番運用では、生成済みマイグレーションを順番に適用する <code>pnpm db:migrate</code> を優先します。
+          初回検証環境では <code>db:push</code> が早いです。
+        </p>
+        <h3>2. RLSポリシー適用</h3>
+        <pre>pnpm db:apply-rls</pre>
+        <p>
+          認証済みレビュアーがUIに必要なテーブルを読み書きできるようにします。
+          service role はワーカーや管理スクリプト用で、ブラウザには出しません。
+        </p>
+        <h3>3. 初期データ投入</h3>
+        <pre>pnpm db:seed
+pnpm db:seed-prompts
+pnpm db:seed-skills</pre>
+        <h3>4. ログインユーザー作成</h3>
+        <pre>pnpm user:create reviewer@example.com '強いパスワード' 'Reviewer Name'</pre>
+        <p>
+          別の担当者へ渡す場合は、メールアドレスごとにユーザーを作成します。退職・担当変更時はSupabase Auth側で無効化または削除します。
+        </p>
+      </section>
+
+      <section>
+        <div class="kicker">Deploy</div>
+        <h2>ビルドと常駐化</h2>
+        <h3>手動起動</h3>
+        <pre>pnpm build
+pnpm start</pre>
+        <h3>PM2で常駐</h3>
+        <pre>pnpm add -g pm2
+pm2 start "pnpm start" --name agent-command-center
+pm2 save
+pm2 status</pre>
+        <h3>確認コマンド</h3>
+        <pre>pnpm lint
+pnpm build
+curl -I http://localhost:3000/login</pre>
+        <div class="note">
+          <p>
+            外部公開する場合は、NginxやCloudflare TunnelなどでHTTPS化し、Supabase AuthのリダイレクトURLにも本番URLを登録します。
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="kicker">Login</div>
+        <h2>ログイン</h2>
+        <p>
+          Supabase Authのメールアドレス・パスワードでログインします。未ログインの状態で内部画面へアクセスすると
+          <code>/login</code> にリダイレクトされます。
+        </p>
+        <figure>
+          <img src="screenshots/01-login.png" alt="ログイン画面" />
+          <figcaption>ログイン画面。レビュアーごとにメールアドレスを発行します。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Inbox</div>
+        <h2>承認待ちInboxの使い方</h2>
+        <ol>
+          <li><code>/inbox</code> を開きます。</li>
+          <li>優先度、商品名、ステージ、担当エージェントを確認します。</li>
+          <li>自分が処理するものは「担当する」でクレームします。</li>
+          <li>内容を確認し、問題なければ承認、問題があれば却下します。</li>
+          <li>却下時は理由を必ず書きます。理由は次回のプロンプト改善に使います。</li>
+        </ol>
+        <div class="note">
+          <p>
+            同じ承認アイテムを複数人が同時処理しないよう、<code>assigned_to</code> と
+            <code>decision</code> の条件で排他制御します。
+          </p>
+        </div>
+        <figure>
+          <img src="screenshots/02-inbox.png" alt="承認待ちInbox" />
+          <figcaption>承認待ちInbox。現環境では未処理8件が表示されています。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Pipeline</div>
+        <h2>商品パイプライン</h2>
+        <p>
+          <code>/pipeline</code> では、商品が <span class="badge">Scout</span>
+          <span class="badge">LP</span><span class="badge">Ad</span>
+          <span class="badge">Outreach</span><span class="badge">CS</span>
+          <span class="badge">Archived</span> のどこにいるかを一覧します。
+        </p>
+        <ul>
+          <li>承認すると次ステージのエージェントが起動し、次の承認アイテムが作られます。</li>
+          <li>却下すると商品ステータスが <code>rejected</code> になります。</li>
+          <li>滞留している商品は、該当ステージの承認待ちやエラーを確認します。</li>
+        </ul>
+        <figure>
+          <img src="screenshots/03-pipeline.png" alt="商品パイプライン" />
+          <figcaption>ステージ別カンバン。現環境ではScout 23件、Archived 1件が表示されています。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Agents</div>
+        <h2>エージェント稼働状況</h2>
+        <p>
+          <code>/agents</code> では、登録済みエージェント、24時間の実行数・失敗数、30日の人間判断との一致率を確認します。
+        </p>
+        <ul>
+          <li>失敗数が増えているエージェントは <code>/runs</code> でエラーメッセージを確認します。</li>
+          <li>一致率が低いエージェントは、プロンプト履歴や却下理由を見て改善します。</li>
+          <li>UIから作成したdynamic agentは、専用TSファイルなしでテスト実行できます。</li>
+        </ul>
+        <figure>
+          <img src="screenshots/04-agents.png" alt="エージェント稼働状況" />
+          <figcaption>エージェント一覧。現環境では20件のエージェントが登録されています。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Prompts & Skills</div>
+        <h2>プロンプトとスキル管理</h2>
+        <h3>プロンプト改善</h3>
+        <ol>
+          <li><code>/agents</code> から対象エージェントを開きます。</li>
+          <li>「プロンプト」タブで現在のアクティブ版を確認します。</li>
+          <li>改善案を新しいバージョンとして保存します。</li>
+          <li>必要なら保存後にアクティブ化します。</li>
+        </ol>
+        <h3>スキル</h3>
+        <p>
+          スキルは、複数エージェントで再利用できるプロンプト断片です。
+          法規制チェック、国内市場リサーチ、文面トーンなど、共通ルールを切り出す用途に使います。
+        </p>
+        <pre>pnpm db:seed-skills</pre>
+        <p>
+          UIでは <code>/skills</code> から作成・編集し、各エージェント詳細の「スキル」タブで着脱します。
+        </p>
+        <figure>
+          <img src="screenshots/05-skills.png" alt="スキル一覧" />
+          <figcaption>スキル一覧。現環境では12件のスキルが登録されています。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Runs</div>
+        <h2>実行ログ・根拠</h2>
+        <p>
+          <code>/runs</code> は、直近100件のエージェント実行を確認する画面です。
+          ステータス、対象商品、tokens、推計USD、エラーを追えます。
+        </p>
+        <ul>
+          <li><code>failed</code> が出たらエラー文を確認します。</li>
+          <li>コストが急増したら、該当時間帯の実行数とtokensを確認します。</li>
+          <li>原因が外部APIの場合は、該当providerのキー・残高・レート制限を見ます。</li>
+        </ul>
+        <figure>
+          <img src="screenshots/06-runs.png" alt="実行ログ・根拠" />
+          <figcaption>実行ログ。現環境では79件のrunが記録されています。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Cost</div>
+        <h2>コスト確認</h2>
+        <p>
+          <code>/cost</code> では、本日、今月累計、実行回数、tokensを確認します。
+          現状は <code>agent_runs.cost_usd</code> から集計します。
+        </p>
+        <ul>
+          <li>日次で本日コストを確認します。</li>
+          <li>月次でエージェント別に高コストな処理を確認します。</li>
+          <li>実LLM接続後は、provider別コストの分解を追加すると管理しやすくなります。</li>
+        </ul>
+        <figure>
+          <img src="screenshots/07-cost.png" alt="コスト画面" />
+          <figcaption>コスト画面。今月の利用傾向を把握します。</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <div class="kicker">Troubleshooting</div>
+        <h2>障害時の確認手順</h2>
+        <table>
+          <tr>
+            <th>ログインできない</th>
+            <td>
+              Supabase Authにユーザーが存在するか、メール確認済みか、<code>NEXT_PUBLIC_SUPABASE_URL</code>
+              と <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> が正しいか確認します。
+            </td>
+          </tr>
+          <tr>
+            <th>画面がDBエラーになる</th>
+            <td>
+              <code>DATABASE_POOL_URL</code>、SupabaseのPooler設定、RLS適用、DBテーブルの有無を確認します。
+            </td>
+          </tr>
+          <tr>
+            <th>承認後に次工程が動かない</th>
+            <td>
+              <code>/runs</code> の失敗ログ、<code>LLM_PROVIDER</code>、外部APIキー、ワーカー常駐状態を確認します。
+            </td>
+          </tr>
+          <tr>
+            <th>エージェントがmockしか返さない</th>
+            <td>
+              現状の実LLM providerは未実装です。<code>LLM_PROVIDER=mock</code> では決定論的なテスト出力になります。
+              本番AI出力にはAnthropic/OpenAI SDK実装とAPIキー設定が必要です。
+            </td>
+          </tr>
+          <tr>
+            <th>コストが0のまま</th>
+            <td>
+              mock providerではtokens/costは0です。実LLM接続後、usage値を <code>finishRun</code> へ渡します。
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <section>
+        <div class="kicker">Audit</div>
+        <h2>今回の欠陥チェック結果</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>確認済み</h3>
+            <ul>
+              <li><code>pnpm lint</code> 成功</li>
+              <li><code>pnpm build</code> 成功</li>
+              <li>主要DBクエリのスモークテスト成功</li>
+              <li><code>localhost:3000</code> のブラウザ表示確認</li>
+              <li>マニュアル用スクリーンショット7枚を現環境から撮り直し</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>修正済み</h3>
+            <ul>
+              <li>DBクライアントを遅延初期化し、ビルド時の環境変数事故を避けるよう変更</li>
+              <li>承認処理の同時押しで二重判定されにくい条件へ変更</li>
+              <li>prompt/skill系テーブルにもRLSポリシーを適用対象化</li>
+              <li>pnpmバージョンを <code>packageManager</code> に固定</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note warn">
+          <p>
+            残タスクは、実LLM provider実装、24/7ワーカー常駐化、外部APIキー・通知・バックアップ手順の本番確定です。
+            UI本体はビルド可能ですが、全自動運用にはこれらの周辺設定が必要です。
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="kicker">Handover</div>
+        <h2>引き継ぎチェックリスト</h2>
+        <ol>
+          <li>サーバーに <code>agent-command-center</code> を配置する。</li>
+          <li>サーバー環境変数を設定する。秘密情報はチャットやGitに残さない。</li>
+          <li><code>pnpm install</code> を実行する。</li>
+          <li><code>pnpm db:migrate</code> または <code>pnpm db:push</code> を実行する。</li>
+          <li><code>pnpm db:apply-rls</code> を実行する。</li>
+          <li><code>pnpm db:seed</code>、<code>pnpm db:seed-prompts</code>、<code>pnpm db:seed-skills</code> を実行する。</li>
+          <li>レビュアーのログインユーザーを作成する。</li>
+          <li><code>pnpm build</code> が通ることを確認する。</li>
+          <li><code>pnpm start</code> またはPM2で常駐させる。</li>
+          <li>ログイン、Inbox、Pipeline、Agents、Skills、Runs、Costを画面確認する。</li>
+          <li>実運用前にDBバックアップ、APIキー管理、障害時連絡先を決める。</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agent Command Center
 
-## Getting Started
+System1〜5の複数AIエージェントを24/7運用するためのオペレーションUI。
+既存パイプライン（Scout → LP → Ad → Outreach → CS）の人間レビューを集約し、承認・パイプライン状況・稼働状況・実行ログ・コストを一画面で扱えます。
 
-First, run the development server:
+## スタック
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) + React 19
+- TypeScript + Tailwind v4 + shadcn/ui
+- Drizzle ORM (postgres-js) + Supabase Postgres
+- Supabase Auth (RLS, A案=認証ユーザーは全件読み書き可)
+
+## 初期セットアップ
+
+### 1. `.env.local` を埋める
+
+`.env.example` を参考に、以下を `.env.local` に書く：
+
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...        # Supabase Dashboard → Project Settings → API
+DATABASE_URL=...                     # Direct connection (5432) — マイグレーション用
+DATABASE_POOL_URL=...                # Session pooler (6543) — Next.js runtime用
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **重要**: `DATABASE_URL` のパスワードは Supabase Dashboard → Database → "Reset database password" でローテーションした新パスワードを使うこと。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. 依存インストール
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm install
+```
 
-## Learn More
+### 3. DBマイグレーション + RLS + シード
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm db:push          # スキーマをSupabaseへ反映
+pnpm db:apply-rls     # RLSポリシー適用 (drizzle/policies.sql)
+pnpm db:seed          # 初期エージェント17件を投入
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. 開発サーバー起動
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+→ http://localhost:3000  (`/inbox` にリダイレクト)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 画面構成
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| ルート         | 内容                                                                 |
+| -------------- | -------------------------------------------------------------------- |
+| `/inbox`       | 承認待ちInbox。優先度・担当・経過時間でレビュアーが処理              |
+| `/pipeline`    | 商品パイプライン (Scout/LP/Ad/Outreach/CS/Archived のカンバン表示)   |
+| `/agents`      | エージェント稼働状況。24h実行数・失敗数・同時実行数                  |
+| `/runs`        | 実行ログ・根拠 (直近100件、tokens/コスト含む)                        |
+| `/cost`        | コストパネル (本日/今月、エージェント別)                             |
+
+## DBスキーマ概要
+
+| テーブル              | 役割                                                               |
+| --------------------- | ------------------------------------------------------------------ |
+| `products`            | パイプラインの主役。stage/status を持つ                            |
+| `agents`              | エージェント定義 (id, schedule, 予算, 同時実行数)                  |
+| `agent_runs`          | 1実行 = 1行。tokens/cost/error/parent_run_id (リトライ親) を記録   |
+| `agent_evaluations`   | 自動評価 or 人間レビュー。verdict + 根拠 evidence                  |
+| `approval_queue`      | 承認待ちInbox。assigned_to/claimed_at で **排他制御**              |
+| `cost_ledger`         | 日次コスト集計 (任意。agent_runs から導出可)                       |
+
+## エージェント命名規則
+
+`<system>.<role>` (例: `scout.keepa_monitor`, `lp.copy_writer`)
+新エージェントは `agents` テーブルに行追加するだけで認識されます。
+
+## 開発時のよく使うコマンド
+
+```bash
+pnpm dev               # 開発サーバー
+pnpm build             # 本番ビルド
+pnpm lint              # ESLint
+
+pnpm db:generate       # マイグレーションSQL生成 (drizzle/0000_*.sql)
+pnpm db:push           # スキーマを直接適用 (開発時に便利)
+pnpm db:migrate        # 生成済みマイグレーションを順次適用 (本番向け)
+pnpm db:studio         # Drizzle Studio (Web UIでテーブル閲覧)
+pnpm db:apply-rls      # drizzle/policies.sql を適用
+pnpm db:seed           # 初期エージェント投入 (idempotent)
+```
+
+## 24/7運用 (Mac mini想定)
+
+- アプリ本体: `pm2` または `launchd` で `pnpm start` を常駐
+- エージェントワーカー: 別プロセス。BullMQ + Redis を推奨 (本リポジトリには未含・別途構築)
+- ワーカーは `SUPABASE_SERVICE_ROLE_KEY` を使ってRLSをバイパスし、書き込みを行う
+- UI側は anon key + Supabase Auth セッション経由で読み書きする (RLSで保護)
+
+## 既知の制約
+
+- Supabase pooler を使うため `prepare: false` を設定済み (Drizzle側)
+- DBパスワードがチャットに残っているため初回ローテーション必須
