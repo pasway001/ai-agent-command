@@ -22,7 +22,7 @@ These are not strictly required to render the UI, but they are required for prod
 
 | Key | Source | Notes |
 | --- | --- | --- |
-| `LARK_WEBHOOK_URL_OPS` | Lark custom bot webhook | Budget alerts and daily cost summary. |
+| `LARK_WEBHOOK_URL_OPS` | Lark custom bot webhook | Optional but recommended. Budget alerts and daily cost summary. |
 | `LARK_WEBHOOK_TIMEOUT_MS` | Local default | Recommended: `5000`. |
 | `BUDGET_SOFT_THRESHOLD_PCT` | Local default | Recommended: `80`. |
 | `BUDGET_HARD_THRESHOLD_PCT` | Local default | Recommended: `100`. |

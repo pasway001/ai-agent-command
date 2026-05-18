@@ -3,6 +3,7 @@ import "./_loadenv";
 type EnvKey = {
   key: string;
   requiredFor: "runtime" | "production" | "ai";
+  optional?: boolean;
   public?: boolean;
   note?: string;
 };
@@ -42,6 +43,7 @@ const keys: EnvKey[] = [
   {
     key: "LARK_WEBHOOK_URL_OPS",
     requiredFor: "production",
+    optional: true,
     note: "ops alerts; local dev can omit",
   },
   {
@@ -94,9 +96,10 @@ console.log(`env check mode=${mode}`);
 for (const item of scoped) {
   const status = mask(process.env[item.key]);
   const ok = status === "set";
-  if (!ok) missing += 1;
+  if (!ok && !item.optional) missing += 1;
   const suffix = item.note ? ` (${item.note})` : "";
-  console.log(`${ok ? "OK " : "NG "} ${item.key}: ${status}${suffix}`);
+  const label = ok ? "OK " : item.optional ? "WARN" : "NG ";
+  console.log(`${label} ${item.key}: ${status}${suffix}`);
 }
 
 if (missing > 0) {
