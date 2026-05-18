@@ -23,8 +23,107 @@ export async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
   }
 }
 
+type ScoutVerdict = "approve" | "reject" | "escalate";
+
+export type ScoutReviewDetails = {
+  sourceName: string | null;
+  sourceUrl: string | null;
+  description: string | null;
+  publishedAt: string | null;
+  category: string | null;
+  score: number | null;
+  verdict: ScoutVerdict | null;
+  rationale: string | null;
+  pros: string[];
+  cons: string[];
+  suggestedPriority: number | null;
+  provider: string | null;
+  model: string | null;
+  japanSummary: string | null;
+  domesticExamples: string[];
+  similarProductCount: number | null;
+  notYetInJapan: boolean | null;
+};
+
+type JsonRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as JsonRecord;
+}
+
+function stringValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function numberValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function booleanValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+function stringArrayValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is string => typeof item === "string" && item.trim().length > 0
+  );
+}
+
+function verdictValue(record: JsonRecord | null, key: string): ScoutVerdict | null {
+  const value = record?.[key];
+  if (value === "approve" || value === "reject" || value === "escalate") {
+    return value;
+  }
+  return null;
+}
+
+function scoutReviewDetails(
+  productMetadata: unknown,
+  runInputPayload: unknown,
+  runOutputPayload: unknown
+): ScoutReviewDetails {
+  const metadata = asRecord(productMetadata);
+  const inputPayload = asRecord(runInputPayload);
+  const outputPayload = asRecord(runOutputPayload);
+  const signals =
+    asRecord(metadata?.signals) ?? asRecord(inputPayload?.signals);
+  const overseas = asRecord(signals?.overseas);
+  const japan = asRecord(signals?.japan);
+
+  return {
+    sourceName: stringValue(overseas, "source"),
+    sourceUrl: stringValue(overseas, "url"),
+    description: stringValue(overseas, "description"),
+    publishedAt: stringValue(overseas, "publishedAt"),
+    category: stringValue(signals, "category"),
+    score: numberValue(outputPayload, "score"),
+    verdict: verdictValue(outputPayload, "verdict"),
+    rationale: stringValue(outputPayload, "rationale"),
+    pros: stringArrayValue(outputPayload, "pros"),
+    cons: stringArrayValue(outputPayload, "cons"),
+    suggestedPriority: numberValue(outputPayload, "suggestedPriority"),
+    provider: stringValue(outputPayload, "provider"),
+    model: stringValue(outputPayload, "model"),
+    japanSummary: stringValue(japan, "searchSummary"),
+    domesticExamples: stringArrayValue(japan, "domesticExamples"),
+    similarProductCount: numberValue(japan, "similarProductCount"),
+    notYetInJapan: booleanValue(japan, "notYetInJapan"),
+  };
+}
+
 export async function getOpenApprovals() {
-  return db
+  const rows = await db
     .select({
       id: approvalQueue.id,
       priority: approvalQueue.priority,
@@ -37,12 +136,26 @@ export async function getOpenApprovals() {
       productStage: products.stage,
       agentId: agentRuns.agentId,
       runId: agentRuns.id,
+      productMetadata: products.metadata,
+      runInputPayload: agentRuns.inputPayload,
+      runOutputPayload: agentRuns.outputPayload,
     })
     .from(approvalQueue)
     .leftJoin(agentRuns, eq(approvalQueue.agentRunId, agentRuns.id))
     .leftJoin(products, eq(approvalQueue.productId, products.id))
     .where(isNull(approvalQueue.decision))
     .orderBy(desc(approvalQueue.priority), approvalQueue.createdAt);
+
+  return rows.map(
+    ({ productMetadata, runInputPayload, runOutputPayload, ...row }) => ({
+      ...row,
+      review: scoutReviewDetails(
+        productMetadata,
+        runInputPayload,
+        runOutputPayload
+      ),
+    })
+  );
 }
 
 export type OpenApproval = Awaited<ReturnType<typeof getOpenApprovals>>[number];
