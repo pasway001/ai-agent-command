@@ -1,5 +1,6 @@
 import "./_loadenv";
 import { runMinimalScout } from "../src/lib/agents/minimal-scout";
+import { closeDb } from "../src/lib/db";
 
 async function main() {
   const result = await runMinimalScout();
@@ -20,7 +21,11 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await closeDb();
+  });

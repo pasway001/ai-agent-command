@@ -50,6 +50,13 @@ export function getDb() {
   return database;
 }
 
+export async function closeDb() {
+  const client = globalForDb.client;
+  globalForDb.client = undefined;
+  globalForDb.db = undefined;
+  await client?.end({ timeout: 5 });
+}
+
 type Database = ReturnType<typeof createDb>;
 
 export const db = new Proxy({} as Database, {
