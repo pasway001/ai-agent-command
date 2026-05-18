@@ -10,35 +10,70 @@ type EnvKey = {
 
 const keys: EnvKey[] = [
   {
-    key: "NEXT_PUBLIC_SUPABASE_URL",
+    key: "AUTH_PROVIDER",
     requiredFor: "runtime",
-    public: true,
-  },
-  {
-    key: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    requiredFor: "runtime",
-    public: true,
-  },
-  {
-    key: "SUPABASE_SERVICE_ROLE_KEY",
-    requiredFor: "runtime",
-    note: "server-only",
+    optional: true,
+    note: "defaults to supabase when Supabase keys exist, otherwise local",
   },
   {
     key: "DATABASE_URL",
     requiredFor: "runtime",
-    note: "direct connection for migrations",
+    note: "local/direct Postgres connection",
   },
   {
     key: "DATABASE_POOL_URL",
     requiredFor: "runtime",
-    note: "pooled runtime connection",
+    optional: true,
+    note: "optional pooled runtime connection",
+  },
+  {
+    key: "NEXT_PUBLIC_SUPABASE_URL",
+    requiredFor: "runtime",
+    optional: true,
+    public: true,
+    note: "required only when AUTH_PROVIDER=supabase",
+  },
+  {
+    key: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    requiredFor: "runtime",
+    optional: true,
+    public: true,
+    note: "required only when AUTH_PROVIDER=supabase",
+  },
+  {
+    key: "SUPABASE_SERVICE_ROLE_KEY",
+    requiredFor: "runtime",
+    optional: true,
+    note: "server-only",
+  },
+  {
+    key: "APP_AUTH_EMAIL",
+    requiredFor: "runtime",
+    optional: true,
+    note: "required only when AUTH_PROVIDER=local",
+  },
+  {
+    key: "APP_AUTH_PASSWORD",
+    requiredFor: "runtime",
+    optional: true,
+    note: "required only when AUTH_PROVIDER=local",
+  },
+  {
+    key: "APP_SESSION_SECRET",
+    requiredFor: "runtime",
+    optional: true,
+    note: "required only when AUTH_PROVIDER=local",
   },
   {
     key: "NEXT_PUBLIC_APP_URL",
     requiredFor: "production",
     public: true,
     note: "production base URL, no trailing slash",
+  },
+  {
+    key: "CRON_SECRET",
+    requiredFor: "production",
+    note: "protects Vercel Cron endpoints",
   },
   {
     key: "LARK_WEBHOOK_URL_OPS",
@@ -66,6 +101,8 @@ const keys: EnvKey[] = [
   {
     key: "ANTHROPIC_API_KEY",
     requiredFor: "ai",
+    optional: true,
+    note: "required only when LLM_PROVIDER=anthropic",
   },
 ];
 
@@ -79,7 +116,7 @@ const order = { runtime: 0, production: 1, ai: 2 } as const;
 
 function isPlaceholder(value: string | undefined): boolean {
   if (!value) return true;
-  return /YOUR_|changeme|eyJ\.\.\.|TODO|^https:\/\/YOUR_PROJECT/i.test(value);
+  return /YOUR_|change-?me|eyJ\.\.\.|TODO|^https:\/\/YOUR_PROJECT/i.test(value);
 }
 
 function mask(value: string | undefined): string {
@@ -90,8 +127,16 @@ function mask(value: string | undefined): string {
 
 const scoped = keys.filter((item) => order[item.requiredFor] <= order[mode]);
 let missing = 0;
+const authProvider =
+  process.env.AUTH_PROVIDER === "supabase" ||
+  (!process.env.AUTH_PROVIDER &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    ? "supabase"
+    : "local";
+const llmProvider = process.env.LLM_PROVIDER ?? "mock";
 
-console.log(`env check mode=${mode}`);
+console.log(`env check mode=${mode} auth=${authProvider} llm=${llmProvider}`);
 
 for (const item of scoped) {
   const status = mask(process.env[item.key]);
@@ -100,6 +145,26 @@ for (const item of scoped) {
   const suffix = item.note ? ` (${item.note})` : "";
   const label = ok ? "OK " : item.optional ? "WARN" : "NG ";
   console.log(`${label} ${item.key}: ${status}${suffix}`);
+}
+
+function requireConditional(key: string, reason: string) {
+  const status = mask(process.env[key]);
+  const ok = status === "set";
+  if (!ok) missing += 1;
+  console.log(`${ok ? "OK " : "NG "} ${key}: ${status} (${reason})`);
+}
+
+if (authProvider === "local") {
+  requireConditional("APP_AUTH_PASSWORD", "AUTH_PROVIDER=local");
+  requireConditional("APP_SESSION_SECRET", "AUTH_PROVIDER=local");
+} else {
+  requireConditional("NEXT_PUBLIC_SUPABASE_URL", "AUTH_PROVIDER=supabase");
+  requireConditional("NEXT_PUBLIC_SUPABASE_ANON_KEY", "AUTH_PROVIDER=supabase");
+  requireConditional("SUPABASE_SERVICE_ROLE_KEY", "AUTH_PROVIDER=supabase");
+}
+
+if (mode === "ai" && llmProvider === "anthropic") {
+  requireConditional("ANTHROPIC_API_KEY", "LLM_PROVIDER=anthropic");
 }
 
 if (missing > 0) {

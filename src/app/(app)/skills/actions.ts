@@ -4,19 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireCurrentUser } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { skills, agentSkills } from "@/lib/db/schema";
 import { SKILL_CATEGORIES } from "./constants";
-
-async function requireUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("認証されていません");
-  return user;
-}
 
 const SkillSchema = z.object({
   slug: z
@@ -70,7 +61,7 @@ export async function createSkill(
   if (!params.ok) return params;
 
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -118,7 +109,7 @@ export async function updateSkill(
   if (!params.ok) return params;
 
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -155,7 +146,7 @@ export async function updateSkill(
 
 export async function deleteSkill(skillId: string): Promise<ActionResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -173,7 +164,7 @@ export async function attachSkill(input: {
   skillId: string;
 }): Promise<ActionResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -211,7 +202,7 @@ export async function detachSkill(input: {
   skillId: string;
 }): Promise<ActionResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -236,7 +227,7 @@ export async function reorderAgentSkills(input: {
   skillIdsInOrder: string[];
 }): Promise<ActionResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }

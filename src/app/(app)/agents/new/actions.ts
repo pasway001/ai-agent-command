@@ -4,19 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireCurrentUser } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { agents } from "@/lib/db/schema";
 import { createPromptVersion } from "@/lib/agent-sdk";
-
-async function requireUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("認証されていません");
-  return user;
-}
 
 const AGENT_TYPES = ["scout", "lp", "ad", "outreach", "cs"] as const;
 const SYSTEM_NO_BY_TYPE: Record<(typeof AGENT_TYPES)[number], number> = {
@@ -96,7 +87,7 @@ export async function createAgent(
 
   let user: { id: string };
   try {
-    user = await requireUser();
+    user = await requireCurrentUser();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }

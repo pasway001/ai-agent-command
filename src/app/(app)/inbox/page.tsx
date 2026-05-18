@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/nav/page-header";
 import { DbErrorState } from "@/components/empty-state";
 import { getOpenApprovals, safe } from "@/lib/db/queries";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { browserRealtimeEnabled, getCurrentUser } from "@/lib/auth/server";
 import { InboxList } from "./inbox-list";
 
 export const dynamic = "force-dynamic";
@@ -9,10 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function InboxPage() {
   const items = await safe(() => getOpenApprovals());
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   return (
     <>
@@ -24,7 +21,11 @@ export default async function InboxPage() {
         {items === null ? (
           <DbErrorState />
         ) : (
-          <InboxList initial={items} currentUserId={user?.id ?? null} />
+          <InboxList
+            initial={items}
+            currentUserId={user?.id ?? null}
+            realtimeEnabled={browserRealtimeEnabled()}
+          />
         )}
       </div>
     </>

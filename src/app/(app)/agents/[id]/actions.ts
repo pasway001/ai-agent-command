@@ -2,20 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireCurrentUser } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { agentPrompts } from "@/lib/db/schema";
 import { createPromptVersion } from "@/lib/agent-sdk";
 import { runDbAgent } from "@/lib/agents/_db-agent";
-
-async function requireUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("認証されていません");
-  return user;
-}
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -26,7 +17,7 @@ export async function savePromptVersion(input: {
   activate: boolean;
 }): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const user = await requireCurrentUser();
     const trimmed = input.systemPrompt.trim();
     if (!trimmed) {
       return { ok: false, error: "プロンプトが空です" };
@@ -55,7 +46,7 @@ export async function testRunDynamicAgent(input: {
   inputJson: string;
 }): Promise<TestRunResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
     let parsed: Record<string, unknown> = {};
     if (input.inputJson.trim()) {
       const obj = JSON.parse(input.inputJson);
@@ -78,7 +69,7 @@ export async function activatePromptVersion(input: {
   promptId: string;
 }): Promise<ActionResult> {
   try {
-    await requireUser();
+    await requireCurrentUser();
     await db.transaction(async (tx) => {
       await tx
         .update(agentPrompts)

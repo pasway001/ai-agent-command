@@ -26,9 +26,11 @@ import { DecisionDialog } from "./decision-dialog";
 export function InboxList({
   initial,
   currentUserId,
+  realtimeEnabled,
 }: {
   initial: OpenApproval[];
   currentUserId: string | null;
+  realtimeEnabled: boolean;
 }) {
   const router = useRouter();
   const [items] = useState(initial);
@@ -45,6 +47,7 @@ export function InboxList({
   const knownIds = useRef(new Set(initial.map((i) => i.id)));
 
   useEffect(() => {
+    if (!realtimeEnabled) return;
     const supabase = createSupabaseBrowserClient();
     const channel = supabase
       .channel("approval_queue_inbox")
@@ -72,7 +75,7 @@ export function InboxList({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [realtimeEnabled, router]);
 
   if (items.length === 0) {
     return (

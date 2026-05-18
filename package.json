@@ -14,6 +14,7 @@
     "db:studio": "drizzle-kit studio",
     "db:apply-rls": "tsx scripts/apply-rls.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed-minimal": "tsx scripts/seed-minimal.ts",
     "db:seed-prompts": "tsx scripts/seed-prompts.ts",
     "db:seed-research-agents": "tsx scripts/seed-research-agents.ts",
     "db:seed-skills": "tsx scripts/seed-skills.ts",
@@ -25,6 +26,7 @@
     "agent:run": "tsx scripts/run-agent.ts",
     "budget:summary": "tsx scripts/budget-summary.ts",
     "budget:summary:dry": "tsx scripts/budget-summary.ts --dry-run",
+    "scout:minimal": "tsx scripts/run-minimal-scout.ts",
     "scout:score": "tsx scripts/run-scoring.ts",
     "pipeline:demo": "tsx scripts/run-pipeline-demo.ts",
     "user:create": "tsx scripts/create-user.ts"

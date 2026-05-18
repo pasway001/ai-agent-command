@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/nav/sidebar";
 import { MobileTopBar } from "@/components/nav/mobile-top-bar";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { getOpenApprovalsCount, safe } from "@/lib/db/queries";
 
 export default async function AppLayout({
@@ -8,20 +8,14 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   const inboxCount = (await safe(() => getOpenApprovalsCount())) ?? 0;
 
   const sidebarUser = user
     ? {
         email: user.email ?? "",
-        name:
-          (user.user_metadata?.name as string | undefined) ??
-          user.email ??
-          "",
+        name: user.name ?? user.email ?? "",
       }
     : null;
 

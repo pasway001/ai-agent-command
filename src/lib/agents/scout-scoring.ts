@@ -1,17 +1,21 @@
 import { z } from "zod";
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "../db";
 import {
   startRun,
   finishRun,
   failRun,
   recordAutoEvaluation,
   enqueueApproval,
-  upsertProduct,
+  findOrCreateProduct,
+  mergeProductMetadata,
   getActivePrompt,
   getAttachedSkills,
   composeSystemPrompt,
 } from "../agent-sdk";
 import { runStructured } from "../llm";
 import { getRecentDisagreements } from "../db/queries";
+import { approvalQueue } from "../db/schema";
 
 export const AGENT_ID = "scout.scoring";
 
@@ -46,6 +50,27 @@ export const CandidateSignalsSchema = z.object({
       domesticDemandTrend: z.enum(["rising", "flat", "declining"]).optional(),
       regulatoryRisk: z.enum(["low", "medium", "high"]).optional(),
       summary: z.string().optional(),
+    })
+    .optional(),
+  overseas: z
+    .object({
+      source: z.string().optional(),
+      url: z.string().url().optional(),
+      country: z.string().optional(),
+      currency: z.string().optional(),
+      pledgedAmount: z.number().optional(),
+      backers: z.number().optional(),
+      priceJpy: z.number().optional(),
+      description: z.string().optional(),
+      publishedAt: z.string().optional(),
+    })
+    .optional(),
+  japan: z
+    .object({
+      notYetInJapan: z.boolean().optional(),
+      similarProductCount: z.number().optional(),
+      domesticExamples: z.array(z.string()).optional(),
+      searchSummary: z.string().optional(),
     })
     .optional(),
 });
@@ -131,6 +156,49 @@ function mockScore(signals: CandidateSignals): ScoringOutput {
     pros.push("規制リスクは低い");
   }
 
+  const backers = signals.overseas?.backers;
+  if (backers !== undefined) {
+    if (backers >= 1000) {
+      score += 0.12;
+      pros.push(`海外で ${backers.toLocaleString()} 人規模の反応`);
+    } else if (backers >= 250) {
+      score += 0.06;
+      pros.push(`海外で初期需要あり（${backers.toLocaleString()}人）`);
+    }
+  }
+
+  const pledged = signals.overseas?.pledgedAmount;
+  if (pledged !== undefined) {
+    if (pledged >= 100_000) {
+      score += 0.1;
+      pros.push("海外クラファン/紹介元で強い支援額シグナル");
+    } else if (pledged < 10_000) {
+      score -= 0.04;
+      cons.push("海外支援額シグナルはまだ弱い");
+    }
+  }
+
+  const notYetInJapan = signals.japan?.notYetInJapan;
+  const similarCount = signals.japan?.similarProductCount;
+  if (notYetInJapan === true || similarCount === 0) {
+    score += 0.12;
+    pros.push("日本で未展開または類似が少ない");
+  } else if (similarCount !== undefined && similarCount >= 5) {
+    score -= 0.08;
+    cons.push(`国内類似が ${similarCount} 件あり差別化が必要`);
+  }
+
+  const priceJpy = signals.overseas?.priceJpy ?? signals.keepa?.priceJpy;
+  if (priceJpy !== undefined) {
+    if (priceJpy >= 8_000 && priceJpy <= 30_000) {
+      score += 0.06;
+      pros.push("越境CFで扱いやすい価格帯");
+    } else if (priceJpy < 2_000) {
+      score -= 0.04;
+      cons.push("単価が低く広告費を吸収しにくい");
+    }
+  }
+
   score = Math.max(0, Math.min(1, score));
 
   let verdict: ScoringOutput["verdict"];
@@ -162,14 +230,14 @@ function mockScore(signals: CandidateSignals): ScoringOutput {
 }
 
 export const DEFAULT_SYSTEM_PROMPT = `You are an Amazon JP product scout scoring assistant.
-Given aggregated market signals about one candidate product, produce a JSON object with:
+Given aggregated overseas and Japan market signals about one candidate product, produce a JSON object with:
 - score (0..1): overall attractiveness
 - verdict: "approve" | "reject" | "escalate"
 - rationale (Japanese)
 - pros (array of short Japanese strings)
 - cons (array of short Japanese strings)
 - suggestedPriority (0..10): how urgently the human reviewer should look at it.
-Be concise. Reject items with high regulatory risk unless strong upside.`;
+Be concise. Prioritize products with overseas traction, low Japan availability, clear video appeal, reasonable Japan regulatory risk, and a crowdfunding-friendly price band. Reject items with high regulatory risk unless strong upside.`;
 
 type FewShot = {
   productTitle: string | null;
@@ -206,6 +274,8 @@ function userPromptFromSignals(
   if (s.keepa) lines.push(`Keepa: ${JSON.stringify(s.keepa)}`);
   if (s.sellersprite) lines.push(`SellerSprite: ${JSON.stringify(s.sellersprite)}`);
   if (s.perplexity) lines.push(`Perplexity: ${JSON.stringify(s.perplexity)}`);
+  if (s.overseas) lines.push(`Overseas signal: ${JSON.stringify(s.overseas)}`);
+  if (s.japan) lines.push(`Japan availability signal: ${JSON.stringify(s.japan)}`);
 
   return lines.join("\n");
 }
@@ -254,7 +324,7 @@ export async function scoreCandidate(
 ): Promise<ScoreCandidateResult> {
   const signals = CandidateSignalsSchema.parse(rawSignals);
 
-  const product = await upsertProduct({
+  const product = await findOrCreateProduct({
     title: signals.title,
     asin: signals.asin,
     jan: signals.jan,
@@ -263,6 +333,7 @@ export async function scoreCandidate(
     status: "pending",
     metadata: { signals },
   });
+  await mergeProductMetadata(product.id, { signals });
 
   const [activePrompt, attachedSkills] = await Promise.all([
     getActivePrompt(AGENT_ID),
@@ -298,6 +369,8 @@ export async function scoreCandidate(
       user: userPromptFromSignals(signals, fewShots),
       schema: ScoringOutputSchema,
       mock: () => mockScore(signals),
+      webSearch: process.env.ANTHROPIC_ENABLE_WEB_SEARCH === "1",
+      webSearchMaxUses: Number(process.env.ANTHROPIC_WEB_SEARCH_MAX_USES ?? "2"),
     });
 
     await recordAutoEvaluation({
@@ -320,13 +393,28 @@ export async function scoreCandidate(
 
     let enqueuedApprovalId: string | null = null;
     if (data.verdict !== "reject") {
-      const item = await enqueueApproval({
-        runId: run.id,
-        productId: product.id,
-        priority: data.suggestedPriority,
-        requiredRole: "reviewer",
-      });
-      enqueuedApprovalId = item.id;
+      const [existingOpen] = await db
+        .select({ id: approvalQueue.id })
+        .from(approvalQueue)
+        .where(
+          and(
+            eq(approvalQueue.productId, product.id),
+            isNull(approvalQueue.decision)
+          )
+        )
+        .limit(1);
+
+      if (existingOpen) {
+        enqueuedApprovalId = existingOpen.id;
+      } else {
+        const item = await enqueueApproval({
+          runId: run.id,
+          productId: product.id,
+          priority: data.suggestedPriority,
+          requiredRole: "reviewer",
+        });
+        enqueuedApprovalId = item.id;
+      }
     }
 
     return {

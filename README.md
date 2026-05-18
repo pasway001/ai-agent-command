@@ -7,30 +7,29 @@ System1〜5の複数AIエージェントを24/7運用するためのオペレー
 
 - Next.js 16 (App Router) + React 19
 - TypeScript + Tailwind v4 + shadcn/ui
-- Drizzle ORM (postgres-js) + Supabase Postgres
-- Supabase Auth (RLS, A案=認証ユーザーは全件読み書き可)
+- Drizzle ORM (postgres-js) + Postgres
+- 認証: 最小構成はローカル1ユーザー認証、必要に応じて Supabase Auth
 
 ## 初期セットアップ
 
 ### 1. `.env.local` を埋める
 
-`.env.example` を参考に、以下を `.env.local` に書く。詳しい本番チェックリストは
+`.env.example` を参考に、まずは以下の最小構成を `.env.local` に書く。詳しい本番チェックリストは
 [`docs/production-env.md`](docs/production-env.md) を参照。
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...        # Supabase Dashboard → Project Settings → API
-DATABASE_URL=...                     # Direct connection (5432) — マイグレーション用
-DATABASE_POOL_URL=...                # Session pooler (6543) — Next.js runtime用
+AUTH_PROVIDER=local
+APP_AUTH_EMAIL=admin@example.com
+APP_AUTH_PASSWORD=...
+APP_SESSION_SECRET=...
+DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-LLM_PROVIDER=mock
+CRON_SECRET=...
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=...
 ```
 
-Claudeで実行する場合は `LLM_PROVIDER=anthropic` と `ANTHROPIC_API_KEY` も設定する。
-調査系エージェントはClaudeのWeb検索を使えるが、既定では1回あたり最大3検索に制限する。
-
-> **重要**: `DATABASE_URL` のパスワードは Supabase Dashboard → Database → "Reset database password" でローテーションした新パスワードを使うこと。
+この構成では契約が必要な外部APIは Claude API のみです。Supabase / Lark / Apify / Keepa / SellerSprite / Perplexity は任意です。
 
 値を入れたら、秘密値を表示せずに状態だけ確認できる：
 
@@ -46,14 +45,15 @@ pnpm env:check:ai
 pnpm install
 ```
 
-### 3. DBマイグレーション + RLS + シード
+### 3. DBマイグレーション + シード
 
 ```bash
-pnpm db:push          # スキーマをSupabaseへ反映
+pnpm db:push
 pnpm db:apply-migration drizzle/0004_budget_alerts.sql  # System 8 budget_alerts
-pnpm db:apply-rls     # RLSポリシー適用 (drizzle/policies.sql)
-pnpm db:seed          # 初期エージェント17件を投入
+pnpm db:seed-minimal  # scout.scoring だけ投入
 ```
+
+Supabase Auth を使う場合だけ `pnpm db:apply-rls` を実行してください。System 2〜5 も同時運用する段階では `pnpm db:seed` で17件のエージェントを投入できます。
 
 ### 4. 開発サーバー起動
 
@@ -62,6 +62,14 @@ pnpm dev
 ```
 
 → http://localhost:3000  (`/inbox` にリダイレクト)
+
+### 5. 最小Scoutを実行
+
+無料RSSソースから海外候補を拾い、Makuake RSS の直近タイトルと簡易比較して、Claudeでスコアリングし、承認候補だけ `/inbox` に入れます。Vercelでは `/api/cron/scout` が毎日08:30 JSTに同じ処理を起動します。
+
+```bash
+pnpm scout:minimal
+```
 
 ## 画面構成
 
@@ -101,17 +109,19 @@ pnpm db:push           # スキーマを直接適用 (開発時に便利)
 pnpm db:migrate        # 生成済みマイグレーションを順次適用 (本番向け)
 pnpm db:studio         # Drizzle Studio (Web UIでテーブル閲覧)
 pnpm db:apply-rls      # drizzle/policies.sql を適用
-pnpm db:seed           # 初期エージェント投入 (idempotent)
+pnpm db:seed-minimal   # 最小Scoutのみ投入
+pnpm db:seed           # System 1〜5 全エージェント投入 (idempotent)
+pnpm scout:minimal     # 無料RSS → Claudeスコアリング → Inbox
+pnpm scout:score       # JSON候補ファイル → Claudeスコアリング → Inbox
 ```
 
 ## 24/7運用 (Mac mini想定)
 
 - アプリ本体: `pm2` または `launchd` で `pnpm start` を常駐
-- エージェントワーカー: 別プロセス。BullMQ + Redis を推奨 (本リポジトリには未含・別途構築)
-- ワーカーは `SUPABASE_SERVICE_ROLE_KEY` を使ってRLSをバイパスし、書き込みを行う
-- UI側は anon key + Supabase Auth セッション経由で読み書きする (RLSで保護)
+- エージェントワーカー: 最小構成は `pnpm scout:minimal` を `cron` / `launchd` で日次実行
+- DB: 最小構成はMac mini上のローカルPostgres。必要になったらSupabase等へ移行
 
 ## 既知の制約
 
-- Supabase pooler を使うため `prepare: false` を設定済み (Drizzle側)
-- DBパスワードがチャットに残っているため初回ローテーション必須
+- Hosted Postgres / Supabase pooler を使う場合に備えて `prepare: false` を設定済み
+- 無料RSSクロールは取得元サイトの仕様変更で失敗する可能性あり。その場合も有料API契約は不要で、候補JSONを `pnpm scout:score <file>` に渡せます

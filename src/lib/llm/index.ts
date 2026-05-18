@@ -76,6 +76,7 @@ function estimateWebSearchCostUsd(searchRequests: number) {
 
 function buildAnthropicTools(opts: StructuredCallOptions<unknown>) {
   if (!opts.webSearch) return undefined;
+  if (process.env.ANTHROPIC_ENABLE_WEB_SEARCH !== "1") return undefined;
 
   const maxUses =
     opts.webSearchMaxUses ??

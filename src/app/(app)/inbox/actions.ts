@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireCurrentUser } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import {
   approvalQueue,
@@ -11,22 +11,13 @@ import {
 } from "@/lib/db/schema";
 import { advancePipeline } from "@/lib/agents/pipeline";
 
-async function requireUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("認証されていません");
-  return user;
-}
-
 export type ActionResult =
   | { ok: true; nextStage?: string; pipelineMessage?: string }
   | { ok: false; error: string };
 
 export async function claimItem(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const user = await requireCurrentUser();
     const [updated] = await db
       .update(approvalQueue)
       .set({ assignedTo: user.id, claimedAt: new Date() })
@@ -50,7 +41,7 @@ export async function claimItem(id: string): Promise<ActionResult> {
 
 export async function releaseItem(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const user = await requireCurrentUser();
     await db
       .update(approvalQueue)
       .set({ assignedTo: null, claimedAt: null })
@@ -76,7 +67,7 @@ export async function decideItem(input: {
   let approvedProductId: string | null = null;
 
   try {
-    const user = await requireUser();
+    const user = await requireCurrentUser();
 
     await db.transaction(async (tx) => {
       const [item] = await tx
