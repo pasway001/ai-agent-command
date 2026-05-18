@@ -28,25 +28,25 @@ These are not strictly required to render the UI, but they are required for prod
 | `BUDGET_HARD_THRESHOLD_PCT` | Local default | Recommended: `100`. |
 | `LLM_PROVIDER` | Local default | Keep `mock` until real provider code is implemented. |
 
-## 3. AI/Data Provider Keys
+## 3. AI Provider Keys
 
-These are needed before the agents stop being deterministic mocks.
+These are needed before the agents stop being deterministic mocks. Keep the scope small at first: use Claude only, then add other providers after their code paths exist.
 
 | Key | Source | Current status |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Anthropic Console | Required for Claude generation once implemented. |
-| `OPENAI_API_KEY` | OpenAI Platform | Optional backup and image generation. |
-| `PERPLEXITY_API_KEY` | Perplexity API | Required for domestic research once implemented. |
-| `APIFY_TOKEN` | Apify Console | Required for real CF/data collection. |
-| `MAKE_API_TOKEN` | Make.com | Required if Make becomes the main orchestrator. |
-| `KEEPA_API_KEY` | Keepa | Phase 2 domestic research. |
-| `SELLERSPRITE_API_KEY` | SellerSprite | Phase 2 domestic research. |
+| `ANTHROPIC_API_KEY` | Anthropic Console | First real provider to wire. |
+| `ANTHROPIC_DEFAULT_MODEL` | Local default | Recommended: `claude-sonnet-4-6`. |
+| `OPENAI_API_KEY` | OpenAI Platform | Optional future backup and image generation. |
+| `LOCAL_LLM_BASE_URL` | Ollama / LM Studio / vLLM | Optional future local model endpoint. |
+| `LOCAL_LLM_MODEL` | Local model runtime | Optional future local model name, for example Qwen. |
+
+Do not add Perplexity, Apify, Make, Keepa, SellerSprite, Gmail, SendGrid, or Postmark keys until the corresponding implementation is enabled. They are useful later, but they are not required for the current production UI.
 
 ## 4. Vercel Setup
 
 Use Vercel Project Settings -> Environment Variables.
 
-Set `Production`, `Preview`, and `Development` deliberately. For the first production deploy, copy only the Core Runtime and Operations keys. Add AI/Data provider keys after provider implementation is merged.
+Set `Production`, `Preview`, and `Development` deliberately. For the first production deploy, copy only the Core Runtime and Operations keys. Add `ANTHROPIC_API_KEY` after the Anthropic provider implementation is merged.
 
 Recommended first production values:
 
@@ -65,6 +65,7 @@ Run:
 ```bash
 pnpm env:check
 pnpm env:check:production
+pnpm env:check:ai
 ```
 
-`env:check` validates the current local runtime. `env:check:production` also reports production-operation gaps such as Lark and AI provider keys.
+`env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.

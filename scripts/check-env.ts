@@ -65,18 +65,6 @@ const keys: EnvKey[] = [
     key: "ANTHROPIC_API_KEY",
     requiredFor: "ai",
   },
-  {
-    key: "PERPLEXITY_API_KEY",
-    requiredFor: "ai",
-  },
-  {
-    key: "APIFY_TOKEN",
-    requiredFor: "ai",
-  },
-  {
-    key: "MAKE_API_TOKEN",
-    requiredFor: "ai",
-  },
 ];
 
 const mode = process.argv.includes("--production")
