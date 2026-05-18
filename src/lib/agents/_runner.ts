@@ -7,6 +7,9 @@ import {
   getAttachedSkills,
   composeSystemPrompt,
 } from "../agent-sdk";
+import { checkBudget } from "../budget";
+
+export { BudgetExceededError } from "../budget";
 import { runStructured } from "../llm";
 
 export type AgentRunOutcome<T> = {
@@ -37,6 +40,11 @@ export type AgentRunOpts<T> = {
  * remain reproducible after prompt/skill changes.
  */
 export async function runAgent<T>(opts: AgentRunOpts<T>): Promise<AgentRunOutcome<T>> {
+  // System 8: gate execution by daily/monthly budget. Throws BudgetExceededError
+  // on hard limit (no startRun, no agent_runs row written). Soft crossings are
+  // recorded asynchronously inside checkBudget() and don't block.
+  await checkBudget(opts.agentId);
+
   const [activePrompt, attachedSkills] = await Promise.all([
     getActivePrompt(opts.agentId),
     getAttachedSkills(opts.agentId),

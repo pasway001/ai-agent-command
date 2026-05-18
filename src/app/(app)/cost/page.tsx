@@ -16,13 +16,58 @@ import {
 } from "@/components/ui/table";
 import { DbErrorState, EmptyState } from "@/components/empty-state";
 import { SummaryCard } from "@/components/summary-card";
-import { getCostSummary, safe } from "@/lib/db/queries";
+import {
+  getCostSummary,
+  getTodayBudgetAlertCount,
+  safe,
+} from "@/lib/db/queries";
 import { cn, formatNum, formatUsd, systemHue, systemLabel } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+function BudgetBar({
+  pct,
+  consumedUsd,
+  budgetUsd,
+}: {
+  pct: number | null;
+  consumedUsd: number;
+  budgetUsd: number | null;
+}) {
+  if (budgetUsd == null) {
+    return (
+      <span className="text-[10px] text-muted-foreground/40">no budget</span>
+    );
+  }
+  const value = Math.max(0, pct ?? 0);
+  const clamped = Math.min(100, value);
+  const color =
+    value >= 100
+      ? "bg-red-500"
+      : value >= 80
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  const remaining = Math.max(0, budgetUsd - consumedUsd);
+  return (
+    <div className="flex flex-col items-end gap-0.5 w-32">
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn("h-full transition-all", color)}
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+      <div className="text-[10px] text-muted-foreground tabular-nums">
+        {value.toFixed(0)}% · 残り{formatUsd(remaining)}
+      </div>
+    </div>
+  );
+}
+
 export default async function CostPage() {
-  const rows = await safe(() => getCostSummary());
+  const [rows, alerts] = await Promise.all([
+    safe(() => getCostSummary()),
+    safe(() => getTodayBudgetAlertCount()),
+  ]);
 
   const totalToday = rows?.reduce((s, r) => s + Number(r.todayUsd), 0) ?? 0;
   const totalMonth = rows?.reduce((s, r) => s + Number(r.monthUsd), 0) ?? 0;
@@ -67,6 +112,28 @@ export default async function CostPage() {
           <DbErrorState />
         ) : (
           <>
+            {alerts && (alerts.soft || alerts.hard || alerts.breach) ? (
+              <div className="flex flex-wrap gap-2 items-center text-xs">
+                <span className="font-medium text-muted-foreground">
+                  本日のアラート:
+                </span>
+                {alerts.hard > 0 && (
+                  <Badge className="bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30">
+                    🚨 hard {alerts.hard}
+                  </Badge>
+                )}
+                {alerts.soft > 0 && (
+                  <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                    ⚠️ soft {alerts.soft}
+                  </Badge>
+                )}
+                {alerts.breach > 0 && (
+                  <Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30">
+                    🟣 breach {alerts.breach}
+                  </Badge>
+                )}
+              </div>
+            ) : null}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <SummaryCard label="本日" value={formatUsd(totalToday)} />
               <SummaryCard label="今月累計" value={formatUsd(totalMonth)} />
@@ -119,13 +186,15 @@ export default async function CostPage() {
               <EmptyState title="今月の実行はまだありません" />
             ) : (
               <div className="rounded-md border overflow-x-auto bg-card">
-                <Table className="min-w-[820px]">
+                <Table className="min-w-[980px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>System</TableHead>
                       <TableHead>エージェント</TableHead>
                       <TableHead className="text-right">本日</TableHead>
                       <TableHead className="text-right">今月</TableHead>
+                      <TableHead className="text-right">日次予算</TableHead>
+                      <TableHead className="text-right">月次予算</TableHead>
                       <TableHead className="text-right">実行</TableHead>
                       <TableHead className="text-right">in tok</TableHead>
                       <TableHead className="text-right">out tok</TableHead>
@@ -169,6 +238,24 @@ export default async function CostPage() {
                           ) : (
                             formatUsd(r.monthUsd)
                           )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end">
+                            <BudgetBar
+                              pct={r.dailyPct}
+                              consumedUsd={Number(r.todayUsd)}
+                              budgetUsd={r.dailyBudgetUsd}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end">
+                            <BudgetBar
+                              pct={r.monthlyPct}
+                              consumedUsd={Number(r.monthUsd)}
+                              budgetUsd={r.monthlyBudgetUsd}
+                            />
+                          </div>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.totalRuns}

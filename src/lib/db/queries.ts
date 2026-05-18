@@ -6,6 +6,7 @@ import {
   agentRuns,
   agentSkills,
   approvalQueue,
+  budgetAlerts,
   products,
   skills,
   type Agent,
@@ -208,8 +209,27 @@ export async function getCostSummary() {
       tokensInMonth: number;
       tokensOutMonth: number;
       totalRuns: number;
+      dailyBudgetUsd: number | null;
+      monthlyBudgetUsd: number | null;
     }
   >();
+
+  // Seed with every known agent so budget bars render even before first run.
+  for (const a of allAgents) {
+    grouped.set(a.id, {
+      agentId: a.id,
+      agentName: a.name,
+      systemNo: a.systemNo,
+      todayUsd: 0,
+      monthUsd: 0,
+      tokensInMonth: 0,
+      tokensOutMonth: 0,
+      totalRuns: 0,
+      dailyBudgetUsd: a.dailyBudgetUsd != null ? Number(a.dailyBudgetUsd) : null,
+      monthlyBudgetUsd:
+        a.monthlyBudgetUsd != null ? Number(a.monthlyBudgetUsd) : null,
+    });
+  }
 
   for (const row of rows) {
     const meta = agentMeta.get(row.agentId);
@@ -224,6 +244,10 @@ export async function getCostSummary() {
         tokensInMonth: 0,
         tokensOutMonth: 0,
         totalRuns: 0,
+        dailyBudgetUsd:
+          meta?.dailyBudgetUsd != null ? Number(meta.dailyBudgetUsd) : null,
+        monthlyBudgetUsd:
+          meta?.monthlyBudgetUsd != null ? Number(meta.monthlyBudgetUsd) : null,
       };
     const cost = Number(row.costUsd);
 
@@ -239,6 +263,7 @@ export async function getCostSummary() {
   }
 
   return Array.from(grouped.values())
+    .filter((r) => r.totalRuns > 0 || r.dailyBudgetUsd != null || r.monthlyBudgetUsd != null)
     .sort((a, b) =>
       a.systemNo !== b.systemNo
         ? a.systemNo - b.systemNo
@@ -253,7 +278,39 @@ export async function getCostSummary() {
       tokensInMonth: row.tokensInMonth,
       tokensOutMonth: row.tokensOutMonth,
       totalRuns: row.totalRuns,
+      dailyBudgetUsd: row.dailyBudgetUsd,
+      monthlyBudgetUsd: row.monthlyBudgetUsd,
+      dailyPct:
+        row.dailyBudgetUsd && row.dailyBudgetUsd > 0
+          ? (row.todayUsd / row.dailyBudgetUsd) * 100
+          : null,
+      monthlyPct:
+        row.monthlyBudgetUsd && row.monthlyBudgetUsd > 0
+          ? (row.monthUsd / row.monthlyBudgetUsd) * 100
+          : null,
     }));
+}
+
+export async function getTodayBudgetAlertCount(): Promise<{
+  soft: number;
+  hard: number;
+  breach: number;
+}> {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(today.getDate()).padStart(2, "0")}`;
+  const rows = await db
+    .select({
+      threshold: budgetAlerts.threshold,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(budgetAlerts)
+    .where(eq(budgetAlerts.alertDate, todayStr))
+    .groupBy(budgetAlerts.threshold);
+  const get = (t: string) => rows.find((r) => r.threshold === t)?.count ?? 0;
+  return { soft: get("soft"), hard: get("hard"), breach: get("breach") };
 }
 
 export async function claimApprovalItem(id: string, userId: string) {

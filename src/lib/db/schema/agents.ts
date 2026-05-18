@@ -96,8 +96,41 @@ export const agentPrompts = pgTable(
   ]
 );
 
+export const budgetAlerts = pgTable(
+  "budget_alerts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: text("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    alertDate: date("alert_date").notNull(),
+    period: text("period").notNull(), // 'daily' | 'monthly'
+    threshold: text("threshold").notNull(), // 'soft' | 'hard' | 'breach'
+    consumedUsd: numeric("consumed_usd", { precision: 10, scale: 4 }).notNull(),
+    budgetUsd: numeric("budget_usd", { precision: 10, scale: 4 }).notNull(),
+    consumedPct: numeric("consumed_pct", { precision: 7, scale: 2 }).notNull(),
+    larkSentAt: timestamp("lark_sent_at", { withTimezone: true }),
+    larkResponse: jsonb("lark_response").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("budget_alerts_date_idx").on(table.alertDate),
+    index("budget_alerts_agent_idx").on(table.agentId),
+    uniqueIndex("budget_alerts_unique").on(
+      table.agentId,
+      table.alertDate,
+      table.period,
+      table.threshold
+    ),
+  ]
+);
+
 export type Agent = typeof agents.$inferSelect;
 export type NewAgent = typeof agents.$inferInsert;
 export type CostLedgerEntry = typeof costLedger.$inferSelect;
 export type AgentPrompt = typeof agentPrompts.$inferSelect;
 export type NewAgentPrompt = typeof agentPrompts.$inferInsert;
+export type BudgetAlert = typeof budgetAlerts.$inferSelect;
+export type NewBudgetAlert = typeof budgetAlerts.$inferInsert;
