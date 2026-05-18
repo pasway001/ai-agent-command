@@ -631,8 +631,9 @@ curl -I http://localhost:3000/login</pre>
           <tr>
             <th>エージェントがmockしか返さない</th>
             <td>
-              現状の実LLM providerは未実装です。<code>LLM_PROVIDER=mock</code> では決定論的なテスト出力になります。
-              本番AI出力にはAnthropic/OpenAI SDK実装とAPIキー設定が必要です。
+              <code>LLM_PROVIDER=mock</code> では決定論的なテスト出力になります。
+              本番AI出力には <code>LLM_PROVIDER=anthropic</code> と <code>ANTHROPIC_API_KEY</code> が必要です。
+              調査系エージェントはClaudeのWeb検索を最大回数つきで利用します。
             </td>
           </tr>
           <tr>
@@ -670,7 +671,7 @@ curl -I http://localhost:3000/login</pre>
         </div>
         <div class="note warn">
           <p>
-            残タスクは、実LLM provider実装、24/7ワーカー常駐化、外部APIキー・通知・バックアップ手順の本番確定です。
+            残タスクは、24/7ワーカー常駐化、外部APIキー・通知・バックアップ手順の本番確定です。
             UI本体はビルド可能ですが、全自動運用にはこれらの周辺設定が必要です。
           </p>
         </div>

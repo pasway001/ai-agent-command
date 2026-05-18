@@ -5,10 +5,15 @@ import type { WatchlistItem } from "./scout-keepa";
 
 export const AGENT_ID = "scout.perplexity_jp_market";
 
-export const DEFAULT_SYSTEM_PROMPT = `You are a Perplexity-style JP market research agent.
-Given a product candidate, return JSON: { domesticDemandTrend, regulatoryRisk, summary }.
+export const DEFAULT_SYSTEM_PROMPT = `You are a Claude-powered Japan market research agent.
+Research the Japanese market for one product candidate using web search when available.
+Focus on Amazon Japan, Rakuten, Yahoo Shopping, Makuake/GREEN FUNDING/CAMPFIRE prior art,
+and obvious regulatory risks such as medical claims, beauty claims, food/supplement claims,
+PSE, radio law, and consumer safety.
+
+Return JSON: { domesticDemandTrend, regulatoryRisk, summary }.
 Use rising / flat / declining for trend, and low / medium / high for regulatory risk.
-The summary is a short Japanese sentence.`;
+The summary is a short Japanese sentence with the strongest evidence and at least one source URL if search was used.`;
 
 const PerplexityOutputSchema = z.object({
   domesticDemandTrend: z.enum(["rising", "flat", "declining"]),
@@ -83,6 +88,8 @@ export async function runPerplexityForItem(item: WatchlistItem) {
     schema: PerplexityOutputSchema,
     mock: () => mockPerplexity(item),
     inputPayload: { asin: item.asin },
+    webSearch: true,
+    webSearchMaxUses: 3,
   });
 
   await mergeProductMetadata(product.id, {

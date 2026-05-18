@@ -27,6 +27,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 LLM_PROVIDER=mock
 ```
 
+Claudeで実行する場合は `LLM_PROVIDER=anthropic` と `ANTHROPIC_API_KEY` も設定する。
+調査系エージェントはClaudeのWeb検索を使えるが、既定では1回あたり最大3検索に制限する。
+
 > **重要**: `DATABASE_URL` のパスワードは Supabase Dashboard → Database → "Reset database password" でローテーションした新パスワードを使うこと。
 
 値を入れたら、秘密値を表示せずに状態だけ確認できる：
@@ -34,6 +37,7 @@ LLM_PROVIDER=mock
 ```bash
 pnpm env:check
 pnpm env:check:production
+pnpm env:check:ai
 ```
 
 ### 2. 依存インストール

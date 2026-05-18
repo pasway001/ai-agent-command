@@ -30,6 +30,8 @@ export type AgentRunOpts<T> = {
   schema: z.ZodType<T>;
   mock: () => T;
   inputPayload?: Record<string, unknown>;
+  webSearch?: boolean;
+  webSearchMaxUses?: number;
 };
 
 /**
@@ -71,6 +73,8 @@ export async function runAgent<T>(opts: AgentRunOpts<T>): Promise<AgentRunOutcom
       user: opts.user,
       schema: opts.schema,
       mock: opts.mock,
+      webSearch: opts.webSearch,
+      webSearchMaxUses: opts.webSearchMaxUses,
     });
 
     await finishRun({

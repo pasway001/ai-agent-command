@@ -61,7 +61,7 @@ const keys: EnvKey[] = [
   {
     key: "LLM_PROVIDER",
     requiredFor: "production",
-    note: "keep mock until real providers are implemented",
+    note: "use mock for dry runs, anthropic for Claude-powered agents",
   },
   {
     key: "ANTHROPIC_API_KEY",

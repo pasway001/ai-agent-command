@@ -26,7 +26,7 @@ These are not strictly required to render the UI, but they are required for prod
 | `LARK_WEBHOOK_TIMEOUT_MS` | Local default | Recommended: `5000`. |
 | `BUDGET_SOFT_THRESHOLD_PCT` | Local default | Recommended: `80`. |
 | `BUDGET_HARD_THRESHOLD_PCT` | Local default | Recommended: `100`. |
-| `LLM_PROVIDER` | Local default | Keep `mock` until real provider code is implemented. |
+| `LLM_PROVIDER` | Local default | Use `mock` for dry runs, or `anthropic` for Claude-powered agents. |
 
 ## 3. AI Provider Keys
 
@@ -34,8 +34,13 @@ These are needed before the agents stop being deterministic mocks. Keep the scop
 
 | Key | Source | Current status |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Anthropic Console | First real provider to wire. |
+| `ANTHROPIC_API_KEY` | Anthropic Console | Required when `LLM_PROVIDER=anthropic`. |
 | `ANTHROPIC_DEFAULT_MODEL` | Local default | Recommended: `claude-sonnet-4-6`. |
+| `ANTHROPIC_MAX_TOKENS` | Local default | Recommended: `1024` to cap per-run output. |
+| `ANTHROPIC_INPUT_USD_PER_1M` | Anthropic pricing | Recommended: `3` for Claude Sonnet 4.6 cost estimates. |
+| `ANTHROPIC_OUTPUT_USD_PER_1M` | Anthropic pricing | Recommended: `15` for Claude Sonnet 4.6 cost estimates. |
+| `ANTHROPIC_WEB_SEARCH_MAX_USES` | Local default | Recommended: `3` to cap search spend per research run. |
+| `ANTHROPIC_WEB_SEARCH_USD_PER_1K` | Local default | Recommended: `10`, matching Claude web search list pricing. |
 | `OPENAI_API_KEY` | OpenAI Platform | Optional future backup and image generation. |
 | `LOCAL_LLM_BASE_URL` | Ollama / LM Studio / vLLM | Optional future local model endpoint. |
 | `LOCAL_LLM_MODEL` | Local model runtime | Optional future local model name, for example Qwen. |
@@ -46,7 +51,7 @@ Do not add Perplexity, Apify, Make, Keepa, SellerSprite, Gmail, SendGrid, or Pos
 
 Use Vercel Project Settings -> Environment Variables.
 
-Set `Production`, `Preview`, and `Development` deliberately. For the first production deploy, copy only the Core Runtime and Operations keys. Add `ANTHROPIC_API_KEY` after the Anthropic provider implementation is merged.
+Set `Production`, `Preview`, and `Development` deliberately. For the first production deploy, copy the Core Runtime and Operations keys first. Add the Anthropic keys when you are ready for live Claude runs.
 
 Recommended first production values:
 
@@ -56,6 +61,19 @@ LARK_WEBHOOK_TIMEOUT_MS=5000
 BUDGET_SOFT_THRESHOLD_PCT=80
 BUDGET_HARD_THRESHOLD_PCT=100
 LLM_PROVIDER=mock
+```
+
+Switch to live Claude runs with:
+
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=...
+ANTHROPIC_DEFAULT_MODEL=claude-sonnet-4-6
+ANTHROPIC_MAX_TOKENS=1024
+ANTHROPIC_INPUT_USD_PER_1M=3
+ANTHROPIC_OUTPUT_USD_PER_1M=15
+ANTHROPIC_WEB_SEARCH_MAX_USES=3
+ANTHROPIC_WEB_SEARCH_USD_PER_1K=10
 ```
 
 ## 5. Local Validation
