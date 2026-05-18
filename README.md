@@ -14,7 +14,8 @@ System1〜5の複数AIエージェントを24/7運用するためのオペレー
 
 ### 1. `.env.local` を埋める
 
-`.env.example` を参考に、以下を `.env.local` に書く：
+`.env.example` を参考に、以下を `.env.local` に書く。詳しい本番チェックリストは
+[`docs/production-env.md`](docs/production-env.md) を参照。
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -22,9 +23,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...        # Supabase Dashboard → Project Settings → API
 DATABASE_URL=...                     # Direct connection (5432) — マイグレーション用
 DATABASE_POOL_URL=...                # Session pooler (6543) — Next.js runtime用
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+LLM_PROVIDER=mock
 ```
 
 > **重要**: `DATABASE_URL` のパスワードは Supabase Dashboard → Database → "Reset database password" でローテーションした新パスワードを使うこと。
+
+値を入れたら、秘密値を表示せずに状態だけ確認できる：
+
+```bash
+pnpm env:check
+pnpm env:check:production
+```
 
 ### 2. 依存インストール
 
@@ -36,6 +46,7 @@ pnpm install
 
 ```bash
 pnpm db:push          # スキーマをSupabaseへ反映
+pnpm db:apply-migration drizzle/0004_budget_alerts.sql  # System 8 budget_alerts
 pnpm db:apply-rls     # RLSポリシー適用 (drizzle/policies.sql)
 pnpm db:seed          # 初期エージェント17件を投入
 ```
