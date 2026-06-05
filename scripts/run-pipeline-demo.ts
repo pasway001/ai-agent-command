@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join, isAbsolute } from "node:path";
 import { runKeepaMonitor } from "../src/lib/agents/scout-keepa";
 import { runSellerspriteResearch } from "../src/lib/agents/scout-sellersprite";
-import { runPerplexityResearch } from "../src/lib/agents/scout-perplexity";
+import { runPerplexityResearchBatch } from "../src/lib/agents/scout-perplexity";
 import { scoreExistingProduct } from "../src/lib/agents/scout-scoring";
 import type { WatchlistItem } from "../src/lib/agents/scout-keepa";
 
@@ -31,11 +31,18 @@ async function main() {
   }
 
   console.log("\n[3/4] scout.perplexity_jp_market");
-  const pxResults = await runPerplexityResearch(watchlist);
+  const pxResults = await runPerplexityResearchBatch(
+    watchlist.map((item) => ({ asin: item.asin, title: item.title, category: item.category }))
+  );
   for (const r of pxResults) {
-    console.log(
-      `  ✔ ${r.product.asin} trend=${r.outcome.data.domesticDemandTrend} risk=${r.outcome.data.regulatoryRisk}`
-    );
+    const risk = r.research.regulatoryFlags.some(
+      (f) => f.severity === "blocker" || f.severity === "high"
+    )
+      ? "high"
+      : r.research.regulatoryFlags.some((f) => f.severity === "medium")
+        ? "medium"
+        : "low";
+    console.log(`  ✔ ${r.productId} trend=${r.research.demandTrend} risk=${risk}`);
   }
 
   console.log("\n[4/4] scout.scoring (集約スコアリング)");

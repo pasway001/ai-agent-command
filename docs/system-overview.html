@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>システム概要 — Agent Command Center</title>
+<style>
+  :root {
+    --bg: #0a0c14;
+    --surface: #111421;
+    --surface2: #1a1f33;
+    --border: #242840;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --orange: #f97316;
+    --teal: #14b8a6;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    line-height: 1.7;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(160deg, #0d1225 0%, #0a0c14 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 24px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(79,142,247,0.08) 0%, transparent 70%);
+  }
+  .hero-logo {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 20px;
+    box-shadow: 0 0 40px rgba(79,142,247,0.3);
+  }
+  .hero h1 {
+    font-size: 36px; font-weight: 800; margin-bottom: 12px;
+    background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .tagline { color: var(--muted); font-size: 16px; max-width: 540px; margin: 0 auto 24px; }
+  .hero-stats {
+    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-top: 24px;
+  }
+  .hero-stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 20px; text-align: center;
+  }
+  .hero-stat .num { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .hero-stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* SECTION */
+  .section { margin-top: 64px; }
+  .section-title {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent); margin-bottom: 8px;
+  }
+  .section-heading { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .section-sub { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+
+  /* PIPELINE DIAGRAM */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    overflow-x: auto; padding: 8px 0 24px;
+    margin: 0 -8px;
+  }
+  .pipeline-stage {
+    flex: 1; min-width: 140px;
+    display: flex; flex-direction: column; align-items: center;
+    position: relative;
+  }
+  .pipeline-stage:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -12px; top: 40px;
+    color: var(--muted); font-size: 18px; z-index: 2;
+  }
+  .stage-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    width: 100%; text-align: center;
+    transition: border-color 0.2s;
+    cursor: default;
+    margin: 0 8px;
+  }
+  .stage-card:hover { border-color: var(--accent); }
+  .stage-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 10px;
+  }
+  .stage-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .stage-card p { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .stage-badge {
+    display: inline-block; margin-top: 8px;
+    background: var(--surface2); border-radius: 4px;
+    padding: 2px 8px; font-size: 10px; color: var(--muted);
+  }
+
+  /* AGENT CARDS */
+  .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .agent-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .agent-card.scout::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .agent-card.lp::before { background: linear-gradient(90deg, var(--green), var(--teal)); }
+  .agent-card.ad::before { background: linear-gradient(90deg, var(--orange), var(--yellow)); }
+  .agent-card.outreach::before { background: linear-gradient(90deg, var(--accent2), var(--red)); }
+  .agent-card .agent-id { font-size: 11px; color: var(--muted); font-family: monospace; margin-bottom: 8px; }
+  .agent-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .agent-card p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+  .agent-meta {
+    margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .tag.green { color: var(--green); border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.08); }
+  .tag.blue { color: var(--accent); border-color: rgba(79,142,247,0.3); background: rgba(79,142,247,0.08); }
+  .tag.purple { color: #a78bfa; border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.08); }
+
+  /* SCREENSHOTS */
+  .screenshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .screenshot-grid { grid-template-columns: 1fr; } }
+  .screenshot-item { }
+  .screenshot-label {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .screenshot-caption { font-size: 13px; color: #94a3b8; margin-top: 8px; }
+  .screenshot-img {
+    width: 100%; border-radius: 10px;
+    border: 1px solid var(--border);
+    display: block;
+  }
+
+  /* SCHEDULE */
+  .schedule-timeline { position: relative; padding-left: 32px; }
+  .schedule-timeline::before {
+    content: '';
+    position: absolute; left: 10px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .schedule-item { position: relative; padding-bottom: 28px; }
+  .schedule-item:last-child { padding-bottom: 0; }
+  .schedule-dot {
+    position: absolute; left: -27px; top: 4px;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .schedule-time {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    font-family: monospace; margin-bottom: 4px;
+  }
+  .schedule-desc { font-size: 14px; }
+  .schedule-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* COST TABLE */
+  .cost-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .cost-table th {
+    text-align: left; padding: 10px 14px;
+    background: var(--surface2); color: var(--muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cost-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-table .total td { font-weight: 700; color: var(--green); background: rgba(34,197,94,0.05); }
+  code { background: var(--surface2); border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 12px; }
+
+  /* SELF LEARNING */
+  .loop-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+  .loop-steps {
+    display: flex; align-items: center; justify-content: center;
+    flex-wrap: wrap; gap: 0;
+  }
+  .loop-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .loop-step .ls-num { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .loop-arrow {
+    color: var(--muted); font-size: 20px; padding: 0 6px;
+  }
+
+  .footer {
+    text-align: center; padding: 40px 24px 60px;
+    color: var(--muted); font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-logo">⚡</div>
+  <h1>Agent Command Center</h1>
+  <p class="tagline">海外クラウドファンディング商品を自動発見し、日本市場向けにローカライズするマルチエージェントシステム</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">14</div><div class="label">情報ソース</div></div>
+    <div class="hero-stat"><div class="num">4</div><div class="label">スカウトステージ</div></div>
+    <div class="hero-stat"><div class="num">20+</div><div class="label">AIエージェント</div></div>
+    <div class="hero-stat"><div class="num">24h</div><div class="label">自動稼働</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SECTION 1: What it does -->
+  <div class="section">
+    <div class="section-title">システム概要</div>
+    <div class="section-heading">何をするシステムか</div>
+    <div class="section-sub">Kickstarter・Indiegogo・BackerKit などの海外クラウドファンディングプラットフォームを自動監視し、日本市場で売れそうな物理商品を発見。スコアリング・ローカライズ・LP生成まで全自動で行います。</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-size:24px;margin-bottom:10px;">🔍</div>
+        <div style="font-weight:700;margin-bottom:6px;">自動発見</div>
+        <div style="font-size:13px;color:var(--muted);">14のRSS/API ソースから毎日2回、海外CF商品を自動収集</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-size:24px;margin-bottom:10px;">🎯</div>
+        <div style="font-weight:700;margin-bottom:6px;">AI スコアリング</div>
+        <div style="font-size:13px;color:var(--muted);">9軸評価で日本市場適合性をスコアリング。閾値以上のみ承認候補に</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-size:24px;margin-bottom:10px;">📝</div>
+        <div style="font-weight:700;margin-bottom:6px;">自動ローカライズ</div>
+        <div style="font-size:13px;color:var(--muted);">Makuake向けLP・薬機法チェック・FAQ・広告文・仕入れ交渉文を自動生成</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Pipeline -->
+  <div class="section">
+    <div class="section-title">パイプライン</div>
+    <div class="section-heading">スカウト4ステージの流れ</div>
+    <div class="section-sub">コスト最適化のため、安いモデルから順番にフィルタリング。最終的にSonnetでスコアリングされる商品は全体の約20-30%に絞られます。</div>
+
+    <div class="pipeline">
+      <div class="pipeline-stage">
+        <div class="stage-card">
+          <div class="stage-icon" style="background:rgba(100,116,139,0.15);">📡</div>
+          <h3>Stage 0</h3>
+          <p>ルールフィルター</p>
+          <div class="stage-badge">無料</div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-card">
+          <div class="stage-icon" style="background:rgba(79,142,247,0.15);">⚡</div>
+          <h3>Stage 1</h3>
+          <p>Haiku 事前フィルター</p>
+          <div class="stage-badge">~$0.001/件</div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-card">
+          <div class="stage-icon" style="background:rgba(20,184,166,0.15);">🔬</div>
+          <h3>Stage 2</h3>
+          <p>市場リサーチ</p>
+          <div class="stage-badge">~$0.02/件</div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-card">
+          <div class="stage-icon" style="background:rgba(124,58,237,0.15);">🎯</div>
+          <h3>Stage 3</h3>
+          <p>Sonnet スコアリング</p>
+          <div class="stage-badge">~$0.03/件</div>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-card">
+          <div class="stage-icon" style="background:rgba(34,197,94,0.15);">✅</div>
+          <h3>Inbox</h3>
+          <p>人間レビュー</p>
+          <div class="stage-badge">承認/却下</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:8px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted);">各ステージの詳細</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+        <div><strong style="color:var(--text);">Stage 0 — ルールフィルター</strong><br><span style="color:var(--muted);">求人投稿・記事・買収ニュース・政治系を正規表現で除外。APIコストゼロ。</span></div>
+        <div><strong style="color:var(--text);">Stage 1 — Haiku 事前フィルター</strong><br><span style="color:var(--muted);">「輸入できるか」「物理商品か」「価格帯は適切か」をHaikuで高速判定。</span></div>
+        <div><strong style="color:var(--text);">Stage 2 — 市場リサーチ（7日キャッシュ）</strong><br><span style="color:var(--muted);">Haiku + web_search で競合・Makuake事例・規制リスクを調査。結果は7日間キャッシュ。</span></div>
+        <div><strong style="color:var(--text);">Stage 3 — 決定論的スコアリング</strong><br><span style="color:var(--muted);">キャッシュ済み調査データのみを参照してSonnetがスコアリング。web検索なしで再現性100%。</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Screenshots -->
+  <div class="section">
+    <div class="section-title">UI スクリーンショット</div>
+    <div class="section-heading">各画面の役割</div>
+    <div class="section-sub">Next.js で構築したウェブアプリ。Mac mini のローカルで動作し、ブラウザからアクセスします。</div>
+
+    <div class="screenshot-grid">
+      <div class="screenshot-item">
+        <div class="screenshot-label">① ログイン画面</div>
+        <img src="screenshots/01-login.png" alt="ログイン" class="screenshot-img">
+        <div class="screenshot-caption">メールアドレス＋パスワード認証。<code>.env</code> の <code>APP_AUTH_EMAIL</code> / <code>APP_AUTH_PASSWORD</code> で設定。</div>
+      </div>
+      <div class="screenshot-item">
+        <div class="screenshot-label">② 承認待ち Inbox</div>
+        <img src="screenshots/02-inbox.png" alt="Inbox" class="screenshot-img">
+        <div class="screenshot-caption">AIがスコア70以上と判定した商品が並ぶ。「承認」で下流のLP・広告生成エージェントが起動。「却下」で自己学習の教師データになる。</div>
+      </div>
+      <div class="screenshot-item">
+        <div class="screenshot-label">③ 商品パイプライン</div>
+        <img src="screenshots/03-pipeline.png" alt="Pipeline" class="screenshot-img">
+        <div class="screenshot-caption">Scout → LP → Ad → Outreach → CS のステージ別カンバンビュー。各商品の進捗をリアルタイムで確認できる。</div>
+      </div>
+      <div class="screenshot-item">
+        <div class="screenshot-label">④ エージェント稼働状況</div>
+        <img src="screenshots/04-agents.png" alt="Agents" class="screenshot-img">
+        <div class="screenshot-caption">20以上のエージェントの稼働状態・24h実行数・一致率・平均応答時間を一覧表示。</div>
+      </div>
+      <div class="screenshot-item">
+        <div class="screenshot-label">⑤ 実行ログ</div>
+        <img src="screenshots/05-runs.png" alt="Runs" class="screenshot-img">
+        <div class="screenshot-caption">各エージェントの実行履歴。商品ごとのトークン数・コスト・処理時間を記録。デバッグにも使用。</div>
+      </div>
+      <div class="screenshot-item">
+        <div class="screenshot-label">⑥ コスト管理</div>
+        <img src="screenshots/06-cost.png" alt="Cost" class="screenshot-img">
+        <div class="screenshot-caption">エージェント別API利用コストを可視化。Scout・LP・Ad・Outreach・CS のシステム別サマリー。予算超過時はLarkに自動アラート。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Agents -->
+  <div class="section">
+    <div class="section-title">AIエージェント一覧</div>
+    <div class="section-heading">各エージェントの役割</div>
+    <div class="section-sub">全エージェントはプロンプトのバージョン管理・スキルの着脱・実行履歴の記録に対応しています。</div>
+
+    <div class="agent-grid">
+      <div class="agent-card scout">
+        <div class="agent-id">scout.prefilter</div>
+        <h3>事前フィルター</h3>
+        <p>Haiku で「日本輸入の可否」を高速判定。明らかな非対象品（ソフトウェア・廉価品・規制対象）を安価に除外。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-haiku</span>
+          <span class="tag">$0.001/件</span>
+          <span class="tag green">並列×5</span>
+        </div>
+      </div>
+      <div class="agent-card scout">
+        <div class="agent-id">scout.perplexity_jp_market</div>
+        <h3>日本市場リサーチ</h3>
+        <p>Haiku + web_search でAmazon JP・楽天・MakuakeなどのJP競合・CF事例・規制リスクを調査。結果を7日間キャッシュ。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-haiku + web</span>
+          <span class="tag">$0.02/件</span>
+          <span class="tag purple">7日キャッシュ</span>
+        </div>
+      </div>
+      <div class="agent-card scout">
+        <div class="agent-id">scout.scoring</div>
+        <h3>スコアリング</h3>
+        <p>9軸（海外牽引力・クロスソース・国内CF事例・規制リスク・価格適合・新規性etc）でSonnetが評価。スコア≥0.7で承認候補。</p>
+        <div class="agent-meta">
+          <span class="tag purple">claude-sonnet</span>
+          <span class="tag">$0.03/件</span>
+          <span class="tag green">決定論的</span>
+        </div>
+      </div>
+      <div class="agent-card lp">
+        <div class="agent-id">lp.copy_writer</div>
+        <h3>LPコピーライター</h3>
+        <p>Makuake/GREEN FUNDING 特化のコピーライター。応援購入者の心理・問題→解決ストーリー構造・景表法準拠で執筆。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-sonnet</span>
+          <span class="tag">ヘッドライン・箇条書き・CTA</span>
+        </div>
+      </div>
+      <div class="agent-card lp">
+        <div class="agent-id">lp.compliance_checker</div>
+        <h3>コンプライアンスチェック</h3>
+        <p>薬機法・景表法・PSE・技適・食品衛生法・CF固有リスク（納期表現・返金保証）を網羅的にチェック。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-sonnet</span>
+          <span class="tag">違反スニペット特定</span>
+        </div>
+      </div>
+      <div class="agent-card lp">
+        <div class="agent-id">lp.faq_generator</div>
+        <h3>FAQ生成</h3>
+        <p>先行予約の不安5点（届くか・品質・納期・サポート・規制）を必須項目として、CF支援者向けFAQを生成。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-sonnet</span>
+          <span class="tag">3〜8問</span>
+        </div>
+      </div>
+      <div class="agent-card ad">
+        <div class="agent-id">ad.headline_writer</div>
+        <h3>広告見出しライター</h3>
+        <p>Meta（Instagram/Facebook）とGoogle向けに分けた戦略で日本語広告文を生成。文字数制限・景表法NGワードを自動チェック。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-sonnet</span>
+          <span class="tag">見出し×3・説明×3</span>
+        </div>
+      </div>
+      <div class="agent-card outreach">
+        <div class="agent-id">outreach.message_drafter</div>
+        <h3>仕入れ交渉メール</h3>
+        <p>海外CF成功者への日本輸入権交渉メール（日英）を生成。Makuake実績・日本市場規模・収益分配モデルを提示。</p>
+        <div class="agent-meta">
+          <span class="tag blue">claude-sonnet</span>
+          <span class="tag">日英両対応</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: Skills -->
+  <div class="section">
+    <div class="section-title">スキルシステム</div>
+    <div class="section-heading">エージェントに着脱可能なプロンプトフラグメント</div>
+    <div class="section-sub">スキルは複数のエージェントに共有でき、DBから動的にシステムプロンプトに追加されます。</div>
+    <div style="margin-bottom:20px;">
+      <img src="screenshots/05-skills.png" alt="Skills" class="screenshot-img" style="border-radius:12px;">
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;font-size:13px;color:var(--muted);">
+      スキル例：国内市場リサーチ・海外市場リサーチ・競合分析・過去トレンド比較・FAQ生成・広告ヘッドライン・日本語LPコピー。
+      Phase 4 の自己学習で「<strong style="color:var(--text);">scout.learned-patterns</strong>」スキルが自動生成・更新されます。
+    </div>
+  </div>
+
+  <!-- SECTION 6: Self-learning -->
+  <div class="section">
+    <div class="section-title">Phase 4 — 自己改善ループ</div>
+    <div class="section-heading">使うほど賢くなる仕組み</div>
+    <div class="section-sub">承認・却下の実績からパターンを自動学習し、次回以降のスコアリング精度を向上させます。</div>
+
+    <div class="loop-diagram">
+      <div class="loop-steps">
+        <div class="loop-step">
+          <div class="ls-num">① 6:00</div>
+          スカウト実行<br>商品発見・スコアリング
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step">
+          <div class="ls-num">② 日中</div>
+          人間がInboxで<br>承認 / 却下
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step">
+          <div class="ls-num">③ 7:00翌日</div>
+          Haikuがパターン分析<br>「なぜ承認/却下か」
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step">
+          <div class="ls-num">④ 自動</div>
+          スキルDB更新<br>「学習済みパターン」
+        </div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step">
+          <div class="ls-num">⑤ 次回〜</div>
+          パターンがスコアリングの<br>system promptに自動注入
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: Sources -->
+  <div class="section">
+    <div class="section-title">情報ソース</div>
+    <div class="section-heading">14のデータソースから自動収集</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">海外ソース（スカウト対象）</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Kicktraq Gadgets</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Kicktraq Product Design</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Kicktraq Hardware <span class="tag" style="margin-left:4px;">New</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Kicktraq Home <span class="tag" style="margin-left:4px;">New</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> BackerKit <span class="tag" style="margin-left:4px;">New</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Yanko Design</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Reddit r/gadgets</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Reddit r/somethingimade...</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> HackerNews Show HN</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);">●</span> Product Hunt</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">国内参照ソース（市場検証用）</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--green);">●</span> Makuake</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--green);">●</span> GREEN FUNDING</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--green);">●</span> CAMPFIRE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: Schedule -->
+  <div class="section">
+    <div class="section-title">スケジュール</div>
+    <div class="section-heading">1日の自動実行タイムライン</div>
+
+    <div class="schedule-timeline">
+      <div class="schedule-item">
+        <div class="schedule-dot" style="background:var(--accent);"></div>
+        <div class="schedule-time">06:00 — scout-cron</div>
+        <div class="schedule-desc">スカウト実行（14ソースから収集 → 4ステージフィルタリング → スコアリング）</div>
+        <div class="schedule-sub">完了後、高スコア商品をLarkに通知</div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-dot" style="background:var(--teal);"></div>
+        <div class="schedule-time">07:00 — learn-cron</div>
+        <div class="schedule-desc">自己学習サイクル（直近90日の承認/却下パターンを分析）</div>
+        <div class="schedule-sub">「scout.learned-patterns」スキルをDBに自動更新</div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-dot" style="background:var(--accent);"></div>
+        <div class="schedule-time">18:00 — scout-cron</div>
+        <div class="schedule-desc">スカウト実行（2回目）</div>
+        <div class="schedule-sub">7日キャッシュが有効な商品は研究フェーズをスキップ</div>
+      </div>
+      <div class="schedule-item">
+        <div class="schedule-dot" style="background:var(--teal);"></div>
+        <div class="schedule-time">19:00 — learn-cron</div>
+        <div class="schedule-desc">自己学習サイクル（2回目）</div>
+        <div class="schedule-sub">追加の承認/却下があれば即時スキル更新</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9: Cost estimate -->
+  <div class="section">
+    <div class="section-title">コスト試算</div>
+    <div class="section-heading">月間 API 利用コスト見積もり</div>
+    <div class="section-sub">1日2回実行・1回あたり15商品処理・7日キャッシュ有効の場合。</div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table class="cost-table">
+        <tr>
+          <th>フェーズ</th>
+          <th>モデル</th>
+          <th>単価</th>
+          <th>月間処理数</th>
+          <th>月額</th>
+        </tr>
+        <tr>
+          <td>Haiku プレフィルター</td>
+          <td><code>claude-haiku</code></td>
+          <td>$0.001/件</td>
+          <td>900件</td>
+          <td style="color:var(--green);">$0.90</td>
+        </tr>
+        <tr>
+          <td>市場リサーチ（7日キャッシュ）</td>
+          <td><code>claude-haiku + web</code></td>
+          <td>$0.02/件</td>
+          <td>600件（新規のみ）</td>
+          <td style="color:var(--green);">$12</td>
+        </tr>
+        <tr>
+          <td>Sonnet スコアリング</td>
+          <td><code>claude-sonnet</code></td>
+          <td>$0.03/件</td>
+          <td>540件</td>
+          <td style="color:var(--green);">$16</td>
+        </tr>
+        <tr>
+          <td>LP・広告・交渉文生成</td>
+          <td><code>claude-sonnet</code></td>
+          <td>$0.05/承認商品</td>
+          <td>〜30件（承認率10%）</td>
+          <td style="color:var(--green);">$1.50</td>
+        </tr>
+        <tr>
+          <td>自己学習（Haiku）</td>
+          <td><code>claude-haiku</code></td>
+          <td>$0.001/回</td>
+          <td>60回</td>
+          <td style="color:var(--green);">$0.06</td>
+        </tr>
+        <tr class="total">
+          <td colspan="4"><strong>月額合計（概算）</strong></td>
+          <td><strong>〜$30/月</strong></td>
+        </tr>
+      </table>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);">
+      ※ プロンプトキャッシュ（2回目以降90%割引）・7日キャッシュ適用後の試算。実際のコストは <code>/cost</code> 画面でリアルタイム確認可能。
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div style="font-size:24px;margin-bottom:12px;">⚡</div>
+  <p style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">Agent Command Center</p>
+  <p>海外 CF → 日本市場ローカライズ、全自動マルチエージェントシステム</p>
+  <p style="margin-top:8px;">Claude Sonnet 4.6 / Haiku 4.5 powered · Mac mini 24h稼働</p>
+</div>
+
+</body>
+</html>

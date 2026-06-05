@@ -1,0 +1,44 @@
+{
+  "kind": "Listing",
+  "data": {
+    "children": [
+      {
+        "kind": "t3",
+        "data": {
+          "title": "Smart Lamp X1 with motion detection",
+          "selftext": "I just got the Smart Lamp X1 and the motion detection is incredible.",
+          "url": "https://example.com/smart-lamp-x1",
+          "permalink": "/r/gadgets/comments/abc123/smart_lamp_x1/",
+          "created_utc": 1700000000,
+          "score": 412,
+          "num_comments": 27,
+          "thumbnail": "https://b.thumbs.redditmedia.com/abc.jpg",
+          "subreddit": "gadgets",
+          "author": "redditor1",
+          "domain": "example.com"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "title": "Cheapest Folding Bike Review",
+          "selftext": "",
+          "url": "https://example.com/folding-bike",
+          "permalink": "/r/gadgets/comments/def456/folding_bike/",
+          "created_utc": 1700001000,
+          "score": 14,
+          "thumbnail": "self",
+          "subreddit": "gadgets",
+          "author": "redditor2",
+          "domain": "example.com"
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "selftext": "missing title should be filtered"
+        }
+      }
+    ]
+  }
+}

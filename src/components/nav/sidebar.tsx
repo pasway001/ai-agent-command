@@ -11,6 +11,7 @@ import {
   Activity,
   LogOut,
   Sparkles,
+  Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,7 @@ function buildSections(inboxCount: number): Section[] {
     {
       label: "観測",
       items: [
+        { href: "/scout-runs", label: "スカウト履歴", icon: Radar },
         { href: "/runs", label: "実行ログ", icon: ScrollText },
         { href: "/cost", label: "コスト", icon: Coins },
       ],

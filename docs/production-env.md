@@ -94,9 +94,9 @@ to the in-app Inbox. Paid research APIs are intentionally not required.
 
 | Key | Notes |
 | --- | --- |
-| `SCOUT_OVERSEAS_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to Product Hunt and Yanko Design. |
+| `SCOUT_OVERSEAS_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to Kicktraq Gadgets, Kicktraq Product Design, and Yanko Design. Product Hunt is intentionally not a default source because it is mostly software/app launches. |
 | `SCOUT_JAPAN_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to Makuake RSS. |
-| `MINIMAL_SCOUT_LIMIT` | Max candidates scored per run. Recommended: `3` at first. |
+| `MINIMAL_SCOUT_LIMIT` | Max physical-product candidates scored per run. Recommended: `3` at first. |
 
 ## 6. Vercel Cron
 

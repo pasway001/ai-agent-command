@@ -1,0 +1,75 @@
+[
+  {
+    "title": "折りたたみ式ポータブル食洗機",
+    "category": "Home / Kitchen",
+    "overseas": {
+      "source": "manual overseas research",
+      "url": "https://example.com/portable-dishwasher",
+      "country": "US",
+      "priceJpy": 24800,
+      "backers": 1420,
+      "pledgedAmount": 180000,
+      "description": "工事不要で狭いキッチンにも置ける小型食洗機。"
+    },
+    "japan": {
+      "notYetInJapan": true,
+      "similarProductCount": 1,
+      "domesticExamples": ["卓上食洗機カテゴリはあるが折りたたみ型は少ない"],
+      "searchSummary": "日本では卓上型はあるが、収納性を前面に出した類似は限定的。"
+    },
+    "perplexity": {
+      "domesticDemandTrend": "rising",
+      "regulatoryRisk": "low",
+      "summary": "単身・共働き世帯向けに時短家電需要が伸びている。"
+    }
+  },
+  {
+    "title": "子ども向け姿勢サポート学習ライト",
+    "category": "Kids / Education / Lighting",
+    "overseas": {
+      "source": "manual overseas research",
+      "url": "https://example.com/study-light",
+      "country": "KR",
+      "priceJpy": 12800,
+      "backers": 680,
+      "pledgedAmount": 76000,
+      "description": "机上の姿勢をセンサーで検知し、ライトでやさしく知らせる学習用ライト。"
+    },
+    "japan": {
+      "notYetInJapan": true,
+      "similarProductCount": 0,
+      "domesticExamples": [],
+      "searchSummary": "国内の学習ライトは明るさ訴求が中心で、姿勢サポート訴求は少ない。"
+    },
+    "perplexity": {
+      "domesticDemandTrend": "rising",
+      "regulatoryRisk": "medium",
+      "summary": "教育・姿勢改善ニーズはあるが、医療的効果表現は避ける必要がある。"
+    }
+  },
+  {
+    "title": "美容サプリ 睡眠改善ブレンド",
+    "category": "Health / Supplements",
+    "overseas": {
+      "source": "manual overseas research",
+      "url": "https://example.com/sleep-supplement",
+      "country": "US",
+      "priceJpy": 3980,
+      "backers": 900,
+      "pledgedAmount": 98000,
+      "description": "美容と睡眠を同時に訴求するサプリメント。"
+    },
+    "japan": {
+      "notYetInJapan": false,
+      "similarProductCount": 12,
+      "domesticExamples": ["睡眠サプリ", "美容サプリ"],
+      "searchSummary": "国内類似が多く、薬機法・景表法リスクも高い。"
+    },
+    "perplexity": {
+      "domesticDemandTrend": "rising",
+      "regulatoryRisk": "high",
+      "summary": "需要はあるが、輸入・広告表現ともに規制確認が重い。"
+    }
+  }
+]
+

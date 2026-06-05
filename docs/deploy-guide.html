@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mac mini デプロイガイド — Agent Command Center</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3347;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    line-height: 1.7;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 0;
+    text-align: center;
+  }
+  .header-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 16px;
+  }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: var(--muted); font-size: 15px; }
+  .container { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+
+  /* progress bar */
+  .steps-nav {
+    display: flex; gap: 4px; margin-bottom: 48px;
+    background: var(--surface); border-radius: 12px; padding: 6px;
+    overflow-x: auto;
+  }
+  .steps-nav span {
+    flex: 1; min-width: 80px; text-align: center; padding: 8px 4px;
+    border-radius: 8px; font-size: 12px; color: var(--muted);
+    white-space: nowrap;
+  }
+  .steps-nav span.done { background: var(--surface2); color: var(--green); }
+
+  /* step card */
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .step-number {
+    position: absolute; top: -14px; left: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 12px; font-weight: 700;
+    padding: 3px 12px; border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .step h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; margin-top: 4px; }
+  .step p { color: #94a3b8; margin-bottom: 12px; }
+
+  /* code block */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .cmd { color: #7dd3fc; }
+  .comment { color: #4a5568; }
+  .val { color: #86efac; }
+  .key { color: #fbbf24; }
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: #7dd3fc;
+  }
+
+  /* info, warn, tip boxes */
+  .box {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .box-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+  .info { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); }
+  .warn { background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3); }
+  .tip { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+
+  /* env table */
+  .env-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .env-table th {
+    text-align: left; padding: 8px 12px;
+    background: var(--surface2); color: var(--muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .env-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .env-table tr:last-child td { border-bottom: none; }
+  .required { color: var(--red); font-size: 11px; font-weight: 600; }
+  .optional { color: var(--muted); font-size: 11px; }
+
+  /* checklist */
+  .check-list { list-style: none; margin: 12px 0; }
+  .check-list li {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .check-list li:last-child { border-bottom: none; }
+  .check-list .icon { color: var(--green); flex-shrink: 0; }
+
+  /* troubleshoot */
+  .trouble-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .trouble-item .q { color: var(--red); font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+  .trouble-item .a { color: #94a3b8; font-size: 13px; }
+
+  /* footer */
+  .footer {
+    text-align: center; padding: 40px 0 60px;
+    color: var(--muted); font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted);
+    margin: 4px;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">⚡</div>
+  <h1>Mac mini デプロイガイド</h1>
+  <p>Agent Command Center を Mac mini で 24時間稼働させるための手順</p>
+  <div style="margin-top:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+    <span class="badge"><span class="dot"></span> macOS 14+</span>
+    <span class="badge"><span class="dot"></span> Node.js 20+</span>
+    <span class="badge"><span class="dot"></span> PostgreSQL 16</span>
+    <span class="badge"><span class="dot"></span> PM2</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Nav -->
+  <div class="steps-nav">
+    <span>① 前提条件</span>
+    <span>② DB</span>
+    <span>③ 環境変数</span>
+    <span>④ ビルド</span>
+    <span>⑤ PM2起動</span>
+    <span>⑥ 自動起動</span>
+    <span>⑦ 動作確認</span>
+  </div>
+
+  <!-- STEP 0: Prerequisites -->
+  <div class="step">
+    <div class="step-number">STEP 1 — 前提条件</div>
+    <h2>必要なソフトウェアをインストール</h2>
+    <p>Mac mini に SSH またはローカルでターミナルを開いて実行します。</p>
+
+    <pre><span class="comment"># Homebrew（未インストールの場合）</span>
+<span class="cmd">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</span>
+
+<span class="comment"># Node.js 20 LTS</span>
+<span class="cmd">brew install node@20</span>
+<span class="cmd">echo 'export PATH="/opt/homebrew/opt/node@20/bin:$PATH"' >> ~/.zshrc</span>
+<span class="cmd">source ~/.zshrc</span>
+
+<span class="comment"># pnpm（パッケージマネージャ）</span>
+<span class="cmd">npm install -g pnpm</span>
+
+<span class="comment"># PostgreSQL 16</span>
+<span class="cmd">brew install postgresql@16</span>
+<span class="cmd">brew services start postgresql@16</span>
+<span class="cmd">echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc</span>
+<span class="cmd">source ~/.zshrc</span>
+
+<span class="comment"># PM2（プロセスマネージャ）</span>
+<span class="cmd">npm install -g pm2</span>
+
+<span class="comment"># バージョン確認</span>
+<span class="cmd">node -v && pnpm -v && psql --version && pm2 -v</span></pre>
+
+    <div class="box info">
+      <span class="box-icon">ℹ️</span>
+      <div>Apple Silicon (M1/M2/M3) の場合、Homebrew は <code>/opt/homebrew/</code> にインストールされます。Intel Macは <code>/usr/local/</code> です。</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Repository -->
+  <div class="step">
+    <div class="step-number">STEP 2 — リポジトリのセットアップ</div>
+    <h2>コードを Mac mini に配置</h2>
+
+    <pre><span class="comment"># プロジェクトをコピー（開発機からrsyncで転送する場合）</span>
+<span class="cmd">rsync -avz --exclude='node_modules' --exclude='.next' --exclude='.env' \
+  /path/to/agent-command-center/ \
+  macmini@192.168.x.x:~/agent-command-center/</span>
+
+<span class="comment"># Mac mini 側で依存インストール</span>
+<span class="cmd">cd ~/agent-command-center</span>
+<span class="cmd">pnpm install</span></pre>
+
+    <div class="box tip">
+      <span class="box-icon">✅</span>
+      <div>Git リポジトリがある場合は <code>git clone</code> でも OK。<code>.env</code> ファイルは必ず手動で作成してください（gitには含めないこと）。</div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Database -->
+  <div class="step">
+    <div class="step-number">STEP 3 — データベースのセットアップ</div>
+    <h2>ローカル PostgreSQL を初期化</h2>
+
+    <pre><span class="comment"># セットアップスクリプトを実行（ユーザー・DB作成 + スキーマ適用）</span>
+<span class="cmd">cd ~/agent-command-center</span>
+<span class="cmd">bash scripts/setup-db.sh</span></pre>
+
+    <p>スクリプトが実行すること：</p>
+    <ul class="check-list">
+      <li><span class="icon">✓</span> <span><code>pathway</code> ユーザー作成</span></li>
+      <li><span class="icon">✓</span> <span><code>pathway</code> データベース作成</span></li>
+      <li><span class="icon">✓</span> <span><code>pnpm drizzle-kit push</code> でスキーマ適用</span></li>
+    </ul>
+
+    <pre><span class="comment"># 接続確認</span>
+<span class="cmd">psql postgresql://pathway:pathway@localhost:5432/pathway -c "\dt"</span></pre>
+
+    <div class="box warn">
+      <span class="box-icon">⚠️</span>
+      <div>Mac mini を再起動した後も PostgreSQL が自動起動するよう、<code>brew services start postgresql@16</code> で launchd 登録されていることを確認してください。</div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Env vars -->
+  <div class="step">
+    <div class="step-number">STEP 4 — 環境変数の設定</div>
+    <h2>.env ファイルを作成</h2>
+
+    <pre><span class="cmd">cp .env.example .env</span>
+<span class="cmd">nano .env</span>  <span class="comment"># または vim .env</span></pre>
+
+    <p>以下の項目を必ず設定してください：</p>
+    <table class="env-table">
+      <tr>
+        <th>変数名</th>
+        <th>説明</th>
+        <th>必須</th>
+      </tr>
+      <tr>
+        <td><code>ANTHROPIC_API_KEY</code></td>
+        <td>Anthropic APIキー（console.anthropic.com で取得）</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>DATABASE_URL</code></td>
+        <td><code>postgresql://pathway:pathway@localhost:5432/pathway</code></td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>CRON_SECRET</code></td>
+        <td>cronエンドポイントの認証トークン（32文字以上のランダム文字列）</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>APP_AUTH_EMAIL</code></td>
+        <td>ログイン用メールアドレス</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>APP_AUTH_PASSWORD</code></td>
+        <td>ログイン用パスワード</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>APP_SESSION_SECRET</code></td>
+        <td>セッション暗号化キー（32文字以上）</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_APP_URL</code></td>
+        <td><code>http://localhost:3000</code>（Mac mini のローカルIP でもOK）</td>
+        <td><span class="required">必須</span></td>
+      </tr>
+      <tr>
+        <td><code>LARK_WEBHOOK_URL_OPS</code></td>
+        <td>Lark 通知用 Webhook URL</td>
+        <td><span class="optional">任意</span></td>
+      </tr>
+      <tr>
+        <td><code>ANTHROPIC_ENABLE_WEB_SEARCH</code></td>
+        <td><code>1</code>（リサーチエージェント用の web 検索を有効化）</td>
+        <td><span class="optional">推奨</span></td>
+      </tr>
+    </table>
+
+    <pre><span class="comment"># ランダムなシークレット生成（例）</span>
+<span class="cmd">openssl rand -base64 32</span></pre>
+  </div>
+
+  <!-- STEP 5: Build -->
+  <div class="step">
+    <div class="step-number">STEP 5 — 本番ビルド</div>
+    <h2>Next.js アプリをビルド</h2>
+
+    <pre><span class="cmd">cd ~/agent-command-center</span>
+<span class="cmd">pnpm build</span>
+
+<span class="comment"># ビルド成功を確認</span>
+<span class="cmd">ls -la .next/</span></pre>
+
+    <div class="box info">
+      <span class="box-icon">ℹ️</span>
+      <div>ビルド時間は Mac mini のスペックにより 2〜5 分ほどかかります。<code>Route (app)</code> の一覧が表示されれば成功です。</div>
+    </div>
+  </div>
+
+  <!-- STEP 6: PM2 -->
+  <div class="step">
+    <div class="step-number">STEP 6 — PM2 でプロセス起動</div>
+    <h2>アプリとスケジューラーを起動</h2>
+
+    <pre><span class="cmd">cd ~/agent-command-center</span>
+
+<span class="comment"># ecosystem.config.js で定義された全プロセスを起動</span>
+<span class="cmd">pm2 start ecosystem.config.js</span>
+
+<span class="comment"># 起動確認</span>
+<span class="cmd">pm2 list</span>
+
+<span class="comment"># ログ確認</span>
+<span class="cmd">pm2 logs pathway-agent --lines 50</span></pre>
+
+    <p>起動されるプロセス：</p>
+    <table class="env-table">
+      <tr><th>プロセス名</th><th>内容</th><th>スケジュール</th></tr>
+      <tr>
+        <td><code>pathway-agent</code></td>
+        <td>Next.js アプリ本体（ポート3000）</td>
+        <td>常時起動</td>
+      </tr>
+      <tr>
+        <td><code>scout-cron</code></td>
+        <td>海外商品スカウト実行</td>
+        <td>毎日 6:00 / 18:00</td>
+      </tr>
+      <tr>
+        <td><code>learn-cron</code></td>
+        <td>承認パターン自己学習</td>
+        <td>毎日 7:00 / 19:00</td>
+      </tr>
+    </table>
+
+    <pre><span class="comment"># 手動でスカウトを今すぐ実行したい場合</span>
+<span class="cmd">curl -s http://localhost:3000/api/cron/scout \
+  -H "Authorization: Bearer $CRON_SECRET"</span></pre>
+  </div>
+
+  <!-- STEP 7: Auto-start -->
+  <div class="step">
+    <div class="step-number">STEP 7 — Mac mini 自動起動設定</div>
+    <h2>再起動後も自動で復旧するよう設定</h2>
+
+    <pre><span class="comment"># PM2 の自動起動スクリプトを生成（表示されたコマンドをコピーして実行）</span>
+<span class="cmd">pm2 startup</span>
+
+<span class="comment"># 例: 上記コマンドが表示する内容を実行（ユーザー名は環境による）</span>
+<span class="cmd">sudo env PATH=$PATH:/opt/homebrew/opt/node@20/bin pm2 startup launchd -u $(whoami) --hp $HOME</span>
+
+<span class="comment"># 現在の PM2 プロセスリストを保存</span>
+<span class="cmd">pm2 save</span></pre>
+
+    <div class="box tip">
+      <span class="box-icon">✅</span>
+      <div>これで Mac mini が再起動・電源断から復旧した後も、PM2 が自動でアプリとスケジューラーを再起動します。</div>
+    </div>
+
+    <p style="margin-top:16px;">代替手段（PM2 なしで launchd のみ使う場合）：</p>
+    <pre><span class="comment"># launchd plist を LaunchAgents にコピー</span>
+<span class="cmd">cp ~/agent-command-center/com.pathway.scout.plist \
+  ~/Library/LaunchAgents/</span>
+
+<span class="comment"># 有効化</span>
+<span class="cmd">launchctl load ~/Library/LaunchAgents/com.pathway.scout.plist</span></pre>
+  </div>
+
+  <!-- STEP 8: Verify -->
+  <div class="step">
+    <div class="step-number">STEP 8 — 動作確認</div>
+    <h2>すべてが正常に動いているか確認</h2>
+
+    <pre><span class="comment"># 1. プロセス状態確認</span>
+<span class="cmd">pm2 list</span>
+
+<span class="comment"># 2. アプリにアクセス</span>
+<span class="cmd">open http://localhost:3000</span>
+
+<span class="comment"># 3. ヘルスチェック</span>
+<span class="cmd">curl -s http://localhost:3000/api/health | python3 -m json.tool</span>
+
+<span class="comment"># 4. スカウト手動実行テスト</span>
+<span class="cmd">curl -s "http://localhost:3000/api/cron/scout" \
+  -H "Authorization: Bearer $(grep CRON_SECRET .env | cut -d= -f2)"</span>
+
+<span class="comment"># 5. ログ監視</span>
+<span class="cmd">tail -f logs/cron.log</span>
+
+<span class="comment"># 6. DB 確認</span>
+<span class="cmd">psql postgresql://pathway:pathway@localhost:5432/pathway \
+  -c "SELECT count(*) FROM products;"</span></pre>
+  </div>
+
+  <!-- Troubleshoot -->
+  <div class="step">
+    <div class="step-number">よくある問題</div>
+    <h2>トラブルシューティング</h2>
+
+    <div class="trouble-item">
+      <div class="q">❌ Port 3000 が使用中</div>
+      <div class="a">
+        <code>lsof -ti:3000 | xargs kill -9</code> でポートを解放してから再起動してください。
+        または <code>.env</code> の <code>PORT=3001</code> に変更。
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="q">❌ PostgreSQL に接続できない</div>
+      <div class="a">
+        <code>brew services list | grep postgresql</code> で起動状態を確認。停止していれば
+        <code>brew services start postgresql@16</code> で起動。
+        <code>DATABASE_URL</code> のパスワードも確認。
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="q">❌ pnpm build でエラー</div>
+      <div class="a">
+        <code>node -v</code> が 20 以上か確認。<code>rm -rf .next && pnpm build</code> でキャッシュクリア。
+        <code>.env</code> の必須変数が設定されているか確認。
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="q">❌ Anthropic API rate limit エラー</div>
+      <div class="a">
+        <code>.env</code> で <code>SCOUT_SCORING_CONCURRENCY=1</code> に下げる。
+        または <code>MINIMAL_SCOUT_LLM_MAX=5</code> で1回あたりの処理数を減らす。
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="q">❌ cron が実行されない</div>
+      <div class="a">
+        <code>pm2 logs scout-cron</code> でログ確認。
+        <code>CRON_SECRET</code> が <code>.env</code> に設定されているか確認。
+        手動で <code>bash scripts/run-cron.sh</code> を実行してエラーを確認。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>Agent Command Center — Mac mini Deploy Guide</p>
+  <p style="margin-top:8px; color:#374151;">問題が発生した場合は <code>pm2 logs</code> と <code>logs/cron.log</code> を確認してください</p>
+</div>
+
+</body>
+</html>

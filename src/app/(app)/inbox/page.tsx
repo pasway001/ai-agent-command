@@ -1,15 +1,18 @@
 import { PageHeader } from "@/components/nav/page-header";
 import { DbErrorState } from "@/components/empty-state";
-import { getOpenApprovals, safe } from "@/lib/db/queries";
+import { getLatestScoutRun, getOpenApprovals, safe } from "@/lib/db/queries";
 import { browserRealtimeEnabled, getCurrentUser } from "@/lib/auth/server";
 import { InboxList } from "./inbox-list";
+import { ScoutSummaryBand } from "./scout-summary-band";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
-  const items = await safe(() => getOpenApprovals());
-
-  const user = await getCurrentUser();
+  const [items, latestScoutRun, user] = await Promise.all([
+    safe(() => getOpenApprovals()),
+    safe(() => getLatestScoutRun()),
+    getCurrentUser(),
+  ]);
 
   return (
     <>
@@ -18,6 +21,7 @@ export default async function InboxPage() {
         description="エージェントが上げてきた候補をレビューします。"
       />
       <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
+        <ScoutSummaryBand run={latestScoutRun ?? null} />
         {items === null ? (
           <DbErrorState />
         ) : (

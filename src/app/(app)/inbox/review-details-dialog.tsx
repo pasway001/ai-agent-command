@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Info,
+  Quote,
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { OpenApproval } from "@/lib/db/queries";
+import { sourceBadgeClasses } from "@/components/source-badge";
+import type {
+  OpenApproval,
+  ScoutAxisKey,
+  ScoutAxisScores,
+  ScoutEvidenceItem,
+} from "@/lib/db/queries";
+import { SCOUT_AXIS_KEYS } from "@/lib/db/queries";
 
 type Review = OpenApproval["review"];
 type Verdict = NonNullable<Review["verdict"]>;
@@ -80,6 +88,14 @@ function dateLabel(value: string | null) {
   }).format(date);
 }
 
+function productTypeLabel(type: Review["productType"]) {
+  if (type === "physical") return "物理商品";
+  if (type === "digital") return "デジタル/ソフトウェア";
+  if (type === "service") return "サービス";
+  if (type === "unknown") return "判断不能";
+  return null;
+}
+
 export function AiScoreBadge({
   review,
   className,
@@ -138,20 +154,29 @@ export function SourceLink({
       </span>
     );
   }
+  const label =
+    review.sourceName ?? hostFromUrl(review.sourceUrl) ?? "商品URL";
+  const badgeClass = sourceBadgeClasses(review.sourceName ?? null);
   return (
     <a
       href={review.sourceUrl}
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "inline-flex min-w-0 items-center gap-1 text-xs font-medium text-primary underline-offset-3 hover:underline",
+        "inline-flex min-w-0 items-center gap-1 text-xs underline-offset-3 hover:underline",
         className
       )}
     >
-      <span className="truncate">
-        {review.sourceName ?? hostFromUrl(review.sourceUrl) ?? "商品URL"}
-      </span>
-      <ExternalLink className="size-3 shrink-0" />
+      <Badge
+        variant="outline"
+        className={cn(
+          "h-5 px-2 text-[10.5px] font-medium tracking-wide",
+          badgeClass
+        )}
+      >
+        <span className="truncate">{label}</span>
+      </Badge>
+      <ExternalLink className="size-3 shrink-0 text-primary" />
     </a>
   );
 }
@@ -168,6 +193,122 @@ function DetailLine({
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-words">{value ?? "—"}</dd>
     </div>
+  );
+}
+
+const AXIS_LABELS: Record<ScoutAxisKey, string> = {
+  overseasTraction: "海外トラクション",
+  crossSourceMentions: "クロスソース言及",
+  japanValidationLevel: "日本クラファン検証",
+  domesticTrend: "国内需要トレンド",
+  regulatoryRisk: "規制リスク (1=安全)",
+  competitionDensity: "競合密度 (1=空白)",
+  priceFit: "価格適合",
+  physicalLikely: "物理商品確度",
+  novelty: "新規性",
+};
+
+function axisBarColor(score: number) {
+  if (score >= 0.7) return "bg-emerald-500/80";
+  if (score >= 0.5) return "bg-amber-500/80";
+  if (score >= 0.3) return "bg-orange-500/70";
+  return "bg-rose-500/60";
+}
+
+function AxisBars({ scores }: { scores: ScoutAxisScores | null }) {
+  if (!scores || Object.keys(scores).length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        9軸スコアは保存されていません（旧スキーマ）。
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {SCOUT_AXIS_KEYS.map((key) => {
+        const ax = scores[key];
+        if (!ax) {
+          return (
+            <div
+              key={key}
+              className="grid grid-cols-[10rem_1fr_3rem] items-center gap-2 text-xs"
+            >
+              <span className="truncate text-muted-foreground">
+                {AXIS_LABELS[key]}
+              </span>
+              <div className="h-2 rounded-full bg-muted" />
+              <span className="text-right font-mono text-muted-foreground">
+                —
+              </span>
+            </div>
+          );
+        }
+        const pct = Math.round(ax.score * 100);
+        return (
+          <div
+            key={key}
+            className="grid grid-cols-[10rem_1fr_3rem] items-center gap-2 text-xs"
+            title={ax.rationale}
+          >
+            <span className="truncate" title={AXIS_LABELS[key]}>
+              {AXIS_LABELS[key]}
+            </span>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full transition-all", axisBarColor(ax.score))}
+                style={{ width: `${Math.max(2, pct)}%` }}
+              />
+            </div>
+            <span className="text-right font-mono">{pct}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EvidenceList({ items }: { items: ScoutEvidenceItem[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        引用情報源は記録されていません。
+      </p>
+    );
+  }
+  return (
+    <ul className="space-y-3">
+      {items.map((ev, idx) => {
+        let host: string | null = null;
+        try {
+          host = new URL(ev.sourceUrl).hostname.replace(/^www\./, "");
+        } catch {
+          host = null;
+        }
+        return (
+          <li
+            key={`${ev.sourceUrl}-${idx}`}
+            className="rounded-lg border border-border bg-muted/30 p-3"
+          >
+            <div className="mb-1 flex items-start gap-2">
+              <Quote className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              <p className="text-sm font-medium leading-snug">{ev.claim}</p>
+            </div>
+            <blockquote className="mb-2 border-l-2 border-border pl-2.5 text-xs italic text-foreground/80">
+              {ev.snippet}
+            </blockquote>
+            <a
+              href={ev.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-primary underline-offset-3 hover:underline"
+            >
+              <ExternalLink className="size-3" />
+              {host ?? ev.sourceUrl}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -245,6 +386,28 @@ export function ReviewDetailsDialog({
           </p>
         </section>
 
+        <section className="border-t pt-4">
+          <h3 className="mb-3 font-medium">9軸スコア</h3>
+          <AxisBars scores={review.axisScores} />
+          {review.mentionSources.length > 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground">
+              クロスソース言及: {review.mentionSources.join(" / ")}（
+              {review.mentionSources.length} 件）
+            </p>
+          ) : null}
+          {review.japanValidationLevel !== null ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              日本クラファン検証スコア:{" "}
+              {(review.japanValidationLevel * 100).toFixed(0)}/100
+            </p>
+          ) : null}
+        </section>
+
+        <section className="border-t pt-4">
+          <h3 className="mb-3 font-medium">引用情報源 (evidence)</h3>
+          <EvidenceList items={review.evidence} />
+        </section>
+
         <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
           <section>
             <h3 className="mb-2 font-medium">強み</h3>
@@ -261,6 +424,21 @@ export function ReviewDetailsDialog({
           <dl className="space-y-2">
             <DetailLine label="取得元" value={review.sourceName} />
             <DetailLine label="カテゴリ" value={review.category} />
+            <DetailLine
+              label="商品種別"
+              value={productTypeLabel(review.productType)}
+            />
+            <DetailLine
+              label="物理商品判定"
+              value={
+                review.physicalProductLikely === null
+                  ? null
+                  : review.physicalProductLikely
+                    ? "物販候補"
+                    : "対象外"
+              }
+            />
+            <DetailLine label="除外理由" value={review.exclusionReason} />
             <DetailLine
               label="日本未展開"
               value={

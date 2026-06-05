@@ -65,7 +65,7 @@ pnpm dev
 
 ### 5. 最小Scoutを実行
 
-無料RSSソースから海外候補を拾い、Makuake RSS の直近タイトルと簡易比較して、Claudeでスコアリングし、承認候補だけ `/inbox` に入れます。Vercelでは `/api/cron/scout` が毎日08:30 JSTに同じ処理を起動します。
+無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、Claudeでスコアリングし、承認候補だけ `/inbox` に入れます。Vercelでは `/api/cron/scout` が毎日08:30 JSTに同じ処理を起動します。
 
 ```bash
 pnpm scout:minimal

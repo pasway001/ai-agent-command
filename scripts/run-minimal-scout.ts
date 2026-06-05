@@ -3,11 +3,14 @@ import { runMinimalScout } from "../src/lib/agents/minimal-scout";
 import { closeDb } from "../src/lib/db";
 
 async function main() {
-  const result = await runMinimalScout();
+  const result = await runMinimalScout({ triggeredBy: "manual" });
 
   console.log(
-    `minimal scout: feeds=${result.feedCount} overseas=${result.overseasCount} japan=${result.japanCount} scoring=${result.candidateCount}`
+    `minimal scout: feeds=${result.feedCount} overseas=${result.overseasCount} japan=${result.japanCount} filtered=${result.filteredCount} scoring=${result.candidateCount}`
   );
+  if (result.scoutRunId) {
+    console.log(`scout_runs.id=${result.scoutRunId} duration=${result.durationMs}ms`);
+  }
   for (const error of result.errors) {
     console.warn(error);
   }

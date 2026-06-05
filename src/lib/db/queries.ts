@@ -8,9 +8,11 @@ import {
   approvalQueue,
   budgetAlerts,
   products,
+  scoutRuns,
   skills,
   type Agent,
   type Product,
+  type ScoutRun,
   type Skill,
 } from "./schema";
 
@@ -24,6 +26,30 @@ export async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 type ScoutVerdict = "approve" | "reject" | "escalate";
+type ScoutProductType = "physical" | "digital" | "service" | "unknown";
+
+/** Phase B: 9-axis breakdown. score 0..1 + short Japanese rationale. */
+export type ScoutAxisScore = { score: number; rationale: string };
+export const SCOUT_AXIS_KEYS = [
+  "overseasTraction",
+  "crossSourceMentions",
+  "japanValidationLevel",
+  "domesticTrend",
+  "regulatoryRisk",
+  "competitionDensity",
+  "priceFit",
+  "physicalLikely",
+  "novelty",
+] as const;
+export type ScoutAxisKey = (typeof SCOUT_AXIS_KEYS)[number];
+export type ScoutAxisScores = Partial<Record<ScoutAxisKey, ScoutAxisScore>>;
+
+/** Phase B: evidence item with cited source URL. */
+export type ScoutEvidenceItem = {
+  claim: string;
+  sourceUrl: string;
+  snippet: string;
+};
 
 export type ScoutReviewDetails = {
   sourceName: string | null;
@@ -39,10 +65,18 @@ export type ScoutReviewDetails = {
   suggestedPriority: number | null;
   provider: string | null;
   model: string | null;
+  productType: ScoutProductType | null;
+  physicalProductLikely: boolean | null;
+  exclusionReason: string | null;
   japanSummary: string | null;
   domesticExamples: string[];
   similarProductCount: number | null;
   notYetInJapan: boolean | null;
+  // ---- Phase B additions ----
+  axisScores: ScoutAxisScores | null;
+  evidence: ScoutEvidenceItem[];
+  mentionSources: string[];
+  japanValidationLevel: number | null;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -88,6 +122,59 @@ function verdictValue(record: JsonRecord | null, key: string): ScoutVerdict | nu
   return null;
 }
 
+function productTypeValue(
+  record: JsonRecord | null,
+  key: string
+): ScoutProductType | null {
+  const value = record?.[key];
+  if (
+    value === "physical" ||
+    value === "digital" ||
+    value === "service" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function extractAxisScores(outputPayload: JsonRecord | null): ScoutAxisScores | null {
+  const raw = asRecord(outputPayload?.axisScores);
+  if (!raw) return null;
+  const result: ScoutAxisScores = {};
+  for (const key of SCOUT_AXIS_KEYS) {
+    const ax = asRecord(raw[key]);
+    if (!ax) continue;
+    const score = numberValue(ax, "score");
+    const rationale = stringValue(ax, "rationale") ?? "";
+    if (score === null) continue;
+    result[key] = { score, rationale };
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+function extractEvidence(outputPayload: JsonRecord | null): ScoutEvidenceItem[] {
+  const raw = outputPayload?.evidence;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item): ScoutEvidenceItem | null => {
+      const rec = asRecord(item);
+      if (!rec) return null;
+      const claim = stringValue(rec, "claim");
+      const sourceUrl = stringValue(rec, "sourceUrl");
+      const snippet = stringValue(rec, "snippet");
+      if (!claim || !sourceUrl || !snippet) return null;
+      return { claim, sourceUrl, snippet };
+    })
+    .filter((e): e is ScoutEvidenceItem => e !== null);
+}
+
+function extractMentionSources(signals: JsonRecord | null): string[] {
+  const raw = signals?.mentionSources;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((s): s is string => typeof s === "string" && s.length > 0);
+}
+
 function scoutReviewDetails(
   productMetadata: unknown,
   runInputPayload: unknown,
@@ -107,7 +194,7 @@ function scoutReviewDetails(
     description: stringValue(overseas, "description"),
     publishedAt: stringValue(overseas, "publishedAt"),
     category: stringValue(signals, "category"),
-    score: numberValue(outputPayload, "score"),
+    score: numberValue(outputPayload, "score") ?? numberValue(outputPayload, "totalScore"),
     verdict: verdictValue(outputPayload, "verdict"),
     rationale: stringValue(outputPayload, "rationale"),
     pros: stringArrayValue(outputPayload, "pros"),
@@ -115,10 +202,18 @@ function scoutReviewDetails(
     suggestedPriority: numberValue(outputPayload, "suggestedPriority"),
     provider: stringValue(outputPayload, "provider"),
     model: stringValue(outputPayload, "model"),
+    productType: productTypeValue(signals, "productType"),
+    physicalProductLikely: booleanValue(signals, "physicalProductLikely"),
+    exclusionReason: stringValue(signals, "exclusionReason"),
     japanSummary: stringValue(japan, "searchSummary"),
     domesticExamples: stringArrayValue(japan, "domesticExamples"),
     similarProductCount: numberValue(japan, "similarProductCount"),
     notYetInJapan: booleanValue(japan, "notYetInJapan"),
+    // ---- Phase B additions ----
+    axisScores: extractAxisScores(outputPayload),
+    evidence: extractEvidence(outputPayload),
+    mentionSources: extractMentionSources(signals),
+    japanValidationLevel: numberValue(japan, "japanValidationLevel"),
   };
 }
 
@@ -622,4 +717,38 @@ export async function getAgentsUsingSkill(skillId: string) {
     .innerJoin(agents, eq(agents.id, agentSkills.agentId))
     .where(eq(agentSkills.skillId, skillId))
     .orderBy(asc(agents.systemNo), asc(agents.name));
+}
+
+// ---------------------------------------------------------------------------
+// scout_runs — Phase A visibility layer.
+// One row per runMinimalScout() invocation.
+// ---------------------------------------------------------------------------
+
+/** Latest N scout runs, newest first. */
+export async function getRecentScoutRuns(limit = 30): Promise<ScoutRun[]> {
+  return db
+    .select()
+    .from(scoutRuns)
+    .orderBy(desc(scoutRuns.startedAt))
+    .limit(limit);
+}
+
+/** Single scout run by id (for /scout-runs/[id]). */
+export async function getScoutRunById(id: string): Promise<ScoutRun | null> {
+  const [row] = await db
+    .select()
+    .from(scoutRuns)
+    .where(eq(scoutRuns.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Most recent completed scout run (used in the /inbox summary banner). */
+export async function getLatestScoutRun(): Promise<ScoutRun | null> {
+  const [row] = await db
+    .select()
+    .from(scoutRuns)
+    .orderBy(desc(scoutRuns.startedAt))
+    .limit(1);
+  return row ?? null;
 }

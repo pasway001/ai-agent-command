@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Installation:
+     1. Copy this file to ~/Library/LaunchAgents/
+        cp com.pathway.scout.plist ~/Library/LaunchAgents/com.pathway.scout.plist
+     2. Activate with launchctl:
+        launchctl load ~/Library/LaunchAgents/com.pathway.scout.plist
+     To unload: launchctl unload ~/Library/LaunchAgents/com.pathway.scout.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pathway.scout</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/shojiyuya/Desktop/仕事/パスウェイ/案件/agent-command-center/scripts/run-cron.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/shojiyuya/Desktop/仕事/パスウェイ/案件/agent-command-center</string>
+
+    <!-- Runs daily at 06:00 and 18:00 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>6</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>18</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/pathway-scout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/pathway-scout-err.log</string>
+</dict>
+</plist>

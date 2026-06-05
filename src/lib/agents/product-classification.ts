@@ -1,0 +1,188 @@
+export const PRODUCT_TYPES = ["physical", "digital", "service", "unknown"] as const;
+
+export type ProductType = (typeof PRODUCT_TYPES)[number];
+
+export type ProductClassification = {
+  productType: ProductType;
+  physicalProductLikely: boolean;
+  exclusionReason?: string;
+};
+
+type Pattern = {
+  pattern: RegExp;
+  label: string;
+};
+
+type ClassifyProductTextInput = {
+  title: string;
+  category?: string;
+  description?: string;
+  source?: string;
+  summary?: string;
+  declaredProductType?: ProductType;
+  declaredPhysicalProductLikely?: boolean;
+};
+
+const HARD_DIGITAL_PATTERNS: Pattern[] = [
+  { pattern: /\bsaas\b/i, label: "SaaS" },
+  { pattern: /\b(web|mobile|ios|android)\s+apps?\b/i, label: "app" },
+  { pattern: /\b(browser|chrome|safari|firefox)\s+extensions?\b/i, label: "browser extension" },
+  { pattern: /\b(api|sdk)\b/i, label: "API/SDK" },
+  { pattern: /\b(ai\s+tools?|developer\s+tools?|devtools?)\b/i, label: "AI/developer tool" },
+  { pattern: /\b(llm|chatgpt|claude|ai\s+(workspace|writing|research|coding|chat|editor|generator|automation|agent|apps?))\b/i, label: "AI software" },
+  { pattern: /\b(chatbots?|copilots?)\b/i, label: "AI software" },
+  { pattern: /\b(newsletters?|courses?|masterclasses?|webinars?)\b/i, label: "content/course" },
+  { pattern: /\b(communities|community|memberships?)\b/i, label: "community" },
+  { pattern: /\b(templates?|notion\s+templates?|figma\s+templates?|prompt\s+packs?)\b/i, label: "template" },
+  { pattern: /\b(e-?books?|pdfs?|digital\s+downloads?)\b/i, label: "digital content" },
+  { pattern: /SaaS|AIツール|ブラウザ拡張|拡張機能|API|SDK|ニュースレター|講座|コース|ウェビナー|教材|電子書籍|テンプレ|プロンプト集|コミュニティ|会員/i, label: "digital/service keyword" },
+];
+
+const SOFT_DIGITAL_PATTERNS: Pattern[] = [
+  { pattern: /\b(software|platform|crm|dashboard|analytics|automation|workflow|no-code|low-code)\b/i, label: "software/platform" },
+  { pattern: /\bplugins?\b/i, label: "plugin" },
+  { pattern: /\bapps?\b/i, label: "app" },
+  { pattern: /ソフトウェア|プラットフォーム|アプリ|自動化|ワークフロー|ダッシュボード|分析ツール|ノーコード|ローコード/i, label: "software/app keyword" },
+];
+
+const SERVICE_PATTERNS: Pattern[] = [
+  { pattern: /\b(consulting|agency|done-for-you|managed\s+service|service\s+business)\b/i, label: "service" },
+  { pattern: /サービス|代行|コンサル|相談|スクール|教室|オンラインサロン|体験プラン/i, label: "service keyword" },
+];
+
+const PHYSICAL_PATTERNS: Pattern[] = [
+  {
+    pattern:
+      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?)\b/i,
+    label: "physical product keyword",
+  },
+  {
+    pattern:
+      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|バッグ|リュック|財布|ケース|スタンド|マウント|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー/i,
+    label: "physical product keyword",
+  },
+];
+
+const PHYSICAL_SOURCE_HINTS: Pattern[] = [
+  { pattern: /kicktraq.*(gadgets|product design|hardware|camera equipment|diy electronics|fabrication tools|3d printing|accessories|apparel|footwear|jewelry|woodworking|diy|pottery|candles|stationery|crochet|embroidery|glass|knitting|letterpress|printing|quilts|weaving|ready-to-wear|pet fashion|ceramics|sculpture|textiles|tabletop games|playing cards)/i, label: "physical crowdfunding category" },
+  { pattern: /yanko design/i, label: "product design source" },
+  { pattern: /makuake/i, label: "crowdfunding source" },
+];
+
+function compactText(parts: Array<string | undefined>) {
+  return parts
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join("\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function firstMatch(patterns: Pattern[], text: string) {
+  return patterns.find(({ pattern }) => pattern.test(text));
+}
+
+function isDeclaredPhysical(input: ClassifyProductTextInput) {
+  return (
+    input.declaredProductType === "physical" ||
+    input.declaredPhysicalProductLikely === true
+  );
+}
+
+export function classifyProductText(
+  input: ClassifyProductTextInput
+): ProductClassification {
+  const productText = compactText([
+    input.title,
+    input.category,
+    input.description,
+    input.summary,
+  ]);
+  const sourceText = input.source ?? "";
+  const text = compactText([productText, sourceText]);
+
+  const hardDigital = firstMatch(HARD_DIGITAL_PATTERNS, text);
+  if (hardDigital) {
+    return {
+      productType: "digital",
+      physicalProductLikely: false,
+      exclusionReason: `${hardDigital.label} のため無形商材と判定`,
+    };
+  }
+
+  const service = firstMatch(SERVICE_PATTERNS, text);
+  if (service) {
+    return {
+      productType: "service",
+      physicalProductLikely: false,
+      exclusionReason: `${service.label} のため物販対象外`,
+    };
+  }
+
+  if (input.declaredProductType === "digital") {
+    return {
+      productType: "digital",
+      physicalProductLikely: false,
+      exclusionReason: "productType=digital のため無形商材と判定",
+    };
+  }
+
+  if (input.declaredProductType === "service") {
+    return {
+      productType: "service",
+      physicalProductLikely: false,
+      exclusionReason: "productType=service のため物販対象外",
+    };
+  }
+
+  if (
+    input.declaredProductType === "unknown" &&
+    input.declaredPhysicalProductLikely === false
+  ) {
+    return {
+      productType: "unknown",
+      physicalProductLikely: false,
+      exclusionReason: "物理的に製造・発送できる商品か判断できないため対象外",
+    };
+  }
+
+  const physical = firstMatch(PHYSICAL_PATTERNS, productText);
+  if (physical || isDeclaredPhysical(input)) {
+    return {
+      productType: "physical",
+      physicalProductLikely: true,
+    };
+  }
+
+  const softDigital = firstMatch(SOFT_DIGITAL_PATTERNS, text);
+  if (softDigital) {
+    return {
+      productType: "digital",
+      physicalProductLikely: false,
+      exclusionReason: `${softDigital.label} のため無形商材と判定`,
+    };
+  }
+
+  const sourceHint = firstMatch(PHYSICAL_SOURCE_HINTS, sourceText);
+  if (sourceHint) {
+    return {
+      productType: "physical",
+      physicalProductLikely: true,
+    };
+  }
+
+  return {
+    productType: "unknown",
+    physicalProductLikely: false,
+    exclusionReason: "物理的に製造・発送できる商品か判断できないため対象外",
+  };
+}
+
+export function isPhysicalProductCandidate(
+  classification: ProductClassification
+) {
+  return (
+    classification.productType === "physical" &&
+    classification.physicalProductLikely
+  );
+}

@@ -1,4 +1,5 @@
 import { runMinimalScout } from "@/lib/agents/minimal-scout";
+import { sendScoutResultAlert } from "@/lib/lark-scout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,14 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const result = await runMinimalScout();
+  const result = await runMinimalScout({ triggeredBy: "cron" });
+
+  try {
+    await sendScoutResultAlert(result);
+  } catch (err) {
+    console.error("[cron/scout] Lark notification failed", err);
+  }
+
   return Response.json({
     ok: true,
     ...result,

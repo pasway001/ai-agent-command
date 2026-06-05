@@ -4,3 +4,4 @@ export * from "./agents";
 export * from "./runs";
 export * from "./queue";
 export * from "./skills";
+export * from "./scoutRuns";

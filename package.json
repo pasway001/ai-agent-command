@@ -29,7 +29,8 @@
     "scout:minimal": "tsx scripts/run-minimal-scout.ts",
     "scout:score": "tsx scripts/run-scoring.ts",
     "pipeline:demo": "tsx scripts/run-pipeline-demo.ts",
-    "user:create": "tsx scripts/create-user.ts"
+    "user:create": "tsx scripts/create-user.ts",
+    "test:scout": "tsx scripts/__tests__/run.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

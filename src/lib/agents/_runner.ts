@@ -32,6 +32,10 @@ export type AgentRunOpts<T> = {
   inputPayload?: Record<string, unknown>;
   webSearch?: boolean;
   webSearchMaxUses?: number;
+  /** Override model for this agent call (e.g. HAIKU_MODEL for cheap pre-filters). */
+  model?: string;
+  /** Override provider for this agent call (e.g. "perplexity" for research agents). */
+  provider?: import("../llm").LLMProvider;
 };
 
 /**
@@ -75,6 +79,8 @@ export async function runAgent<T>(opts: AgentRunOpts<T>): Promise<AgentRunOutcom
       mock: opts.mock,
       webSearch: opts.webSearch,
       webSearchMaxUses: opts.webSearchMaxUses,
+      model: opts.model,
+      provider: opts.provider,
     });
 
     await finishRun({
