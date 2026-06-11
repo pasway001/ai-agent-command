@@ -15,6 +15,23 @@ import {
   type ScoutRun,
   type Skill,
 } from "./schema";
+import { SCOUT_AXIS_KEYS } from "../scout-review";
+import type {
+  ScoutAxisScores,
+  ScoutEvidenceItem,
+  ScoutProductType,
+  ScoutReviewDetails,
+  ScoutVerdict,
+} from "../scout-review";
+
+export { SCOUT_AXIS_KEYS } from "../scout-review";
+export type {
+  ScoutAxisKey,
+  ScoutAxisScore,
+  ScoutAxisScores,
+  ScoutEvidenceItem,
+  ScoutReviewDetails,
+} from "../scout-review";
 
 export async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -24,60 +41,6 @@ export async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
     return null;
   }
 }
-
-type ScoutVerdict = "approve" | "reject" | "escalate";
-type ScoutProductType = "physical" | "digital" | "service" | "unknown";
-
-/** Phase B: 9-axis breakdown. score 0..1 + short Japanese rationale. */
-export type ScoutAxisScore = { score: number; rationale: string };
-export const SCOUT_AXIS_KEYS = [
-  "overseasTraction",
-  "crossSourceMentions",
-  "japanValidationLevel",
-  "domesticTrend",
-  "regulatoryRisk",
-  "competitionDensity",
-  "priceFit",
-  "physicalLikely",
-  "novelty",
-] as const;
-export type ScoutAxisKey = (typeof SCOUT_AXIS_KEYS)[number];
-export type ScoutAxisScores = Partial<Record<ScoutAxisKey, ScoutAxisScore>>;
-
-/** Phase B: evidence item with cited source URL. */
-export type ScoutEvidenceItem = {
-  claim: string;
-  sourceUrl: string;
-  snippet: string;
-};
-
-export type ScoutReviewDetails = {
-  sourceName: string | null;
-  sourceUrl: string | null;
-  description: string | null;
-  publishedAt: string | null;
-  category: string | null;
-  score: number | null;
-  verdict: ScoutVerdict | null;
-  rationale: string | null;
-  pros: string[];
-  cons: string[];
-  suggestedPriority: number | null;
-  provider: string | null;
-  model: string | null;
-  productType: ScoutProductType | null;
-  physicalProductLikely: boolean | null;
-  exclusionReason: string | null;
-  japanSummary: string | null;
-  domesticExamples: string[];
-  similarProductCount: number | null;
-  notYetInJapan: boolean | null;
-  // ---- Phase B additions ----
-  axisScores: ScoutAxisScores | null;
-  evidence: ScoutEvidenceItem[];
-  mentionSources: string[];
-  japanValidationLevel: number | null;
-};
 
 type JsonRecord = Record<string, unknown>;
 

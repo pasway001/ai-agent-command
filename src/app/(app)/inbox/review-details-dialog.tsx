@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { sourceBadgeClasses } from "@/components/source-badge";
+import { SCOUT_AXIS_KEYS } from "@/lib/scout-review";
 import type {
-  OpenApproval,
   ScoutAxisKey,
   ScoutAxisScores,
   ScoutEvidenceItem,
-} from "@/lib/db/queries";
-import { SCOUT_AXIS_KEYS } from "@/lib/db/queries";
+} from "@/lib/scout-review";
+import type { OpenApproval } from "@/lib/db/queries";
 
 type Review = OpenApproval["review"];
 type Verdict = NonNullable<Review["verdict"]>;

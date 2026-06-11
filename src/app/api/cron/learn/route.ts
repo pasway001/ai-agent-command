@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const result = await runLearningCycle();
+  await runLearningCycle();
 
   return Response.json({
     ok: true,
