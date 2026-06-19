@@ -1,6 +1,6 @@
 # Sales Board
 
-Generated at: 2026-06-19T12:20:03.480Z
+Generated at: 2026-06-19T12:48:03.847Z
 Products: 30
 
 ## Priority List
@@ -16,6 +16,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/burtran/burtran-smart-sleep-mask-recharge-in-minutes-anywhere/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 2. HUBi32 – The Cyberpunk ESP32-S3 Smart Desk & Dev Hub
@@ -29,6 +30,7 @@ Products: 30
 - Checks: PSE / 商標推奨
 - Risks: PSE確認が必要
 - Source: Kicktraq DIY Electronics <http://www.kicktraq.com/projects/bhawnacreator/hubi32/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 3. This Revolver-Style Titanium Driver’s Fidgety Design Is Both Eye and Hand Candy
@@ -42,6 +44,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Yanko Design <https://www.yankodesign.com/2026/06/18/this-revolver-style-titanium-drivers-fidgety-design-is-both-eye-and-hand-candy/?utm_source=rss&utm_medium=rss&utm_campaign=this-revolver-style-titanium-drivers-fidgety-design-is-both-eye-and-hand-candy>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 4. UKNIGHT: A Pixel Lantern Speaker for Your Desk
@@ -55,6 +58,7 @@ Products: 30
 - Checks: 技適 / 商標推奨
 - Risks: 技適確認が必要
 - Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/1702789293/uknight-a-pixel-lantern-speaker-for-your-desk/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 5. EVERLITE 3-in-1 Outdoor Flashlight
@@ -68,6 +72,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/23831970/everlite-3-in-1-outdoor-flashlight/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 6. FlexTorch Duo - The World's First Modular Flashlight
@@ -81,6 +86,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/kaman/flextorch-duo/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 7. Magical Trainers Pocket! ✦ Vol.2 Satchel Bags & Mini bags
@@ -94,6 +100,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Accessories <http://www.kicktraq.com/projects/polymernai/magical-trainers-pocket-adventure-bags/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 8. Pocket Shower: A Dual-Formula Reset for Anywhere
@@ -107,6 +114,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/pocketshower/pocket-shower-a-dual-formula-reset-for-anywhere/>
+- Sales: 未連絡
 - LP asset: 話題のPocket Shower: A Dual-Formu / risk=low
 
 ### 9. 3I Atlas Space Terminal - Digital Life AI Companion Hub
@@ -120,6 +128,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Hardware <http://www.kicktraq.com/projects/jessehang/3i-atlas-space-terminal-metaverse-ai-companion-hub/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 10. Atmos: Personal Air purifier built for real life
@@ -133,6 +142,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/ziggle-labs/atmos-1/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 11. Bruegel's Wearable Art: Enamel Pins, Pendants & Earrings
@@ -146,6 +156,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Accessories <http://www.kicktraq.com/projects/pincognita/bruegels-wearable-art-artisan-pins-pendants-and-earrings/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 12. Craftphilia: World's First Fully Automated Tufting Machine
@@ -159,6 +170,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq DIY Electronics <http://www.kicktraq.com/projects/207408103/craftphilia-worlds-first-fully-automated-tufting-machine/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 13. Critter Collector ITA Bag
@@ -172,6 +184,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Accessories <http://www.kicktraq.com/projects/pawmegranart/critter-collector-ita-bag/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 14. D1 Milano x Peter Tarka: The Impossible Watch
@@ -185,6 +198,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/840192188/d1-milano-x-peter-tarka-the-impossible-watch/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 15. DUSQ - The World’s Only Sleep Regulation System
@@ -198,6 +212,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/dusq/dusq-the-worlds-only-sleep-regulation-system/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 16. ILC1/7 VFD clock large Soviet vacuum fluorescent display DIY
@@ -211,6 +226,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq DIY Electronics <http://www.kicktraq.com/projects/oscilloscopeclocks/ilc1-7-vfd-clock-large-soviet-vacuum-fluorescent-display-diy/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 17. Kieslect AI NotePods 10S: Earbuds with AI Meeting Summaries
@@ -224,6 +240,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/kieslect/kieslect-ai-notepods-10s-earbuds-with-ai-meeting-summaries/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 18. Kinderbox – The Smart Audio Box for Children
@@ -237,6 +254,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/kinderbox/kinderbox-the-smart-audio-box-for-children/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 19. Lemoreleexpand: View Dock with Real-Time Status Display
@@ -250,6 +268,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Hardware <http://www.kicktraq.com/projects/1193373437/lemoreleexpand-smart-dock-with-real-time-status-display/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 20. MorningBlues SonicGlass A1 — Floating Lyric Speaker
@@ -263,6 +282,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/morningblues/morningblues-sonicglass-a1-floating-lyric-speaker/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 21. OFFROAD 35
@@ -276,6 +296,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Accessories <http://www.kicktraq.com/projects/theurbansociety/offroad-35/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 22. Pest Memo: The Smart Bed Bug Detector That Gives Back
@@ -289,6 +310,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Hardware <http://www.kicktraq.com/projects/pestmemo/pest-memo-the-smart-bed-bug-detector-that-gives-back/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 23. PlantSenso — Turns plant care into play
@@ -302,6 +324,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/sensoplantsensor/senso-smart-and-gamified-plant-sensor/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 24. Rokibot G7: Ultimate AWD Robotic Mower for Challenging Lawns
@@ -315,6 +338,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Hardware <http://www.kicktraq.com/projects/313444523/rokibot-ultimate-awd-robotic-mower-for-challenging-lawns/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 25. Smart Joystick Controller -ESP32-S3 for Robotics & Gaming
@@ -328,6 +352,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq DIY Electronics <http://www.kicktraq.com/projects/open-gadgets/smart-joystick-controller/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 26. Sou: Jewelry Wearable For Effortless Presence & Calm
@@ -341,6 +366,7 @@ Products: 30
 - Checks: 食品衛生 / 商標推奨
 - Risks: 食品衛生法・材質表示を確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/hannes-sou/sou-jewelry-wearable-for-effortless-presence-and-calm/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 27. StrokeKeeper: Your Golf Score Made Easy
@@ -354,6 +380,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/strokekeeper/strokekeeper-your-golf-score-made-easy/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 28. Sychedelic Headphones: From Stress to Focus In Minutes
@@ -367,6 +394,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/riarus/sychedelic-neuroacoustic-headphones/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 29. Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
@@ -380,6 +408,7 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/>
+- Sales: 未連絡
 - LP asset: not generated
 
 ### 30. Vimow: Wire-Free Vision AI Robot Lawn Mower
@@ -393,4 +422,5 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/vimow/vimow-the-boundary-free-visionary-mower/>
+- Sales: 未連絡
 - LP asset: not generated

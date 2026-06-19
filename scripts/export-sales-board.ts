@@ -4,6 +4,11 @@ import { dirname, isAbsolute, join } from "node:path";
 import { closeDb } from "../src/lib/db";
 import { getPipelineProductsByStage } from "../src/lib/db/queries";
 import type { Product } from "../src/lib/db/schema";
+import {
+  SALES_EXECUTION_LABELS,
+  followUpState,
+  salesExecutionFromMetadata,
+} from "../src/lib/sales/execution";
 
 type Args = {
   csv: string;
@@ -172,6 +177,11 @@ function toCsv(products: ProductWithSummary[]) {
     "lp_risk",
     "lp_faq_count",
     "lp_image_count",
+    "sales_status",
+    "supplier_email",
+    "next_follow_up_at",
+    "follow_up_state",
+    "sales_note",
   ];
 
   const rows = products.map((product, index) => {
@@ -179,6 +189,7 @@ function toCsv(products: ProductWithSummary[]) {
     const unit = grossProfitAtTarget(price.min);
     const flags = complianceFlags(product);
     const summary = product.pipelineSummary;
+    const execution = salesExecutionFromMetadata(product.metadata);
     return csvLine([
       index + 1,
       product.stage,
@@ -205,6 +216,11 @@ function toCsv(products: ProductWithSummary[]) {
       summary.lpRiskLevel,
       summary.lpFaqCount,
       summary.lpImageCount,
+      SALES_EXECUTION_LABELS[execution.status],
+      execution.supplierEmail,
+      execution.nextFollowUpAt,
+      followUpState(execution),
+      execution.note,
     ]);
   });
 
@@ -231,6 +247,7 @@ function toMarkdown(products: ProductWithSummary[]) {
     const price = priceRange(product);
     const unit = grossProfitAtTarget(price.min);
     const flags = complianceFlags(product);
+    const execution = salesExecutionFromMetadata(product.metadata);
     const checks = [
       flags.pse ? "PSE" : null,
       flags.giteki ? "技適" : null,
@@ -250,6 +267,7 @@ function toMarkdown(products: ProductWithSummary[]) {
       `- Checks: ${checks.join(" / ")}`,
       `- Risks: ${summary.salesRisks.join(" / ") || "-"}`,
       `- Source: ${summary.sourceName ?? "-"}${summary.sourceUrl ? ` <${summary.sourceUrl}>` : ""}`,
+      `- Sales: ${SALES_EXECUTION_LABELS[execution.status]}${execution.nextFollowUpAt ? ` / Next: ${execution.nextFollowUpAt.slice(0, 10)} / ${followUpState(execution)}` : ""}`,
       `- LP asset: ${summary.lpHeadline ? `${summary.lpHeadline} / risk=${summary.lpRiskLevel ?? "-"}` : "not generated"}`,
       ""
     );

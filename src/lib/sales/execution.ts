@@ -43,6 +43,8 @@ export type SalesExecution = {
   history: SalesExecutionEvent[];
 };
 
+export type SalesFollowUpState = "none" | "overdue" | "today" | "upcoming";
+
 export type SalesPipelineStage =
   | "scout"
   | "lp"
@@ -164,4 +166,34 @@ export function buildSalesExecutionUpdate(
     updatedBy: input.userId,
     history: [event, ...input.previous.history].slice(0, 30),
   };
+}
+
+export function followUpState(
+  execution: SalesExecution,
+  now = new Date()
+): SalesFollowUpState {
+  if (
+    !execution.nextFollowUpAt ||
+    execution.status === "uncontacted" ||
+    execution.status === "won" ||
+    execution.status === "lost"
+  ) {
+    return "none";
+  }
+
+  const followUp = new Date(execution.nextFollowUpAt);
+  if (Number.isNaN(followUp.getTime())) return "none";
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(followUp);
+  target.setHours(0, 0, 0, 0);
+
+  if (target.getTime() < today.getTime()) return "overdue";
+  if (target.getTime() === today.getTime()) return "today";
+  return "upcoming";
+}
+
+export function isActiveSalesStatus(status: SalesExecutionStatus) {
+  return status !== "uncontacted" && status !== "won" && status !== "lost";
 }

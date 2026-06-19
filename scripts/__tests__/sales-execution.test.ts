@@ -1,6 +1,8 @@
 import { assertDeepEqual, assertEqual, defineSuite } from "./_assert";
 import {
   buildSalesExecutionUpdate,
+  followUpState,
+  isActiveSalesStatus,
   nextStageForSalesStatus,
   parseSalesExecutionStatus,
   salesExecutionFromMetadata,
@@ -129,6 +131,35 @@ t.test("buildSalesExecutionUpdate keeps last contact timestamp for uncontacted r
   assertEqual(next.lastContactedAt, "2026-06-18T00:00:00.000Z");
   assertEqual(next.history.length, 2);
   assertEqual(next.history[0].status, "uncontacted");
+});
+
+t.test("followUpState classifies overdue, today, upcoming, and inactive", () => {
+  const now = new Date("2026-06-19T12:00:00.000+09:00");
+  const base = salesExecutionFromMetadata({
+    salesExecution: {
+      status: "contacted",
+      nextFollowUpAt: "2026-06-19T00:00:00.000+09:00",
+    },
+  });
+
+  assertEqual(followUpState(base, now), "today");
+  assertEqual(
+    followUpState({ ...base, nextFollowUpAt: "2026-06-18T00:00:00.000+09:00" }, now),
+    "overdue"
+  );
+  assertEqual(
+    followUpState({ ...base, nextFollowUpAt: "2026-06-20T00:00:00.000+09:00" }, now),
+    "upcoming"
+  );
+  assertEqual(followUpState({ ...base, status: "won" }, now), "none");
+});
+
+t.test("isActiveSalesStatus excludes terminal and uncontacted states", () => {
+  assertEqual(isActiveSalesStatus("contacted"), true);
+  assertEqual(isActiveSalesStatus("sample_requested"), true);
+  assertEqual(isActiveSalesStatus("uncontacted"), false);
+  assertEqual(isActiveSalesStatus("won"), false);
+  assertEqual(isActiveSalesStatus("lost"), false);
 });
 
 export const salesExecution = t;

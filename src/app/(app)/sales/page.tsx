@@ -25,6 +25,8 @@ import {
 import {
   SALES_EXECUTION_LABELS,
   SALES_EXECUTION_STATUSES,
+  followUpState,
+  isActiveSalesStatus,
   salesExecutionFromMetadata,
   type SalesExecution,
 } from "@/lib/sales/execution";
@@ -148,6 +150,19 @@ function salesStatusVariant(status: SalesExecution["status"]) {
   return "secondary";
 }
 
+function followUpLabel(state: ReturnType<typeof followUpState>) {
+  if (state === "overdue") return "期限超過";
+  if (state === "today") return "本日確認";
+  if (state === "upcoming") return "次回確認";
+  return null;
+}
+
+function followUpVariant(state: ReturnType<typeof followUpState>) {
+  if (state === "overdue") return "destructive";
+  if (state === "today") return "secondary";
+  return "outline";
+}
+
 export default async function SalesPage() {
   const grouped = await safe(() => getPipelineProductsByStage());
 
@@ -167,9 +182,15 @@ export default async function SalesPage() {
 
   const products = rankProducts(grouped).slice(0, 30);
   const regulatedCount = products.filter(regulationRequired).length;
-  const activeOutreachCount = products.filter((product) => {
-    const execution = salesExecutionFromMetadata(product.metadata);
-    return execution.status !== "uncontacted" && execution.status !== "lost";
+  const executions = products.map((product) =>
+    salesExecutionFromMetadata(product.metadata)
+  );
+  const activeOutreachCount = executions.filter((execution) =>
+    isActiveSalesStatus(execution.status)
+  ).length;
+  const dueFollowUpCount = executions.filter((execution) => {
+    const state = followUpState(execution);
+    return state === "overdue" || state === "today";
   }).length;
 
   return (
@@ -179,7 +200,7 @@ export default async function SalesPage() {
         description="リサーチ済み候補をスコア順に確認し、仕入れ打診へ進めます。"
       />
       <div className="flex-1 space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <SummaryCard
             label="候補"
             value={products.length}
@@ -198,10 +219,16 @@ export default async function SalesPage() {
             accent={regulatedCount > 0 ? "amber" : "muted"}
           />
           <SummaryCard
-            label="メール草案"
+            label="商談中"
             value={activeOutreachCount}
-            hint="商談進行中"
+            hint="連絡済み以降"
             accent="default"
+          />
+          <SummaryCard
+            label="本日対応"
+            value={dueFollowUpCount}
+            hint="期限超過/本日確認"
+            accent={dueFollowUpCount > 0 ? "rose" : "muted"}
           />
         </div>
 
@@ -213,6 +240,8 @@ export default async function SalesPage() {
             const flags = complianceFlags(product);
             const needs = complianceNeeds(product);
             const execution = salesExecutionFromMetadata(product.metadata);
+            const followUp = followUpState(execution);
+            const followUpText = followUpLabel(followUp);
             return (
               <article
                 key={product.id}
@@ -240,6 +269,11 @@ export default async function SalesPage() {
                       <Badge variant={salesStatusVariant(execution.status)}>
                         {SALES_EXECUTION_LABELS[execution.status]}
                       </Badge>
+                      {followUpText ? (
+                        <Badge variant={followUpVariant(followUp)}>
+                          {followUpText}
+                        </Badge>
+                      ) : null}
                     </div>
 
                     <div>
@@ -274,6 +308,14 @@ export default async function SalesPage() {
                     {summary.nextAction ? (
                       <p className="rounded-md bg-muted/50 px-3 py-2 text-xs leading-5 text-foreground/80">
                         次: {summary.nextAction}
+                      </p>
+                    ) : null}
+                    {execution.nextFollowUpAt ? (
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        次回確認:{" "}
+                        {new Date(execution.nextFollowUpAt).toLocaleDateString(
+                          "ja-JP"
+                        )}
                       </p>
                     ) : null}
                   </div>
