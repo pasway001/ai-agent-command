@@ -17,6 +17,13 @@ import {
 } from "./schema";
 import { SCOUT_AXIS_KEYS } from "../scout-review";
 import type {
+  AdAsset,
+  ComplianceAsset,
+  CsAsset,
+  FaqAsset,
+  ImageAsset,
+  LpCopyAsset,
+  OutreachAsset,
   ScoutAxisScores,
   ScoutEvidenceItem,
   ScoutProductType,
@@ -75,6 +82,14 @@ function stringArrayValue(record: JsonRecord | null, key: string) {
   return value.filter(
     (item): item is string => typeof item === "string" && item.trim().length > 0
   );
+}
+
+function recordArrayValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => asRecord(item))
+    .filter((item): item is JsonRecord => item !== null);
 }
 
 function verdictValue(record: JsonRecord | null, key: string): ScoutVerdict | null {
@@ -138,6 +153,87 @@ function extractMentionSources(signals: JsonRecord | null): string[] {
   return raw.filter((s): s is string => typeof s === "string" && s.length > 0);
 }
 
+function extractLpCopy(lp: JsonRecord | null): LpCopyAsset | null {
+  const copy = asRecord(lp?.copy);
+  if (!copy) return null;
+  return {
+    headline: stringValue(copy, "headline"),
+    subheadline: stringValue(copy, "subheadline"),
+    bullets: stringArrayValue(copy, "bullets"),
+    cta: stringValue(copy, "cta"),
+    problemStatement: stringValue(copy, "problemStatement"),
+    productSolution: stringValue(copy, "productSolution"),
+  };
+}
+
+function extractCompliance(lp: JsonRecord | null): ComplianceAsset | null {
+  const compliance = asRecord(lp?.compliance);
+  if (!compliance) return null;
+  return {
+    riskLevel: stringValue(compliance, "riskLevel"),
+    violations: recordArrayValue(compliance, "violations").map((item) => ({
+      snippet: stringValue(item, "snippet"),
+      regulation: stringValue(item, "regulation"),
+      severity: stringValue(item, "severity"),
+    })),
+    suggestions: stringArrayValue(compliance, "suggestions"),
+  };
+}
+
+function extractFaqs(lp: JsonRecord | null): FaqAsset[] {
+  return recordArrayValue(lp, "faqs")
+    .map((item): FaqAsset | null => {
+      const question = stringValue(item, "question");
+      const answer = stringValue(item, "answer");
+      if (!question || !answer) return null;
+      return { question, answer };
+    })
+    .filter((item): item is FaqAsset => item !== null);
+}
+
+function extractImages(lp: JsonRecord | null): ImageAsset[] {
+  return recordArrayValue(lp, "images").map((item) => ({
+    slot: stringValue(item, "slot"),
+    prompt: stringValue(item, "prompt"),
+    source: stringValue(item, "source"),
+  }));
+}
+
+function extractAd(metadata: JsonRecord | null): AdAsset | null {
+  const ad = asRecord(metadata?.ad);
+  const headlines = stringArrayValue(asRecord(ad?.headlines), "headlines");
+  const descriptions = stringArrayValue(asRecord(ad?.headlines), "descriptions");
+  if (headlines.length === 0 && descriptions.length === 0) return null;
+  return { headlines, descriptions };
+}
+
+function twoLangMessage(value: unknown): OutreachAsset["ja"] {
+  const record = asRecord(value);
+  return {
+    subject: stringValue(record, "subject"),
+    body: stringValue(record, "body"),
+  };
+}
+
+function extractOutreach(metadata: JsonRecord | null): OutreachAsset | null {
+  const messages = asRecord(asRecord(metadata?.outreach)?.messages);
+  if (!messages) return null;
+  return {
+    ja: twoLangMessage(messages.ja),
+    en: twoLangMessage(messages.en),
+  };
+}
+
+function extractCs(metadata: JsonRecord | null): CsAsset | null {
+  const templates = asRecord(asRecord(metadata?.cs)?.templates);
+  if (!templates) return null;
+  return {
+    inquiry: twoLangMessage(templates.inquiry),
+    complaint: twoLangMessage(templates.complaint),
+    refund: twoLangMessage(templates.refund),
+  };
+}
+
 function scoutReviewDetails(
   productMetadata: unknown,
   runInputPayload: unknown,
@@ -152,6 +248,7 @@ function scoutReviewDetails(
   const salesReadiness = asRecord(metadata?.salesReadiness);
   const overseas = asRecord(signals?.overseas);
   const japan = asRecord(signals?.japan);
+  const lp = asRecord(metadata?.lp);
   const japanAngle =
     stringValue(shortlist, "japanAngle") ?? stringValue(japan, "searchSummary");
 
@@ -201,6 +298,13 @@ function scoutReviewDetails(
       salesReadiness,
       "sourceReportGeneratedAt"
     ),
+    lpCopy: extractLpCopy(lp),
+    lpCompliance: extractCompliance(lp),
+    lpFaqs: extractFaqs(lp),
+    lpImages: extractImages(lp),
+    ad: extractAd(metadata),
+    outreach: extractOutreach(metadata),
+    cs: extractCs(metadata),
   };
 }
 

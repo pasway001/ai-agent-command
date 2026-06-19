@@ -23,6 +23,13 @@ import type {
   ScoutAxisKey,
   ScoutAxisScores,
   ScoutEvidenceItem,
+  AdAsset,
+  ComplianceAsset,
+  CsAsset,
+  FaqAsset,
+  ImageAsset,
+  LpCopyAsset,
+  OutreachAsset,
 } from "@/lib/scout-review";
 import type { OpenApproval } from "@/lib/db/queries";
 
@@ -328,6 +335,189 @@ function PointList({ items, empty }: { items: string[]; empty: string }) {
   );
 }
 
+function TextBlock({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null;
+}) {
+  if (!value) return null;
+  return (
+    <div className="rounded-md border bg-muted/20 p-3">
+      <div className="mb-1 text-xs font-medium text-muted-foreground">
+        {label}
+      </div>
+      <p className="whitespace-pre-wrap break-words text-sm leading-6">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function LpAssets({
+  copy,
+  compliance,
+  faqs,
+  images,
+}: {
+  copy: LpCopyAsset | null;
+  compliance: ComplianceAsset | null;
+  faqs: FaqAsset[];
+  images: ImageAsset[];
+}) {
+  if (!copy && !compliance && faqs.length === 0 && images.length === 0) {
+    return null;
+  }
+  return (
+    <section className="border-t pt-4">
+      <h3 className="mb-3 font-medium">生成済みLPアセット</h3>
+      <div className="space-y-3">
+        {copy ? (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              {copy.headline ? (
+                <Badge variant="outline">{copy.headline}</Badge>
+              ) : null}
+              {copy.cta ? <Badge>{copy.cta}</Badge> : null}
+            </div>
+            <dl className="space-y-2">
+              <DetailLine label="サブ見出し" value={copy.subheadline} />
+              <DetailLine label="問題提起" value={copy.problemStatement} />
+              <DetailLine label="解決提案" value={copy.productSolution} />
+            </dl>
+            {copy.bullets.length > 0 ? (
+              <div className="mt-3">
+                <PointList items={copy.bullets} empty="" />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {compliance ? (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-sm font-medium">コンプライアンス</span>
+              <Badge variant="outline">risk={compliance.riskLevel ?? "—"}</Badge>
+            </div>
+            {compliance.violations.length > 0 ? (
+              <ul className="space-y-1.5 text-sm">
+                {compliance.violations.map((violation, index) => (
+                  <li key={index} className="break-words">
+                    {violation.severity ?? "risk"}: {violation.snippet ?? "—"} /{" "}
+                    {violation.regulation ?? "—"}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <PointList
+              items={compliance.suggestions}
+              empty="コンプライアンス提案はありません。"
+            />
+          </div>
+        ) : null}
+
+        {faqs.length > 0 ? (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <h4 className="mb-2 text-sm font-medium">FAQ</h4>
+            <dl className="space-y-3">
+              {faqs.map((faq, index) => (
+                <div key={`${faq.question}-${index}`}>
+                  <dt className="text-sm font-medium">{faq.question}</dt>
+                  <dd className="mt-1 break-words text-sm text-muted-foreground">
+                    {faq.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+
+        {images.length > 0 ? (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <h4 className="mb-2 text-sm font-medium">画像案</h4>
+            <ul className="space-y-2">
+              {images.map((image, index) => (
+                <li key={`${image.slot}-${index}`} className="text-sm">
+                  <span className="font-medium">{image.slot ?? "image"}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    ({image.source ?? "source未定"})
+                  </span>
+                  <p className="mt-0.5 break-words text-muted-foreground">
+                    {image.prompt ?? "プロンプトなし"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function AdAssets({ ad }: { ad: AdAsset | null }) {
+  if (!ad) return null;
+  return (
+    <section className="border-t pt-4">
+      <h3 className="mb-3 font-medium">広告アセット</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <h4 className="mb-2 text-sm font-medium">見出し</h4>
+          <PointList items={ad.headlines} empty="見出しは未生成です。" />
+        </div>
+        <div>
+          <h4 className="mb-2 text-sm font-medium">説明文</h4>
+          <PointList items={ad.descriptions} empty="説明文は未生成です。" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OutreachAssets({ outreach }: { outreach: OutreachAsset | null }) {
+  if (!outreach) return null;
+  return (
+    <section className="border-t pt-4">
+      <h3 className="mb-3 font-medium">仕入れ連絡文面</h3>
+      <div className="grid gap-3 md:grid-cols-2">
+        <TextBlock
+          label={`JA: ${outreach.ja.subject ?? "件名なし"}`}
+          value={outreach.ja.body}
+        />
+        <TextBlock
+          label={`EN: ${outreach.en.subject ?? "No subject"}`}
+          value={outreach.en.body}
+        />
+      </div>
+    </section>
+  );
+}
+
+function CsAssets({ cs }: { cs: CsAsset | null }) {
+  if (!cs) return null;
+  return (
+    <section className="border-t pt-4">
+      <h3 className="mb-3 font-medium">CSテンプレート</h3>
+      <div className="grid gap-3">
+        <TextBlock
+          label={`通常問い合わせ: ${cs.inquiry.subject ?? "件名なし"}`}
+          value={cs.inquiry.body}
+        />
+        <TextBlock
+          label={`クレーム: ${cs.complaint.subject ?? "件名なし"}`}
+          value={cs.complaint.body}
+        />
+        <TextBlock
+          label={`返金/交換: ${cs.refund.subject ?? "件名なし"}`}
+          value={cs.refund.body}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function ReviewDetailsDialog({
   item,
   onClose,
@@ -414,6 +604,16 @@ export function ReviewDetailsDialog({
             </div>
           </div>
         </section>
+
+        <LpAssets
+          copy={review.lpCopy}
+          compliance={review.lpCompliance}
+          faqs={review.lpFaqs}
+          images={review.lpImages}
+        />
+        <AdAssets ad={review.ad} />
+        <OutreachAssets outreach={review.outreach} />
+        <CsAssets cs={review.cs} />
 
         <section className="border-t pt-4">
           <div className="mb-2 flex items-center gap-2">

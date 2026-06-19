@@ -26,7 +26,7 @@ pnpm dev
 - `.env.local` を生成または不足分だけ補完
 - ローカルPostgresを起動し、`pathway` role/databaseを作成
 - Drizzle schemaを非対話で適用
-- `scout.scoring` agentをseed
+- Scout/LP/広告/仕入れ/CSのローカル最小agentをseed
 - `reports/scout-products-2026-06-19.json` の30商品を `/inbox` 承認待ちへ投入
 - `pnpm env:check` でローカル実行に必要な設定を確認
 
@@ -53,7 +53,7 @@ LLM_PROVIDER=mock
 ```bash
 pnpm env:check
 pnpm local:db
-pnpm db:seed-minimal
+pnpm db:seed-minimal  # Scout/LP/広告/仕入れ/CSのローカル最小agentを投入
 ```
 
 Supabase Auth を使う場合だけ `pnpm db:apply-rls` を実行してください。System 2〜5 も同時運用する段階では `pnpm db:seed` で17件のエージェントを投入できます。

@@ -22,6 +22,47 @@ export type ScoutEvidenceItem = {
   snippet: string;
 };
 
+export type LpCopyAsset = {
+  headline: string | null;
+  subheadline: string | null;
+  bullets: string[];
+  cta: string | null;
+  problemStatement: string | null;
+  productSolution: string | null;
+};
+
+export type ComplianceAsset = {
+  riskLevel: string | null;
+  violations: Array<{
+    snippet: string | null;
+    regulation: string | null;
+    severity: string | null;
+  }>;
+  suggestions: string[];
+};
+
+export type FaqAsset = { question: string; answer: string };
+export type ImageAsset = {
+  slot: string | null;
+  prompt: string | null;
+  source: string | null;
+};
+
+export type AdAsset = {
+  headlines: string[];
+  descriptions: string[];
+};
+
+export type OutreachAsset = {
+  ja: { subject: string | null; body: string | null };
+  en: { subject: string | null; body: string | null };
+};
+
+export type CsAsset = Record<
+  "inquiry" | "complaint" | "refund",
+  { subject: string | null; body: string | null }
+>;
+
 export type ScoutReviewDetails = {
   sourceName: string | null;
   sourceUrl: string | null;
@@ -56,4 +97,11 @@ export type ScoutReviewDetails = {
   salesRisks: string[];
   importedAt: string | null;
   sourceReportGeneratedAt: string | null;
+  lpCopy: LpCopyAsset | null;
+  lpCompliance: ComplianceAsset | null;
+  lpFaqs: FaqAsset[];
+  lpImages: ImageAsset[];
+  ad: AdAsset | null;
+  outreach: OutreachAsset | null;
+  cs: CsAsset | null;
 };

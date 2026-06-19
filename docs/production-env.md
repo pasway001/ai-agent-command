@@ -15,8 +15,8 @@ pnpm dev
 
 `pnpm local:bootstrap` creates or completes `.env.local`, starts local
 Postgres when needed, creates the `pathway` role/database, applies the Drizzle
-schema, seeds `scout.scoring`, imports the bundled 30-product shortlist into
-`/inbox`, and runs `pnpm env:check`.
+schema, seeds the minimum Scout/LP/ad/outreach/CS pipeline agents, imports the
+bundled 30-product shortlist into `/inbox`, and runs `pnpm env:check`.
 
 ## 1. Core Runtime
 
