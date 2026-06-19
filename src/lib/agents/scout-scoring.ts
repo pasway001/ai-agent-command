@@ -13,13 +13,14 @@ import {
   getAttachedSkills,
   composeSystemPrompt,
 } from "../agent-sdk";
-import { runStructured } from "../llm";
+import { SONNET_MODEL, runStructured } from "../llm";
 import { getRecentDisagreements } from "../db/queries";
 import { approvalQueue } from "../db/schema";
 import {
   PRODUCT_TYPES,
   classifyProductText,
 } from "./product-classification";
+import { modelForProvider, resolveScoutClaudeProvider } from "./provider";
 
 export const AGENT_ID = "scout.scoring";
 
@@ -764,6 +765,7 @@ export async function scoreCandidate(
     // upstream Perplexity research stage (stored in signals.perplexity.evidence).
     // This ensures the same product always gets the same score given identical
     // signals (reproducibility guarantee).
+    const scoringProvider = resolveScoutClaudeProvider("SCOUT_SCORING_PROVIDER");
     const { data: rawData, usage, provider, model } = forcedRejection
       ? {
           data: forcedRejection as unknown,
@@ -778,6 +780,12 @@ export async function scoreCandidate(
           // Mock returns the full Phase-B ScoringOutput; cast through unknown
           // so the schema-inferred (looser) type accepts it.
           mock: () => mockScore(signals) as unknown as z.infer<typeof ScoringOutputSchema>,
+          provider: scoringProvider,
+          model: modelForProvider(
+            scoringProvider,
+            process.env.SCOUT_SCORING_MODEL ?? SONNET_MODEL,
+            "SCOUT_SCORING_PERPLEXITY_MODEL"
+          ),
           // webSearch intentionally omitted — scoring must be deterministic.
         });
 

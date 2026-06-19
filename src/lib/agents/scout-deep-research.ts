@@ -2,6 +2,7 @@ import { z } from "zod";
 import { mergeProductMetadata } from "../agent-sdk";
 import { runAgent } from "./_runner";
 import { SONNET_MODEL } from "../llm";
+import { modelForProvider, resolveScoutResearchProvider } from "./provider";
 
 /**
  * Deep-research agent (Stage 3.5) — runs only on products that scored >= threshold.
@@ -215,13 +216,19 @@ export async function runDeepResearch(
     .filter((l): l is string => l !== null)
     .join("\n");
 
+  const provider = resolveScoutResearchProvider("SCOUT_DEEP_RESEARCH_PROVIDER");
   const outcome = await runAgent({
     agentId: AGENT_ID,
     productId: input.productId,
     defaultSystemPrompt: DEEP_RESEARCH_SYSTEM_PROMPT,
     user: queryLines,
     schema: DeepResearchSchema,
-    model: SONNET_MODEL,
+    provider,
+    model: modelForProvider(
+      provider,
+      process.env.SCOUT_DEEP_RESEARCH_MODEL ?? SONNET_MODEL,
+      "SCOUT_DEEP_RESEARCH_PERPLEXITY_MODEL"
+    ),
     webSearch: true,
     webSearchMaxUses: Number(
       process.env.SCOUT_DEEP_RESEARCH_WEB_SEARCH_MAX_USES ?? "10"

@@ -71,6 +71,12 @@ pnpm dev
 pnpm scout:minimal
 ```
 
+DBや本番API設定がまだ無い状態で、公開ソースから先に30件の候補だけ確認する場合:
+
+```bash
+pnpm research:products -- --limit 30
+```
+
 ## 画面構成
 
 | ルート         | 内容                                                                 |
@@ -113,6 +119,7 @@ pnpm db:seed-minimal   # 最小Scoutのみ投入
 pnpm db:seed           # System 1〜5 全エージェント投入 (idempotent)
 pnpm scout:minimal     # 無料RSS → Claudeスコアリング → Inbox
 pnpm scout:score       # JSON候補ファイル → Claudeスコアリング → Inbox
+pnpm research:products # DBなしで公開ソースから商品候補を抽出
 ```
 
 ## 24/7運用 (Mac mini想定)

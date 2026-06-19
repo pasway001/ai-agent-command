@@ -9,14 +9,32 @@ import type {
  * inline parser. fetch() is called via globalThis so tests can stub it.
  */
 
+function repairMojibake(value: string) {
+  let current = value;
+  for (let i = 0; i < 2; i++) {
+    if (!/[ÃÂ]|â[\u0080-\u00bf]/.test(current)) break;
+    const repaired = Buffer.from(current, "latin1").toString("utf8");
+    if (repaired === current) break;
+    current = repaired;
+  }
+  return current;
+}
+
 function decodeHtml(value: string) {
-  return value
+  const decoded = value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_match, code: string) =>
+      String.fromCodePoint(Number(code))
+    )
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code: string) =>
+      String.fromCodePoint(Number.parseInt(code, 16))
+    );
+  return repairMojibake(decoded);
 }
 
 function stripTags(value: string) {

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { mergeProductMetadata, findOrCreateProduct } from "../agent-sdk";
 import { runAgent } from "./_runner";
 import { SONNET_MODEL } from "../llm";
+import { modelForProvider, resolveScoutResearchProvider } from "./provider";
 
 /**
  * Domestic market research agent (System 7).
@@ -281,13 +282,19 @@ export async function runPerplexityResearch(
     .filter((l): l is string => l !== null)
     .join("\n");
 
+  const provider = resolveScoutResearchProvider("SCOUT_RESEARCH_PROVIDER");
   const outcome = await runAgent({
     agentId: AGENT_ID,
     productId: product.id,
     defaultSystemPrompt: DEFAULT_SYSTEM_PROMPT,
     user: queryLines,
     schema: JpMarketResearchSchema,
-    model: SONNET_MODEL,
+    provider,
+    model: modelForProvider(
+      provider,
+      process.env.SCOUT_RESEARCH_MODEL ?? SONNET_MODEL,
+      "SCOUT_RESEARCH_PERPLEXITY_MODEL"
+    ),
     webSearch: true,
     webSearchMaxUses: Number(process.env.SCOUT_RESEARCH_WEB_SEARCH_MAX_USES ?? "8"),
     mock: () => mockResearch(input.title),

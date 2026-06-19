@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HAIKU_MODEL, runStructured } from "../llm";
+import { resolveScoutClaudeProvider } from "./provider";
 
 /**
  * Stage 1 lightweight pre-filter: runs Claude Haiku (~$0.001) before the
@@ -109,7 +110,7 @@ export async function runPrefilter(
     user,
     schema: PrefilterSchema,
     model: HAIKU_MODEL,
-    // No provider override — respects LLM_PROVIDER global env (mock in dev)
+    provider: resolveScoutClaudeProvider("SCOUT_PREFILTER_PROVIDER"),
     mock: () => mockPrefilter(title, description),
   });
 

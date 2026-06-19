@@ -28,6 +28,7 @@ const HARD_DIGITAL_PATTERNS: Pattern[] = [
   { pattern: /\b(web|mobile|ios|android)\s+apps?\b/i, label: "app" },
   { pattern: /\b(browser|chrome|safari|firefox)\s+extensions?\b/i, label: "browser extension" },
   { pattern: /\b(api|sdk)\b/i, label: "API/SDK" },
+  { pattern: /\b(stl|3d\s+printable|printable\s+files?|digital\s+files?|3d\s+models?|model\s+packs?)\b/i, label: "3D printable/digital file" },
   { pattern: /\b(ai\s+tools?|developer\s+tools?|devtools?)\b/i, label: "AI/developer tool" },
   { pattern: /\b(llm|chatgpt|claude|ai\s+(workspace|writing|research|coding|chat|editor|generator|automation|agent|apps?))\b/i, label: "AI software" },
   { pattern: /\b(chatbots?|copilots?)\b/i, label: "AI software" },
@@ -50,21 +51,27 @@ const SERVICE_PATTERNS: Pattern[] = [
   { pattern: /サービス|代行|コンサル|相談|スクール|教室|オンラインサロン|体験プラン/i, label: "service keyword" },
 ];
 
+const PROHIBITED_PATTERNS: Pattern[] = [
+  { pattern: /\b(sex\s+toys?|adult\s+toys?|erotic|pornographic)\b/i, label: "adult product" },
+  { pattern: /\b(firearms?|guns?|knives|knife|weapons?|ammo|ammunition)\b/i, label: "weapon-related product" },
+  { pattern: /\b(cbd|cannabis|nicotine|vape|tobacco)\b/i, label: "regulated product" },
+];
+
 const PHYSICAL_PATTERNS: Pattern[] = [
   {
     pattern:
-      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?)\b/i,
+      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|docks?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|sneakers?|sandals?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?|showers?|pillows?|shelves?|sensors?|humidifiers?|stationery|notebooks?)\b/i,
     label: "physical product keyword",
   },
   {
     pattern:
-      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|バッグ|リュック|財布|ケース|スタンド|マウント|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー/i,
+      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|バッグ|リュック|財布|ケース|スタンド|マウント|ドック|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー|シャワー|枕|ピロー|棚|センサー|加湿器|文具|ノート/i,
     label: "physical product keyword",
   },
 ];
 
 const PHYSICAL_SOURCE_HINTS: Pattern[] = [
-  { pattern: /kicktraq.*(gadgets|product design|hardware|camera equipment|diy electronics|fabrication tools|3d printing|accessories|apparel|footwear|jewelry|woodworking|diy|pottery|candles|stationery|crochet|embroidery|glass|knitting|letterpress|printing|quilts|weaving|ready-to-wear|pet fashion|ceramics|sculpture|textiles|tabletop games|playing cards)/i, label: "physical crowdfunding category" },
+  { pattern: /kicktraq.*(gadgets|product design|hardware|wearables|home|camera equipment|diy electronics|fabrication tools|accessories|apparel|footwear|jewelry|woodworking|diy|pottery|candles|stationery|crochet|embroidery|glass|knitting|letterpress|printing|quilts|weaving|ready-to-wear|pet fashion|ceramics|sculpture|textiles|tabletop games|playing cards)/i, label: "physical crowdfunding category" },
   { pattern: /yanko design/i, label: "product design source" },
   { pattern: /makuake/i, label: "crowdfunding source" },
 ];
@@ -116,6 +123,15 @@ export function classifyProductText(
       productType: "service",
       physicalProductLikely: false,
       exclusionReason: `${service.label} のため物販対象外`,
+    };
+  }
+
+  const prohibited = firstMatch(PROHIBITED_PATTERNS, text);
+  if (prohibited) {
+    return {
+      productType: "unknown",
+      physicalProductLikely: false,
+      exclusionReason: `${prohibited.label} のため日本向け販売候補から除外`,
     };
   }
 

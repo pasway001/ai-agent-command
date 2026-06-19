@@ -14,6 +14,7 @@ import {
 import {
   getEnabledSources,
   getFetcher,
+  rateLimitCheck,
   type NormalizedCandidate,
   type SourceConfig,
 } from "./sources";
@@ -602,7 +603,11 @@ export async function runMinimalScout(
   );
   const llmMax = positiveInt(
     opts.llmMax ?? Number(process.env.MINIMAL_SCOUT_LLM_MAX ?? ""),
-    Number.isFinite(legacyLimit) && legacyLimit > 0 ? legacyLimit : 15
+    Number.isFinite(legacyLimit) && legacyLimit > 0 ? legacyLimit : 30
+  );
+  const fetchTimeoutMs = positiveInt(
+    Number(process.env.SCOUT_FETCH_TIMEOUT_MS ?? ""),
+    15_000
   );
 
   // Resolve sources. Priority:
@@ -674,8 +679,19 @@ export async function runMinimalScout(
 
   const fetched = await Promise.allSettled(
     resolvedSources.map(async (src) => {
+      const rateLimit = rateLimitCheck(src);
+      if (!rateLimit.allowed) {
+        throw new Error(
+          `${src.name}: rate limited; retry after ${Math.ceil(
+            rateLimit.retryAfterMs / 1000
+          )}s`
+        );
+      }
       const fetcher = getFetcher(src.type);
-      const items = await fetcher(src, { limit: limitPerFeed });
+      const items = await fetcher(src, {
+        limit: limitPerFeed,
+        signal: AbortSignal.timeout(fetchTimeoutMs),
+      });
       return items;
     })
   );

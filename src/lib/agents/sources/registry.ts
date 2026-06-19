@@ -56,6 +56,69 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "Kicktraq Home",
     type: "rss",
     endpoint: "https://www.kicktraq.com/categories/design/home/latest.rss",
+    // Currently returns an empty feed from Kicktraq; keep listed for easy
+    // re-enable if the endpoint starts serving items again.
+    enabled: false,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-wearables",
+    name: "Kicktraq Wearables",
+    type: "rss",
+    endpoint:
+      "https://www.kicktraq.com/categories/technology/wearables/latest.rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-3d-printing",
+    name: "Kicktraq 3D Printing",
+    type: "rss",
+    endpoint:
+      "https://www.kicktraq.com/categories/technology/3d%20printing/latest.rss",
+    // This category is often STL/downloadable model packs rather than
+    // importable finished goods, so it is opt-in.
+    enabled: false,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-diy-electronics",
+    name: "Kicktraq DIY Electronics",
+    type: "rss",
+    endpoint:
+      "https://www.kicktraq.com/categories/technology/diy%20electronics/latest.rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-accessories",
+    name: "Kicktraq Accessories",
+    type: "rss",
+    endpoint:
+      "https://www.kicktraq.com/categories/fashion/accessories/latest.rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-footwear",
+    name: "Kicktraq Footwear",
+    type: "rss",
+    endpoint: "https://www.kicktraq.com/categories/fashion/footwear/latest.rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 60,
+  },
+  {
+    id: "kicktraq-fabrication-tools",
+    name: "Kicktraq Fabrication Tools",
+    type: "rss",
+    endpoint:
+      "https://www.kicktraq.com/categories/technology/fabrication%20tools/latest.rss",
     enabled: true,
     category: "primary",
     rateLimitPerHour: 60,
@@ -65,7 +128,9 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "BackerKit",
     type: "rss",
     endpoint: "https://www.backerkit.com/crowdfunding.rss",
-    enabled: true,
+    // BackerKit currently returns 403 to server-side fetches. Keep disabled
+    // until an authenticated or documented feed is available.
+    enabled: false,
     category: "primary",
     rateLimitPerHour: 60,
   },
@@ -83,7 +148,9 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "Reddit r/gadgets",
     type: "reddit_json",
     endpoint: "https://www.reddit.com/r/gadgets/new.json?limit=50",
-    enabled: true,
+    // Reddit blocks anonymous server fetches from many hosts with 403. Keep
+    // the fetcher and tests, but do not make production scout runs noisy.
+    enabled: false,
     category: "primary",
     rateLimitPerHour: 60,
   },
@@ -93,7 +160,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     type: "reddit_json",
     endpoint:
       "https://www.reddit.com/r/somethingimadeforyou/new.json?limit=50",
-    enabled: true,
+    enabled: false,
     category: "primary",
     rateLimitPerHour: 60,
   },
@@ -124,7 +191,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     // RSS URL is unverified — if it 404s the run surfaces the error in
     // perFeed.errorMessage. Used as Japan reference (makuake validation).
     endpoint: "https://greenfunding.jp/feed",
-    enabled: true,
+    enabled: false,
     category: "japan_reference",
     rateLimitPerHour: 30,
   },

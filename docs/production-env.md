@@ -37,7 +37,7 @@ These are not strictly required to render the UI, but they are required for prod
 | `LARK_WEBHOOK_TIMEOUT_MS` | Local default | Recommended: `5000`. |
 | `BUDGET_SOFT_THRESHOLD_PCT` | Local default | Recommended: `80`. |
 | `BUDGET_HARD_THRESHOLD_PCT` | Local default | Recommended: `100`. |
-| `LLM_PROVIDER` | Local default | Use `mock` for dry runs, or `anthropic` for Claude-powered agents. |
+| `LLM_PROVIDER` | Local default | Use `mock` for full dry runs, or `anthropic` for Claude-powered agents. Scout stages can be overridden by `SCOUT_*_PROVIDER`. |
 
 ## 3. AI Provider Keys
 
@@ -57,7 +57,7 @@ These are needed before the agents stop being deterministic mocks. Keep the scop
 | `LOCAL_LLM_BASE_URL` | Ollama / LM Studio / vLLM | Optional future local model endpoint. |
 | `LOCAL_LLM_MODEL` | Local model runtime | Optional future local model name, for example Qwen. |
 
-Do not add Perplexity, Apify, Make, Keepa, SellerSprite, Gmail, SendGrid, or Postmark keys until the corresponding implementation is enabled. They are useful later, but they are not required for the current production UI.
+Perplexity is enabled for the scout research stage. If `PERPLEXITY_API_KEY` is set, `scout.perplexity_jp_market` uses `sonar-pro`; otherwise it falls back to Claude web_search when Anthropic is configured, then to deterministic mock for local dry runs. Do not add Apify, Make, Keepa, SellerSprite, Gmail, SendGrid, or Postmark keys until the corresponding implementation is enabled.
 
 ## 4. Minimum-Cost Setup
 
@@ -94,9 +94,16 @@ to the in-app Inbox. Paid research APIs are intentionally not required.
 
 | Key | Notes |
 | --- | --- |
-| `SCOUT_OVERSEAS_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to Kicktraq Gadgets, Kicktraq Product Design, and Yanko Design. Product Hunt is intentionally not a default source because it is mostly software/app launches. |
+| `SCOUT_OVERSEAS_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to the source registry (Kicktraq physical-product categories, Yanko Design, HN Show, Product Hunt when token exists). |
 | `SCOUT_JAPAN_RSS_FEEDS` | Optional comma-separated `Name|URL` feeds. Defaults to Makuake RSS. |
-| `MINIMAL_SCOUT_LIMIT` | Max physical-product candidates scored per run. Recommended: `3` at first. |
+| `MINIMAL_SCOUT_LIMIT` | Legacy combined limit. Use only when the two newer limits below are unset. |
+| `MINIMAL_SCOUT_LIMIT_PER_FEED` | Raw items fetched from each source. Recommended: `20` to start, `30` for 30-product hunts. |
+| `MINIMAL_SCOUT_LLM_MAX` | Total merged candidates sent through prefilter/research/scoring. Default: `30`. |
+| `SCOUT_FETCH_TIMEOUT_MS` | Per-source fetch timeout. Default: `15000`. |
+| `SCOUT_PREFILTER_PROVIDER` | Optional override for prefilter. Defaults to Anthropic when configured, else mock. |
+| `SCOUT_SCORING_PROVIDER` | Optional override for scoring. Defaults to Anthropic when configured, else mock. |
+| `SCOUT_RESEARCH_PROVIDER` | Optional override for Japan market research. Defaults to Perplexity when configured, else Anthropic, else mock. |
+| `SCOUT_DEEP_RESEARCH_PROVIDER` | Optional override for high-score deep research. Defaults to Perplexity when configured, else Anthropic, else mock. |
 
 ## 6. Vercel Cron
 
@@ -112,6 +119,8 @@ Run:
 pnpm env:check
 pnpm env:check:production
 pnpm env:check:ai
+pnpm research:products -- --limit 30
 ```
 
 `env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.
+`research:products` is a DB-free live-source shortlist command for quick product discovery; the DB-backed production path remains `pnpm scout:minimal`.
