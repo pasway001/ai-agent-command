@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { HAIKU_MODEL, runStructured } from "../llm";
 import { resolveScoutClaudeProvider } from "./provider";
+import {
+  classifyProductText,
+  isPhysicalProductCandidate,
+} from "./product-classification";
 
 /**
  * Stage 1 lightweight pre-filter: runs Claude Haiku (~$0.001) before the
@@ -58,10 +62,12 @@ function hashStr(s: string): number {
 function mockPrefilter(title: string, description?: string): PrefilterResult {
   const seed = hashStr(`pf:${title}`);
   const text = `${title} ${description ?? ""}`.toLowerCase();
+  const classification = classifyProductText({ title, description });
+  const physicalLikely = isPhysicalProductCandidate(classification);
 
   const softwareKeywords = ["app", "software", "saas", "platform", "ai tool", "extension", "api"];
   const isSoftware = softwareKeywords.some((k) => text.includes(k));
-  if (isSoftware) {
+  if (isSoftware && !physicalLikely) {
     return {
       viable: false,
       confidence: "high",
@@ -82,12 +88,14 @@ function mockPrefilter(title: string, description?: string): PrefilterResult {
   }
 
   const viabilities = [true, true, true, false] as const;
-  const viable = viabilities[seed % viabilities.length];
+  const viable = physicalLikely ? true : viabilities[seed % viabilities.length];
   return {
     viable,
-    confidence: "medium",
-    reason: viable ? "基本条件を満たす物理商品と判断" : "差別化ポイントが不明確または汎用品の可能性",
-    blockers: viable ? [] : ["low_differentiation"],
+    confidence: physicalLikely ? "low" : "medium",
+    reason: viable
+      ? "基本条件を満たす物理商品と判断"
+      : classification.exclusionReason ?? "差別化ポイントが不明確または汎用品の可能性",
+    blockers: viable ? [] : [classification.exclusionReason ?? "low_differentiation"],
   };
 }
 

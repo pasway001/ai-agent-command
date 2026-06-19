@@ -60,12 +60,12 @@ const PROHIBITED_PATTERNS: Pattern[] = [
 const PHYSICAL_PATTERNS: Pattern[] = [
   {
     pattern:
-      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|docks?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|sneakers?|sandals?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?|showers?|pillows?|shelves?|sensors?|humidifiers?|stationery|notebooks?)\b/i,
+      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bulbs?|projectors?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|docks?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|sneakers?|sandals?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?|showers?|pillows?|shelves?|sensors?|humidifiers?|stationery|notebooks?)\b/i,
     label: "physical product keyword",
   },
   {
     pattern:
-      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|バッグ|リュック|財布|ケース|スタンド|マウント|ドック|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー|シャワー|枕|ピロー|棚|センサー|加湿器|文具|ノート/i,
+      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|電球|プロジェクター|バッグ|リュック|財布|ケース|スタンド|マウント|ドック|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー|シャワー|枕|ピロー|棚|センサー|加湿器|文具|ノート/i,
     label: "physical product keyword",
   },
 ];
@@ -108,24 +108,6 @@ export function classifyProductText(
   const sourceText = input.source ?? "";
   const text = compactText([productText, sourceText]);
 
-  const hardDigital = firstMatch(HARD_DIGITAL_PATTERNS, text);
-  if (hardDigital) {
-    return {
-      productType: "digital",
-      physicalProductLikely: false,
-      exclusionReason: `${hardDigital.label} のため無形商材と判定`,
-    };
-  }
-
-  const service = firstMatch(SERVICE_PATTERNS, text);
-  if (service) {
-    return {
-      productType: "service",
-      physicalProductLikely: false,
-      exclusionReason: `${service.label} のため物販対象外`,
-    };
-  }
-
   const prohibited = firstMatch(PROHIBITED_PATTERNS, text);
   if (prohibited) {
     return {
@@ -163,10 +145,29 @@ export function classifyProductText(
   }
 
   const physical = firstMatch(PHYSICAL_PATTERNS, productText);
-  if (physical || isDeclaredPhysical(input)) {
+  const sourceHint = firstMatch(PHYSICAL_SOURCE_HINTS, sourceText);
+  if (physical || sourceHint || isDeclaredPhysical(input)) {
     return {
       productType: "physical",
       physicalProductLikely: true,
+    };
+  }
+
+  const hardDigital = firstMatch(HARD_DIGITAL_PATTERNS, text);
+  if (hardDigital) {
+    return {
+      productType: "digital",
+      physicalProductLikely: false,
+      exclusionReason: `${hardDigital.label} のため無形商材と判定`,
+    };
+  }
+
+  const service = firstMatch(SERVICE_PATTERNS, text);
+  if (service) {
+    return {
+      productType: "service",
+      physicalProductLikely: false,
+      exclusionReason: `${service.label} のため物販対象外`,
     };
   }
 
@@ -176,14 +177,6 @@ export function classifyProductText(
       productType: "digital",
       physicalProductLikely: false,
       exclusionReason: `${softDigital.label} のため無形商材と判定`,
-    };
-  }
-
-  const sourceHint = firstMatch(PHYSICAL_SOURCE_HINTS, sourceText);
-  if (sourceHint) {
-    return {
-      productType: "physical",
-      physicalProductLikely: true,
     };
   }
 

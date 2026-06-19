@@ -14,6 +14,7 @@ import { runSuites, type TestSuite } from "./_assert";
 import { reddit } from "./sources/reddit.test";
 import { hn } from "./sources/hackernews.test";
 import { scoring } from "./scout-scoring.test";
+import { scoutPrefilter } from "./scout-prefilter.test";
 import { minimal } from "./minimal-scout.test";
 import { salesExecution } from "./sales-execution.test";
 import { salesTasks } from "./sales-tasks.test";
@@ -23,6 +24,7 @@ const suites: TestSuite[] = [
   reddit.suite,
   hn.suite,
   scoring.suite,
+  scoutPrefilter.suite,
   minimal.suite,
   salesExecution.suite,
   salesTasks.suite,

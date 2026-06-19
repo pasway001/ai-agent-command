@@ -18,6 +18,28 @@ const seedAgents: NewAgent[] = [
     monthlyBudgetUsd: "20",
   },
   {
+    id: "scout.perplexity_jp_market",
+    name: "国内市場リサーチ",
+    systemNo: 1,
+    agentType: "scout",
+    description:
+      "候補商品の国内競合、クラファン履歴、規制リスク、需要トレンドを調査する",
+    concurrencyLimit: 1,
+    dailyBudgetUsd: "2",
+    monthlyBudgetUsd: "40",
+  },
+  {
+    id: "scout.deep_research",
+    name: "高スコア候補ディープリサーチ",
+    systemNo: 1,
+    agentType: "scout",
+    description:
+      "高スコア商品のターゲット、価格、Makuake可能性、輸入リスクを精査する",
+    concurrencyLimit: 1,
+    dailyBudgetUsd: "2",
+    monthlyBudgetUsd: "40",
+  },
+  {
     id: "lp.copy_writer",
     name: "LPコピー生成",
     systemNo: 2,

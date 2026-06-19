@@ -1,25 +1,26 @@
 # Local Acceptance Report
 
-Generated at: 2026-06-19T13:17:45.894Z
+Generated at: 2026-06-19T13:23:55.851Z
 
 ## Summary
 
-- Passed: 36
+- Passed: 37
 - Warnings: 0
 - Failures: 0
-- Total checks: 36
+- Total checks: 37
 
 ## Checks
 
 | Status | Check | Detail |
 | --- | --- | --- |
-| PASS | DB商品数 | 30 non-smoke product(s), stages={"scout":29,"lp":1} |
+| PASS | DB商品数 | 35 non-smoke product(s), stages={"scout":34,"lp":1} |
 | PASS | スコア付き商品 | 30/30 products include shortlist.score |
-| PASS | 一次ソースURL | 30/30 products include source URL |
+| PASS | 一次ソースURL | 32/30 products include source URL |
 | PASS | 次アクション | 30/30 products include next action |
 | PASS | 連絡先候補同期 | 30/30 products include synced contact leads |
-| PASS | エージェント | 8 agent(s) seeded |
-| PASS | 承認待ち | 30 open approval(s); can be lower after real review work |
+| PASS | エージェント | 10 agent(s) seeded |
+| PASS | 承認待ち | 32 open approval(s); can be lower after real review work |
+| PASS | 最新Scout実行 | run=ed346d54-8568-49e8-97f2-2dcdb36591f2 scored=3 enqueued=2 errors=0 |
 | PASS | 実装ファイル src/app/(app)/sales/page.tsx | src/app/(app)/sales/page.tsx |
 | PASS | 実装ファイル src/app/(app)/sales/actions.ts | src/app/(app)/sales/actions.ts |
 | PASS | 実装ファイル src/lib/sales/execution.ts | src/lib/sales/execution.ts |

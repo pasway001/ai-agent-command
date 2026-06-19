@@ -2,9 +2,9 @@ import "./_loadenv";
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
-import { count, isNull } from "drizzle-orm";
+import { count, desc, isNull } from "drizzle-orm";
 import { closeDb, db } from "../src/lib/db";
-import { agents, approvalQueue, products } from "../src/lib/db/schema";
+import { agents, approvalQueue, products, scoutRuns } from "../src/lib/db/schema";
 import { contactLeadsFromMetadata } from "../src/lib/sales/contact-leads";
 
 type CheckStatus = "pass" | "warn" | "fail";
@@ -190,6 +190,16 @@ async function main() {
     .select({ c: count() })
     .from(approvalQueue)
     .where(isNull(approvalQueue.decision));
+  const [latestScoutRun] = await db
+    .select({
+      id: scoutRuns.id,
+      scoredCount: scoutRuns.scoredCount,
+      enqueuedCount: scoutRuns.enqueuedCount,
+      errors: scoutRuns.errors,
+    })
+    .from(scoutRuns)
+    .orderBy(desc(scoutRuns.startedAt))
+    .limit(1);
 
   const productsWithScore = nonSmokeProducts.filter((product) => {
     const metadata = asRecord(product.metadata);
@@ -243,13 +253,25 @@ async function main() {
     ),
     check(
       "エージェント",
-      Number(agentCount?.c ?? 0) >= 8,
+      Number(agentCount?.c ?? 0) >= 10,
       `${Number(agentCount?.c ?? 0)} agent(s) seeded`
     ),
     warn(
       "承認待ち",
       Number(openApprovalCount?.c ?? 0) >= 30,
       `${Number(openApprovalCount?.c ?? 0)} open approval(s); can be lower after real review work`
+    ),
+    warn(
+      "最新Scout実行",
+      Boolean(
+        latestScoutRun &&
+          Number(latestScoutRun.scoredCount ?? 0) > 0 &&
+          Array.isArray(latestScoutRun.errors) &&
+          latestScoutRun.errors.length === 0
+      ),
+      latestScoutRun
+        ? `run=${latestScoutRun.id} scored=${Number(latestScoutRun.scoredCount ?? 0)} enqueued=${Number(latestScoutRun.enqueuedCount ?? 0)} errors=${Array.isArray(latestScoutRun.errors) ? latestScoutRun.errors.length : "unknown"}`
+        : "no scout run recorded; run pnpm scout:minimal to verify the research agent"
     )
   );
 
