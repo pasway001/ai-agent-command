@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CircleDollarSign,
   ExternalLink,
@@ -25,9 +26,14 @@ import {
 import {
   SALES_EXECUTION_LABELS,
   SALES_EXECUTION_STATUSES,
+  SALES_EXECUTION_VIEWS,
+  SALES_EXECUTION_VIEW_LABELS,
   followUpState,
   isActiveSalesStatus,
+  parseSalesExecutionView,
+  salesExecutionMatchesView,
   salesExecutionFromMetadata,
+  type SalesExecutionView,
   type SalesExecution,
 } from "@/lib/sales/execution";
 import { updateSalesExecution } from "./actions";
@@ -36,6 +42,13 @@ export const dynamic = "force-dynamic";
 
 type GroupedProducts = Awaited<ReturnType<typeof getPipelineProductsByStage>>;
 type SalesProduct = GroupedProducts[Product["stage"]][number];
+type SearchParams = Promise<{ view?: string }>;
+type SalesProductRow = {
+  rank: number;
+  product: SalesProduct;
+  execution: SalesExecution;
+  followUp: ReturnType<typeof followUpState>;
+};
 
 function rankProducts(grouped: GroupedProducts) {
   return Object.values(grouped)
@@ -163,7 +176,28 @@ function followUpVariant(state: ReturnType<typeof followUpState>) {
   return "outline";
 }
 
-export default async function SalesPage() {
+function salesViewHref(view: SalesExecutionView) {
+  return view === "all" ? "/sales" : `/sales?view=${view}`;
+}
+
+function countForView(
+  rows: SalesProductRow[],
+  view: SalesExecutionView,
+  now: Date
+) {
+  return rows.filter((row) =>
+    salesExecutionMatchesView(row.execution, view, now)
+  ).length;
+}
+
+export default async function SalesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const { view } = await searchParams;
+  const activeView = parseSalesExecutionView(view);
+  const now = new Date();
   const grouped = await safe(() => getPipelineProductsByStage());
 
   if (grouped === null) {
@@ -181,16 +215,24 @@ export default async function SalesPage() {
   }
 
   const products = rankProducts(grouped).slice(0, 30);
-  const regulatedCount = products.filter(regulationRequired).length;
-  const executions = products.map((product) =>
-    salesExecutionFromMetadata(product.metadata)
+  const rows = products.map((product, index) => {
+    const execution = salesExecutionFromMetadata(product.metadata);
+    return {
+      rank: index + 1,
+      product,
+      execution,
+      followUp: followUpState(execution, now),
+    };
+  });
+  const visibleRows = rows.filter((row) =>
+    salesExecutionMatchesView(row.execution, activeView, now)
   );
-  const activeOutreachCount = executions.filter((execution) =>
-    isActiveSalesStatus(execution.status)
+  const regulatedCount = products.filter(regulationRequired).length;
+  const activeOutreachCount = rows.filter((row) =>
+    isActiveSalesStatus(row.execution.status)
   ).length;
-  const dueFollowUpCount = executions.filter((execution) => {
-    const state = followUpState(execution);
-    return state === "overdue" || state === "today";
+  const dueFollowUpCount = rows.filter((row) => {
+    return row.followUp === "overdue" || row.followUp === "today";
   }).length;
 
   return (
@@ -232,15 +274,38 @@ export default async function SalesPage() {
           />
         </div>
 
+        <div className="flex flex-wrap gap-2 rounded-md border bg-muted/20 p-2">
+          {SALES_EXECUTION_VIEWS.map((viewKey) => {
+            const active = viewKey === activeView;
+            return (
+              <Button
+                key={viewKey}
+                nativeButton={false}
+                render={<Link href={salesViewHref(viewKey)} />}
+                variant={active ? "default" : "outline"}
+                size="sm"
+              >
+                {SALES_EXECUTION_VIEW_LABELS[viewKey]}
+                <span className="font-mono text-[11px]">
+                  {countForView(rows, viewKey, now)}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
         <div className="space-y-3">
-          {products.map((product, index) => {
+          {visibleRows.length === 0 ? (
+            <div className="rounded-md border bg-background p-8 text-center text-sm text-muted-foreground">
+              該当商品なし
+            </div>
+          ) : null}
+          {visibleRows.map(({ rank, product, execution, followUp }) => {
             const summary = product.pipelineSummary;
             const price = priceRange(product);
             const unit = grossProfitAtTarget(price.min);
             const flags = complianceFlags(product);
             const needs = complianceNeeds(product);
-            const execution = salesExecutionFromMetadata(product.metadata);
-            const followUp = followUpState(execution);
             const followUpText = followUpLabel(followUp);
             return (
               <article
@@ -251,7 +316,7 @@ export default async function SalesPage() {
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="secondary" className="font-mono">
-                        #{index + 1}
+                        #{rank}
                       </Badge>
                       {summary.shortlistScore !== null ? (
                         <Badge variant="outline" className="font-mono">

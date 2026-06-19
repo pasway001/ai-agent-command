@@ -20,6 +20,26 @@ export const SALES_EXECUTION_LABELS: Record<SalesExecutionStatus, string> = {
   lost: "見送り",
 };
 
+export const SALES_EXECUTION_VIEWS = [
+  "all",
+  "uncontacted",
+  "due",
+  "active",
+  "won",
+  "lost",
+] as const;
+
+export type SalesExecutionView = (typeof SALES_EXECUTION_VIEWS)[number];
+
+export const SALES_EXECUTION_VIEW_LABELS: Record<SalesExecutionView, string> = {
+  all: "すべて",
+  uncontacted: "未連絡",
+  due: "本日対応",
+  active: "商談中",
+  won: "仕入れOK",
+  lost: "見送り",
+};
+
 export type SalesExecutionEvent = {
   id: string;
   status: SalesExecutionStatus;
@@ -85,6 +105,13 @@ export function parseSalesExecutionStatus(
   return SALES_EXECUTION_STATUSES.includes(value as SalesExecutionStatus)
     ? (value as SalesExecutionStatus)
     : null;
+}
+
+export function parseSalesExecutionView(value: unknown): SalesExecutionView {
+  if (typeof value !== "string") return "all";
+  return SALES_EXECUTION_VIEWS.includes(value as SalesExecutionView)
+    ? (value as SalesExecutionView)
+    : "all";
 }
 
 function salesEventFromRecord(record: JsonRecord): SalesExecutionEvent | null {
@@ -196,4 +223,18 @@ export function followUpState(
 
 export function isActiveSalesStatus(status: SalesExecutionStatus) {
   return status !== "uncontacted" && status !== "won" && status !== "lost";
+}
+
+export function salesExecutionMatchesView(
+  execution: SalesExecution,
+  view: SalesExecutionView,
+  now = new Date()
+) {
+  if (view === "all") return true;
+  if (view === "uncontacted") return execution.status === "uncontacted";
+  if (view === "active") return isActiveSalesStatus(execution.status);
+  if (view === "won") return execution.status === "won";
+  if (view === "lost") return execution.status === "lost";
+  const state = followUpState(execution, now);
+  return state === "overdue" || state === "today";
 }

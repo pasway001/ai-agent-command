@@ -4,7 +4,9 @@ import {
   followUpState,
   isActiveSalesStatus,
   nextStageForSalesStatus,
+  parseSalesExecutionView,
   parseSalesExecutionStatus,
+  salesExecutionMatchesView,
   salesExecutionFromMetadata,
 } from "../../src/lib/sales/execution";
 
@@ -18,6 +20,13 @@ t.test("parseSalesExecutionStatus accepts known statuses", () => {
 t.test("parseSalesExecutionStatus rejects unknown values", () => {
   assertEqual(parseSalesExecutionStatus("pending"), null);
   assertEqual(parseSalesExecutionStatus(null), null);
+});
+
+t.test("parseSalesExecutionView falls back to all", () => {
+  assertEqual(parseSalesExecutionView("due"), "due");
+  assertEqual(parseSalesExecutionView("active"), "active");
+  assertEqual(parseSalesExecutionView("other"), "all");
+  assertEqual(parseSalesExecutionView(undefined), "all");
 });
 
 t.test("salesExecutionFromMetadata returns defaults for empty metadata", () => {
@@ -160,6 +169,30 @@ t.test("isActiveSalesStatus excludes terminal and uncontacted states", () => {
   assertEqual(isActiveSalesStatus("uncontacted"), false);
   assertEqual(isActiveSalesStatus("won"), false);
   assertEqual(isActiveSalesStatus("lost"), false);
+});
+
+t.test("salesExecutionMatchesView filters by execution view", () => {
+  const now = new Date("2026-06-19T12:00:00.000+09:00");
+  const due = salesExecutionFromMetadata({
+    salesExecution: {
+      status: "contacted",
+      nextFollowUpAt: "2026-06-19T00:00:00.000+09:00",
+    },
+  });
+  const uncontacted = salesExecutionFromMetadata({
+    salesExecution: { status: "uncontacted" },
+  });
+  const won = salesExecutionFromMetadata({
+    salesExecution: { status: "won" },
+  });
+
+  assertEqual(salesExecutionMatchesView(due, "all", now), true);
+  assertEqual(salesExecutionMatchesView(due, "due", now), true);
+  assertEqual(salesExecutionMatchesView(due, "active", now), true);
+  assertEqual(salesExecutionMatchesView(uncontacted, "uncontacted", now), true);
+  assertEqual(salesExecutionMatchesView(uncontacted, "active", now), false);
+  assertEqual(salesExecutionMatchesView(won, "won", now), true);
+  assertEqual(salesExecutionMatchesView(won, "due", now), false);
 });
 
 export const salesExecution = t;
