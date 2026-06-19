@@ -1,8 +1,12 @@
 import { assertDeepEqual, assertEqual, defineSuite } from "./_assert";
 import {
+  contactLeadsFromMetadata,
   extractContactLeadCandidates,
   extractEmails,
   extractLinks,
+  preferredContactEmail,
+  preferredContactUrl,
+  primaryContactLead,
 } from "../../src/lib/sales/contact-leads";
 
 const t = defineSuite("contact-leads");
@@ -55,6 +59,38 @@ t.test("extractContactLeadCandidates skips aggregator chrome links", () => {
   assertEqual(leads.length, 1);
   assertEqual(leads[0].kind, "crowdfunding");
   assertEqual(leads[0].value, "https://www.kickstarter.com/profile/realmaker");
+});
+
+t.test("contactLeadsFromMetadata extracts synced contact candidates", () => {
+  const snapshot = contactLeadsFromMetadata({
+    contactLeads: {
+      fetchedAt: "2026-06-19T00:00:00.000Z",
+      sourceUrl: "https://example.test/story",
+      fetchStatus: "ok:200",
+      candidates: [
+        {
+          kind: "email",
+          value: "hello@brand.example",
+          label: "hello@brand.example",
+          score: 100,
+        },
+        {
+          kind: "crowdfunding",
+          value: "https://www.kickstarter.com/profile/brand",
+          label: "Creator",
+          score: 88,
+        },
+      ],
+    },
+  });
+
+  assertEqual(snapshot?.fetchStatus, "ok:200");
+  assertEqual(primaryContactLead(snapshot)?.value, "hello@brand.example");
+  assertEqual(preferredContactEmail(snapshot), "hello@brand.example");
+  assertEqual(
+    preferredContactUrl(snapshot),
+    "https://www.kickstarter.com/profile/brand"
+  );
 });
 
 export const contactLeads = t;

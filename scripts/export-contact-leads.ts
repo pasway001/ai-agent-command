@@ -6,8 +6,12 @@ import { getPipelineProductsByStage } from "../src/lib/db/queries";
 import type { Product } from "../src/lib/db/schema";
 import {
   type ContactLeadCandidate,
-  extractContactLeadCandidates,
+  type ContactLeadSnapshot,
 } from "../src/lib/sales/contact-leads";
+import {
+  fetchContactLeadSnapshot,
+  mapLimit,
+} from "../src/lib/sales/contact-lead-fetch";
 import {
   contactLookupHint,
   enSubject,
@@ -31,8 +35,7 @@ type ProductWithSummary = Product & {
 
 type ContactLeadRow = {
   product: ProductWithSummary;
-  fetchStatus: string;
-  candidates: ContactLeadCandidate[];
+  snapshot: ContactLeadSnapshot;
 };
 
 function tokyoDateSlug(date = new Date()) {
@@ -123,53 +126,8 @@ function csvLine(values: unknown[]) {
   return values.map(csvCell).join(",");
 }
 
-function shortError(err: unknown) {
-  const message = err instanceof Error ? err.message : String(err);
-  return message.replace(/\s+/g, " ").slice(0, 120);
-}
-
-async function fetchHtml(url: string, timeoutMs: number) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "user-agent":
-          "Mozilla/5.0 (compatible; AgentCommandCenter/0.1; +https://github.com/pasway001/ai-agent-command)",
-      },
-    });
-    const html = await response.text();
-    return {
-      status: response.ok ? `ok:${response.status}` : `http:${response.status}`,
-      html,
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function mapLimit<T, R>(
-  items: T[],
-  concurrency: number,
-  mapper: (item: T, index: number) => Promise<R>
-) {
-  const results = new Array<R>(items.length);
-  let nextIndex = 0;
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (nextIndex < items.length) {
-      const index = nextIndex;
-      nextIndex++;
-      results[index] = await mapper(items[index], index);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
-
 function valuesByKind(row: ContactLeadRow, kind: ContactLeadCandidate["kind"]) {
-  return row.candidates
+  return row.snapshot.candidates
     .filter((candidate) => candidate.kind === kind)
     .map((candidate) => candidate.value);
 }
@@ -179,7 +137,7 @@ function leadList(values: string[]) {
 }
 
 function primary(row: ContactLeadRow) {
-  return row.candidates[0] ?? null;
+  return row.snapshot.candidates[0] ?? null;
 }
 
 async function buildContactLeadRow(
@@ -187,25 +145,12 @@ async function buildContactLeadRow(
   timeoutMs: number,
   maxCandidates: number
 ): Promise<ContactLeadRow> {
-  const sourceUrl = product.pipelineSummary.sourceUrl;
-  if (!sourceUrl) {
-    return { product, fetchStatus: "missing_source_url", candidates: [] };
-  }
-
-  try {
-    const fetched = await fetchHtml(sourceUrl, timeoutMs);
-    return {
-      product,
-      fetchStatus: fetched.status,
-      candidates: extractContactLeadCandidates(fetched.html, sourceUrl, maxCandidates),
-    };
-  } catch (err) {
-    return {
-      product,
-      fetchStatus: `error:${shortError(err)}`,
-      candidates: [],
-    };
-  }
+  const snapshot = await fetchContactLeadSnapshot({
+    sourceUrl: product.pipelineSummary.sourceUrl,
+    timeoutMs,
+    maxCandidates,
+  });
+  return { product, snapshot };
 }
 
 function toCsv(rows: ContactLeadRow[]) {
@@ -242,7 +187,7 @@ function toCsv(rows: ContactLeadRow[]) {
       product.stage,
       summary.sourceName,
       summary.sourceUrl,
-      row.fetchStatus,
+      row.snapshot.fetchStatus,
       top?.kind,
       top?.value,
       leadList(valuesByKind(row, "email")),
@@ -269,8 +214,8 @@ function statusSummary(rows: ContactLeadRow[]) {
   const crowdfunding = rows.filter(
     (row) => valuesByKind(row, "crowdfunding").length > 0
   ).length;
-  const anyLead = rows.filter((row) => row.candidates.length > 0).length;
-  const okFetch = rows.filter((row) => row.fetchStatus.startsWith("ok:")).length;
+  const anyLead = rows.filter((row) => row.snapshot.candidates.length > 0).length;
+  const okFetch = rows.filter((row) => row.snapshot.fetchStatus.startsWith("ok:")).length;
   return { directEmails, contactPages, crowdfunding, anyLead, okFetch };
 }
 
@@ -303,7 +248,7 @@ function toMarkdown(rows: ContactLeadRow[]) {
       "",
       `- Score: ${summary.shortlistScore ?? "-"} / Stage: ${product.stage}`,
       `- Source: ${summary.sourceName ?? "-"}${summary.sourceUrl ? ` <${summary.sourceUrl}>` : ""}`,
-      `- Fetch: ${row.fetchStatus}`,
+      `- Fetch: ${row.snapshot.fetchStatus}`,
       `- Primary: ${top ? `${top.kind} / ${top.value}` : "-"}`,
       `- Emails: ${leadList(valuesByKind(row, "email")) || "-"}`,
       `- Contact pages: ${leadList(valuesByKind(row, "contact_page")) || "-"}`,

@@ -5,6 +5,7 @@ import { dirname, isAbsolute, join } from "node:path";
 import { count, isNull } from "drizzle-orm";
 import { closeDb, db } from "../src/lib/db";
 import { agents, approvalQueue, products } from "../src/lib/db/schema";
+import { contactLeadsFromMetadata } from "../src/lib/sales/contact-leads";
 
 type CheckStatus = "pass" | "warn" | "fail";
 
@@ -26,9 +27,11 @@ const REQUIRED_FILES = [
   "src/lib/sales/execution.ts",
   "src/lib/sales/tasks.ts",
   "src/lib/sales/contact-leads.ts",
+  "src/lib/sales/contact-lead-fetch.ts",
   "src/lib/sales/outreach-kit.ts",
   "scripts/export-sales-tasks.ts",
   "scripts/export-contact-leads.ts",
+  "scripts/sync-contact-leads.ts",
 ];
 
 type Args = {
@@ -207,6 +210,10 @@ async function main() {
       stringValue(shortlist, "nextAction") !== null
     );
   });
+  const productsWithContactLeads = nonSmokeProducts.filter((product) => {
+    const snapshot = contactLeadsFromMetadata(product.metadata);
+    return snapshot !== null && snapshot.candidates.length > 0;
+  });
 
   checks.push(
     check(
@@ -228,6 +235,11 @@ async function main() {
       "次アクション",
       productsWithNextAction.length >= 30,
       `${productsWithNextAction.length}/30 products include next action`
+    ),
+    check(
+      "連絡先候補同期",
+      productsWithContactLeads.length >= 30,
+      `${productsWithContactLeads.length}/30 products include synced contact leads`
     ),
     check(
       "エージェント",

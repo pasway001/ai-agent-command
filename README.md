@@ -133,10 +133,11 @@ pnpm sales:board         # DB内候補から利益/仕入れ確認用CSV・MDを
 pnpm sales:outreach      # DB内候補から仕入れ打診メール/確認項目CSV・MDを生成
 pnpm sales:tasks         # DB内候補から今日の販売タスクCSV・MDを生成
 pnpm sales:contacts      # DB内候補の一次ソースからメーカー連絡先候補CSV・MDを生成
+pnpm sales:contacts:sync # 連絡先候補をproducts.metadata.contactLeadsへ同期
 pnpm vercel:audit      # 任意: リンク中Vercelプロジェクトの必要env名を監査
 ```
 
-ローカル起動後は `/sales` で30商品の販売デスクを確認でき、商談ステータス/連絡先/次回確認日をローカルDBに保存し、未連絡・本日対応・商談中で絞り込めます。`pnpm sales:tasks` で追客、商談確認、未連絡高スコア商品の順に日次タスクを出力できます。`pnpm sales:contacts` で一次ソースからメール、公式サイト、クラファン、SNSなどの仕入れ連絡先候補を抽出できます。
+ローカル起動後は `/sales` で30商品の販売デスクを確認でき、商談ステータス/連絡先/次回確認日をローカルDBに保存し、未連絡・本日対応・商談中で絞り込めます。`pnpm sales:tasks` で追客、商談確認、未連絡高スコア商品の順に日次タスクを出力できます。`pnpm sales:contacts` で一次ソースからメール、公式サイト、クラファン、SNSなどの仕入れ連絡先候補を抽出し、`pnpm sales:contacts:sync` で `/sales` に表示できます。
 
 ## 24/7運用 (Mac mini想定)
 

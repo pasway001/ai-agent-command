@@ -1,13 +1,13 @@
 # Local Acceptance Report
 
-Generated at: 2026-06-19T13:12:30.707Z
+Generated at: 2026-06-19T13:17:45.894Z
 
 ## Summary
 
-- Passed: 33
+- Passed: 36
 - Warnings: 0
 - Failures: 0
-- Total checks: 33
+- Total checks: 36
 
 ## Checks
 
@@ -17,6 +17,7 @@ Generated at: 2026-06-19T13:12:30.707Z
 | PASS | スコア付き商品 | 30/30 products include shortlist.score |
 | PASS | 一次ソースURL | 30/30 products include source URL |
 | PASS | 次アクション | 30/30 products include next action |
+| PASS | 連絡先候補同期 | 30/30 products include synced contact leads |
 | PASS | エージェント | 8 agent(s) seeded |
 | PASS | 承認待ち | 30 open approval(s); can be lower after real review work |
 | PASS | 実装ファイル src/app/(app)/sales/page.tsx | src/app/(app)/sales/page.tsx |
@@ -24,9 +25,11 @@ Generated at: 2026-06-19T13:12:30.707Z
 | PASS | 実装ファイル src/lib/sales/execution.ts | src/lib/sales/execution.ts |
 | PASS | 実装ファイル src/lib/sales/tasks.ts | src/lib/sales/tasks.ts |
 | PASS | 実装ファイル src/lib/sales/contact-leads.ts | src/lib/sales/contact-leads.ts |
+| PASS | 実装ファイル src/lib/sales/contact-lead-fetch.ts | src/lib/sales/contact-lead-fetch.ts |
 | PASS | 実装ファイル src/lib/sales/outreach-kit.ts | src/lib/sales/outreach-kit.ts |
 | PASS | 実装ファイル scripts/export-sales-tasks.ts | scripts/export-sales-tasks.ts |
 | PASS | 実装ファイル scripts/export-contact-leads.ts | scripts/export-contact-leads.ts |
+| PASS | 実装ファイル scripts/sync-contact-leads.ts | scripts/sync-contact-leads.ts |
 | PASS | レポート scout-products-2026-06-19.json | reports/scout-products-2026-06-19.json (29689 bytes) |
 | PASS | レポート sales-board-2026-06-19.csv | reports/sales-board-2026-06-19.csv (15602 bytes) |
 | PASS | レポート sales-board-2026-06-19.md | reports/sales-board-2026-06-19.md (19817 bytes) |

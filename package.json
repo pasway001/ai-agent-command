@@ -40,6 +40,7 @@
     "sales:outreach": "tsx scripts/export-outreach-kit.ts",
     "sales:tasks": "tsx scripts/export-sales-tasks.ts",
     "sales:contacts": "tsx scripts/export-contact-leads.ts",
+    "sales:contacts:sync": "tsx scripts/sync-contact-leads.ts",
     "pipeline:demo": "tsx scripts/run-pipeline-demo.ts",
     "user:create": "tsx scripts/create-user.ts",
     "test:scout": "tsx scripts/__tests__/run.ts"

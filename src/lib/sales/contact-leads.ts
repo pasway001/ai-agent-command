@@ -18,9 +18,42 @@ export type ContactLeadCandidate = {
   score: number;
 };
 
+export type ContactLeadSnapshot = {
+  fetchedAt: string;
+  sourceUrl: string | null;
+  fetchStatus: string;
+  candidates: ContactLeadCandidate[];
+};
+
+export const CONTACT_LEAD_KIND_LABELS: Record<ContactLeadKind, string> = {
+  email: "メール",
+  contact_page: "問い合わせ",
+  official_site: "公式",
+  crowdfunding: "クラファン",
+  social: "SNS",
+  external_link: "外部",
+};
+
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const LINK_RE =
   /<a\b[^>]*\bhref\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi;
+
+type JsonRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as JsonRecord;
+}
+
+function stringValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function numberValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
 
 function stripTags(value: string) {
   return decodeHtmlEntities(value.replace(/<[^>]*>/g, " "))
@@ -121,7 +154,10 @@ function isLikelyPlatformChrome(link: ExtractedLink, sourceUrl: string) {
     }
   })();
   if (isAggregatorHost(sourceUrl) && h === host(sourceUrl)) return true;
-  if (isAggregatorHost(sourceUrl) && /kicktraq|yanko-?design|yankodesign/i.test(link.url)) {
+  if (
+    isAggregatorHost(sourceUrl) &&
+    /kicktraq|yanko-?design|yankodesign/i.test(link.url)
+  ) {
     return true;
   }
   if (h.includes("kicktraq.com")) return true;
@@ -246,4 +282,70 @@ export function extractContactLeadCandidates(
       return a.value.localeCompare(b.value);
     })
     .slice(0, maxCandidates);
+}
+
+function contactLeadKind(value: unknown): ContactLeadKind | null {
+  if (
+    value === "email" ||
+    value === "contact_page" ||
+    value === "official_site" ||
+    value === "crowdfunding" ||
+    value === "social" ||
+    value === "external_link"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function candidateFromRecord(record: JsonRecord): ContactLeadCandidate | null {
+  const kind = contactLeadKind(record.kind);
+  const value = stringValue(record, "value");
+  const score = numberValue(record, "score");
+  if (!kind || !value || score === null) return null;
+  return {
+    kind,
+    value,
+    label: stringValue(record, "label") ?? value,
+    score,
+  };
+}
+
+export function contactLeadsFromMetadata(
+  metadataValue: unknown
+): ContactLeadSnapshot | null {
+  const metadata = asRecord(metadataValue);
+  const contactLeads = asRecord(metadata?.contactLeads);
+  const fetchedAt = stringValue(contactLeads, "fetchedAt");
+  const fetchStatus = stringValue(contactLeads, "fetchStatus");
+  if (!fetchedAt || !fetchStatus) return null;
+
+  const candidates = Array.isArray(contactLeads?.candidates)
+    ? contactLeads.candidates
+        .map((item) => asRecord(item))
+        .filter((item): item is JsonRecord => item !== null)
+        .map(candidateFromRecord)
+        .filter((item): item is ContactLeadCandidate => item !== null)
+    : [];
+
+  return {
+    fetchedAt,
+    sourceUrl: stringValue(contactLeads, "sourceUrl"),
+    fetchStatus,
+    candidates,
+  };
+}
+
+export function primaryContactLead(snapshot: ContactLeadSnapshot | null) {
+  return snapshot?.candidates[0] ?? null;
+}
+
+export function preferredContactEmail(snapshot: ContactLeadSnapshot | null) {
+  return snapshot?.candidates.find((candidate) => candidate.kind === "email")?.value ?? null;
+}
+
+export function preferredContactUrl(snapshot: ContactLeadSnapshot | null) {
+  return (
+    snapshot?.candidates.find((candidate) => candidate.kind !== "email")?.value ?? null
+  );
 }

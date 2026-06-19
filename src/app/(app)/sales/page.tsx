@@ -17,6 +17,15 @@ import { ProductStatusBadge, StageBadge } from "@/components/status-badge";
 import { getPipelineProductsByStage, safe } from "@/lib/db/queries";
 import type { Product } from "@/lib/db/schema";
 import {
+  CONTACT_LEAD_KIND_LABELS,
+  contactLeadsFromMetadata,
+  preferredContactEmail,
+  preferredContactUrl,
+  primaryContactLead,
+  type ContactLeadSnapshot,
+  type ContactLeadCandidate,
+} from "@/lib/sales/contact-leads";
+import {
   complianceNeeds,
   contactLookupHint,
   enBody,
@@ -48,6 +57,7 @@ type SalesProductRow = {
   product: SalesProduct;
   execution: SalesExecution;
   followUp: ReturnType<typeof followUpState>;
+  contactLeads: ContactLeadSnapshot | null;
 };
 
 function rankProducts(grouped: GroupedProducts) {
@@ -180,6 +190,21 @@ function salesViewHref(view: SalesExecutionView) {
   return view === "all" ? "/sales" : `/sales?view=${view}`;
 }
 
+function contactLeadHref(candidate: ContactLeadCandidate) {
+  if (candidate.kind === "email") return `mailto:${encodeURIComponent(candidate.value)}`;
+  return candidate.value;
+}
+
+function contactLeadDisplay(candidate: ContactLeadCandidate) {
+  if (candidate.kind === "email") return candidate.value;
+  try {
+    const url = new URL(candidate.value);
+    return `${url.hostname.replace(/^www\./, "")}${url.pathname === "/" ? "" : url.pathname}`;
+  } catch {
+    return candidate.value;
+  }
+}
+
 function countForView(
   rows: SalesProductRow[],
   view: SalesExecutionView,
@@ -222,6 +247,7 @@ export default async function SalesPage({
       product,
       execution,
       followUp: followUpState(execution, now),
+      contactLeads: contactLeadsFromMetadata(product.metadata),
     };
   });
   const visibleRows = rows.filter((row) =>
@@ -300,13 +326,17 @@ export default async function SalesPage({
               該当商品なし
             </div>
           ) : null}
-          {visibleRows.map(({ rank, product, execution, followUp }) => {
+          {visibleRows.map(({ rank, product, execution, followUp, contactLeads }) => {
             const summary = product.pipelineSummary;
             const price = priceRange(product);
             const unit = grossProfitAtTarget(price.min);
             const flags = complianceFlags(product);
             const needs = complianceNeeds(product);
             const followUpText = followUpLabel(followUp);
+            const primaryLead = primaryContactLead(contactLeads);
+            const suggestedEmail =
+              execution.supplierEmail ?? preferredContactEmail(contactLeads);
+            const suggestedUrl = execution.contactUrl ?? preferredContactUrl(contactLeads);
             return (
               <article
                 key={product.id}
@@ -442,6 +472,53 @@ export default async function SalesPage({
                       </p>
                     </div>
 
+                    {contactLeads ? (
+                      <div className="rounded-md border bg-muted/20 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
+                          <span>連絡先候補</span>
+                          <Badge variant="outline">
+                            {contactLeads.fetchStatus}
+                          </Badge>
+                        </div>
+                        {primaryLead ? (
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            優先: {CONTACT_LEAD_KIND_LABELS[primaryLead.kind]} /{" "}
+                            {contactLeadDisplay(primaryLead)}
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            候補なし。手動で公式サイトまたはSNSを確認してください。
+                          </p>
+                        )}
+                        {contactLeads.candidates.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {contactLeads.candidates.slice(0, 4).map((candidate) => (
+                              <Button
+                                key={`${candidate.kind}:${candidate.value}`}
+                                nativeButton={false}
+                                render={
+                                  <a
+                                    href={contactLeadHref(candidate)}
+                                    target={
+                                      candidate.kind === "email" ? undefined : "_blank"
+                                    }
+                                    rel={
+                                      candidate.kind === "email" ? undefined : "noreferrer"
+                                    }
+                                  />
+                                }
+                                variant="outline"
+                                size="sm"
+                              >
+                                {CONTACT_LEAD_KIND_LABELS[candidate.kind]}
+                                <ExternalLink className="size-3" />
+                              </Button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
                     <div className="flex flex-wrap gap-2">
                       <Button
                         nativeButton={false}
@@ -450,7 +527,7 @@ export default async function SalesPage({
                             href={mailtoHref(
                               product,
                               "ja",
-                              execution.supplierEmail
+                              suggestedEmail
                             )}
                           />
                         }
@@ -466,7 +543,7 @@ export default async function SalesPage({
                             href={mailtoHref(
                               product,
                               "en",
-                              execution.supplierEmail
+                              suggestedEmail
                             )}
                           />
                         }
@@ -536,7 +613,7 @@ export default async function SalesPage({
                       <Input
                         name="supplierEmail"
                         type="email"
-                        defaultValue={execution.supplierEmail ?? ""}
+                        defaultValue={suggestedEmail ?? ""}
                         placeholder="supplier@example.com"
                       />
                     </label>
@@ -563,7 +640,7 @@ export default async function SalesPage({
                       <Input
                         name="contactUrl"
                         type="url"
-                        defaultValue={execution.contactUrl ?? ""}
+                        defaultValue={suggestedUrl ?? ""}
                         placeholder="https://..."
                       />
                     </label>
