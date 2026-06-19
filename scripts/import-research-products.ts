@@ -70,9 +70,13 @@ function abs(path: string) {
 }
 
 function requireDatabaseConfig() {
-  if (!process.env.DATABASE_POOL_URL && !process.env.DATABASE_URL) {
+  if (
+    !process.env.DATABASE_POOL_URL &&
+    !process.env.DATABASE_URL &&
+    !process.env.DATABASE_URL_DIRECT
+  ) {
     throw new Error(
-      "DATABASE_POOL_URL or DATABASE_URL must be set to import products into the DB. " +
+      "DATABASE_POOL_URL, DATABASE_URL, or DATABASE_URL_DIRECT must be set to import products into the DB. " +
         "Use --dry-run to inspect the import plan without DB writes."
     );
   }

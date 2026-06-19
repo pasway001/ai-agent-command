@@ -9,10 +9,14 @@ const globalForDb = globalThis as unknown as {
 
 function getConnectionString() {
   const connectionString =
-    process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
+    process.env.DATABASE_POOL_URL ??
+    process.env.DATABASE_URL ??
+    process.env.DATABASE_URL_DIRECT;
 
   if (!connectionString) {
-    throw new Error("DATABASE_POOL_URL or DATABASE_URL must be set");
+    throw new Error(
+      "DATABASE_POOL_URL, DATABASE_URL, or DATABASE_URL_DIRECT must be set"
+    );
   }
 
   return connectionString;

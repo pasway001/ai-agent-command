@@ -80,7 +80,7 @@ pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sa
 pnpm research:import -- --input reports/scout-products.json --dry-run
 ```
 
-`pnpm scout:minimal` はDB-backed運用コマンドです。`DATABASE_URL` または `DATABASE_POOL_URL`
+`pnpm scout:minimal` はDB-backed運用コマンドです。`DATABASE_URL` / `DATABASE_POOL_URL` / `DATABASE_URL_DIRECT`
 が未設定の場合は、成功に見せかけず明示的に失敗します。DB設定後は `pnpm research:import`
 で抽出済み候補を `/inbox` の承認待ちへ投入できます。
 

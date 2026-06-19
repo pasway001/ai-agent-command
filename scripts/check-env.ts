@@ -18,6 +18,7 @@ const keys: EnvKey[] = [
   {
     key: "DATABASE_URL",
     requiredFor: "runtime",
+    optional: true,
     note: "local/direct Postgres connection",
   },
   {
@@ -25,6 +26,12 @@ const keys: EnvKey[] = [
     requiredFor: "runtime",
     optional: true,
     note: "optional pooled runtime connection",
+  },
+  {
+    key: "DATABASE_URL_DIRECT",
+    requiredFor: "runtime",
+    optional: true,
+    note: "optional direct/runtime Postgres alias used by some Vercel projects",
   },
   {
     key: "NEXT_PUBLIC_SUPABASE_URL",
@@ -153,6 +160,17 @@ function requireConditional(key: string, reason: string) {
   if (!ok) missing += 1;
   console.log(`${ok ? "OK " : "NG "} ${key}: ${status} (${reason})`);
 }
+
+function requireAny(keys: string[], reason: string) {
+  const ok = keys.some((key) => mask(process.env[key]) === "set");
+  if (!ok) missing += 1;
+  console.log(`${ok ? "OK " : "NG "} ${keys.join(" | ")}: ${ok ? "set" : "missing"} (${reason})`);
+}
+
+requireAny(
+  ["DATABASE_POOL_URL", "DATABASE_URL", "DATABASE_URL_DIRECT"],
+  "Postgres connection"
+);
 
 if (authProvider === "local") {
   requireConditional("APP_AUTH_PASSWORD", "AUTH_PROVIDER=local");

@@ -196,7 +196,11 @@ function positiveInt(value: number | undefined, fallback: number) {
 }
 
 function hasDatabaseConfig() {
-  return Boolean(process.env.DATABASE_POOL_URL || process.env.DATABASE_URL);
+  return Boolean(
+    process.env.DATABASE_POOL_URL ||
+      process.env.DATABASE_URL ||
+      process.env.DATABASE_URL_DIRECT
+  );
 }
 
 // ---- cross-source merge ----
@@ -599,7 +603,7 @@ export async function runMinimalScout(
 ): Promise<MinimalScoutRunResult> {
   if (!opts.skipPersistence && !hasDatabaseConfig()) {
     throw new Error(
-      "DATABASE_POOL_URL or DATABASE_URL must be set for DB-backed scout runs. " +
+      "DATABASE_POOL_URL, DATABASE_URL, or DATABASE_URL_DIRECT must be set for DB-backed scout runs. " +
         "Use `pnpm research:products -- --limit 30` for DB-free live source discovery."
     );
   }

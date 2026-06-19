@@ -16,6 +16,7 @@ local Postgres, local one-user auth, and Claude as the only paid API.
 | `APP_SESSION_SECRET` | Local secret store | 32+ random chars for signed session cookies. |
 | `DATABASE_URL` | Local Postgres | Direct/runtime connection for the Mac mini Postgres. |
 | `DATABASE_POOL_URL` | Hosted Postgres/Supabase | Optional. Leave empty for local Postgres. |
+| `DATABASE_URL_DIRECT` | Vercel/hosted Postgres alias | Optional alias accepted when `DATABASE_URL` is not present. |
 | `NEXT_PUBLIC_APP_URL` | Local/production URL | No trailing slash. Used in alert links. |
 | `CRON_SECRET` | Secret generator | Required for Vercel Cron `/api/cron/scout`. Use 32+ random chars. |
 
@@ -69,6 +70,7 @@ APP_AUTH_EMAIL=admin@example.com
 APP_AUTH_PASSWORD=<strong-password>
 APP_SESSION_SECRET=<32+ random chars>
 DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
+# or DATABASE_URL_DIRECT=...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 CRON_SECRET=<32+ random chars>
 LARK_WEBHOOK_TIMEOUT_MS=5000
@@ -126,4 +128,4 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 ```
 
 `env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.
-`research:products` is a DB-free live-source shortlist command for quick product discovery, and `research:sales-pack` turns its JSON output into LP/ad/outreach hypotheses. `research:import` writes the JSON into `products`, `agent_runs`, `agent_evaluations`, and `approval_queue` so reviewers can process the items in `/inbox`. The DB-backed production path remains `pnpm scout:minimal`; it requires `DATABASE_URL` or `DATABASE_POOL_URL` and fails early when neither is configured.
+`research:products` is a DB-free live-source shortlist command for quick product discovery, and `research:sales-pack` turns its JSON output into LP/ad/outreach hypotheses. `research:import` writes the JSON into `products`, `agent_runs`, `agent_evaluations`, and `approval_queue` so reviewers can process the items in `/inbox`. The DB-backed production path remains `pnpm scout:minimal`; it requires `DATABASE_URL`, `DATABASE_POOL_URL`, or `DATABASE_URL_DIRECT` and fails early when none is configured.
