@@ -128,6 +128,7 @@ pnpm scout:score       # JSON候補ファイル → Claudeスコアリング →
 pnpm research:products # DBなしで公開ソースから商品候補を抽出
 pnpm research:sales-pack # 抽出JSONから販売準備パックを生成
 pnpm research:import     # 抽出JSONをproducts/runs/evaluations/approval_queueへ投入
+pnpm sales:board         # DB内候補から利益/仕入れ確認用CSV・MDを生成
 pnpm vercel:audit      # 任意: リンク中Vercelプロジェクトの必要env名を監査
 ```
 

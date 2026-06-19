@@ -35,6 +35,7 @@
     "research:products": "tsx scripts/research-products.ts",
     "research:sales-pack": "tsx scripts/prepare-sales-pack.ts",
     "research:import": "tsx scripts/import-research-products.ts",
+    "sales:board": "tsx scripts/export-sales-board.ts",
     "pipeline:demo": "tsx scripts/run-pipeline-demo.ts",
     "user:create": "tsx scripts/create-user.ts",
     "test:scout": "tsx scripts/__tests__/run.ts"
