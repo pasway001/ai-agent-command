@@ -24,7 +24,9 @@ const REQUIRED_FILES = [
   "src/app/(app)/sales/page.tsx",
   "src/app/(app)/sales/actions.ts",
   "src/lib/sales/execution.ts",
+  "src/lib/sales/tasks.ts",
   "src/lib/sales/outreach-kit.ts",
+  "scripts/export-sales-tasks.ts",
 ];
 
 type Args = {
@@ -247,6 +249,8 @@ async function main() {
   const salesBoardMd = latestReport(reportFiles, "sales-board-", ".md");
   const outreachCsv = latestReport(reportFiles, "outreach-kit-", ".csv");
   const outreachMd = latestReport(reportFiles, "outreach-kit-", ".md");
+  const salesTasksCsv = latestReport(reportFiles, "sales-tasks-", ".csv");
+  const salesTasksMd = latestReport(reportFiles, "sales-tasks-", ".md");
   const salesPackMd = latestReport(reportFiles, "sales-pack-", ".md");
 
   for (const file of [
@@ -255,6 +259,8 @@ async function main() {
     salesBoardMd,
     outreachCsv,
     outreachMd,
+    salesTasksCsv,
+    salesTasksMd,
     salesPackMd,
   ]) {
     checks.push(
@@ -303,6 +309,21 @@ async function main() {
         "Outreachメール列",
         ["ja_subject", "ja_body", "en_subject", "en_body"].every((name) =>
           header.includes(name)
+        ),
+        header.join(",")
+      )
+    );
+  }
+
+  if (salesTasksCsv) {
+    const rows = parseCsv(await readFile(join(REPORTS_DIR, salesTasksCsv), "utf8"));
+    const header = rows[0] ?? [];
+    checks.push(
+      check("Sales Tasks CSV行数", rows.length >= 31, `${rows.length - 1} data row(s)`),
+      check(
+        "Sales Tasks実行列",
+        ["task_priority", "task_type", "sales_status", "follow_up_state", "ja_subject"].every(
+          (name) => header.includes(name)
         ),
         header.join(",")
       )
