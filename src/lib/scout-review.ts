@@ -47,4 +47,13 @@ export type ScoutReviewDetails = {
   evidence: ScoutEvidenceItem[];
   mentionSources: string[];
   japanValidationLevel: number | null;
+  shortlistRank: number | null;
+  shortlistScore: number | null;
+  japanAngle: string | null;
+  nextAction: string | null;
+  salesPriority: number | null;
+  salesReasons: string[];
+  salesRisks: string[];
+  importedAt: string | null;
+  sourceReportGeneratedAt: string | null;
 };

@@ -359,6 +359,7 @@ export function ReviewDetailsDialog({
           </DialogTitle>
           <DialogDescription className="break-words">
             {review.description ??
+              review.japanAngle ??
               review.category ??
               "Scoutが取得した候補の詳細です。"}
           </DialogDescription>
@@ -374,7 +375,45 @@ export function ReviewDetailsDialog({
               掲載日 {publishedAt}
             </span>
           ) : null}
+          {review.shortlistRank !== null ? (
+            <Badge variant="outline" className="h-6 font-mono text-[11px]">
+              Rank {review.shortlistRank}
+            </Badge>
+          ) : null}
+          {review.shortlistScore !== null ? (
+            <Badge variant="outline" className="h-6 font-mono text-[11px]">
+              Shortlist {review.shortlistScore}点
+            </Badge>
+          ) : null}
         </div>
+
+        <section className="border-t pt-4">
+          <div className="mb-2 flex items-center gap-2">
+            <CheckCircle2 className="size-4 text-emerald-600" />
+            <h3 className="font-medium">販売準備メモ</h3>
+          </div>
+          <dl className="mb-4 space-y-2">
+            <DetailLine label="日本向け訴求" value={review.japanAngle} />
+            <DetailLine label="次アクション" value={review.nextAction} />
+            <DetailLine label="販売優先度" value={review.salesPriority} />
+          </dl>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <h4 className="mb-2 text-sm font-medium">売れる理由</h4>
+              <PointList
+                items={review.salesReasons}
+                empty="販売理由の記録はありません。"
+              />
+            </div>
+            <div>
+              <h4 className="mb-2 text-sm font-medium">確認リスク</h4>
+              <PointList
+                items={review.salesRisks}
+                empty="確認リスクの記録はありません。"
+              />
+            </div>
+          </div>
+        </section>
 
         <section className="border-t pt-4">
           <div className="mb-2 flex items-center gap-2">

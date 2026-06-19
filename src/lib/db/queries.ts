@@ -148,8 +148,12 @@ function scoutReviewDetails(
   const outputPayload = asRecord(runOutputPayload);
   const signals =
     asRecord(metadata?.signals) ?? asRecord(inputPayload?.signals);
+  const shortlist = asRecord(metadata?.shortlist);
+  const salesReadiness = asRecord(metadata?.salesReadiness);
   const overseas = asRecord(signals?.overseas);
   const japan = asRecord(signals?.japan);
+  const japanAngle =
+    stringValue(shortlist, "japanAngle") ?? stringValue(japan, "searchSummary");
 
   return {
     sourceName: stringValue(overseas, "source"),
@@ -168,7 +172,7 @@ function scoutReviewDetails(
     productType: productTypeValue(signals, "productType"),
     physicalProductLikely: booleanValue(signals, "physicalProductLikely"),
     exclusionReason: stringValue(signals, "exclusionReason"),
-    japanSummary: stringValue(japan, "searchSummary"),
+    japanSummary: japanAngle,
     domesticExamples: stringArrayValue(japan, "domesticExamples"),
     similarProductCount: numberValue(japan, "similarProductCount"),
     notYetInJapan: booleanValue(japan, "notYetInJapan"),
@@ -177,6 +181,26 @@ function scoutReviewDetails(
     evidence: extractEvidence(outputPayload),
     mentionSources: extractMentionSources(signals),
     japanValidationLevel: numberValue(japan, "japanValidationLevel"),
+    shortlistRank: numberValue(shortlist, "rank"),
+    shortlistScore: numberValue(shortlist, "score"),
+    japanAngle,
+    nextAction:
+      stringValue(salesReadiness, "nextAction") ??
+      stringValue(shortlist, "nextAction"),
+    salesPriority: numberValue(salesReadiness, "priority"),
+    salesReasons:
+      stringArrayValue(salesReadiness, "reasons").length > 0
+        ? stringArrayValue(salesReadiness, "reasons")
+        : stringArrayValue(shortlist, "reasons"),
+    salesRisks:
+      stringArrayValue(salesReadiness, "risks").length > 0
+        ? stringArrayValue(salesReadiness, "risks")
+        : stringArrayValue(shortlist, "risks"),
+    importedAt: stringValue(salesReadiness, "importedAt"),
+    sourceReportGeneratedAt: stringValue(
+      salesReadiness,
+      "sourceReportGeneratedAt"
+    ),
   };
 }
 

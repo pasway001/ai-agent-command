@@ -70,11 +70,14 @@ function AiReviewCell({ item }: { item: OpenApproval }) {
         <VerdictBadge review={review} />
       </div>
       <p className="line-clamp-2 break-words text-xs leading-5 text-muted-foreground">
-        {review.rationale ?? "AI評価の詳細は保存されていません。"}
+        {review.rationale ??
+          review.nextAction ??
+          review.japanAngle ??
+          "AI評価の詳細は保存されていません。"}
       </p>
-      {review.pros[0] ? (
+      {review.pros[0] || review.salesReasons[0] ? (
         <p className="truncate text-xs text-foreground/80">
-          強み: {review.pros[0]}
+          強み: {review.pros[0] ?? review.salesReasons[0]}
         </p>
       ) : null}
     </div>
@@ -365,9 +368,9 @@ export function InboxList({
                       </span>
                     ) : null}
                   </div>
-                  {item.review.rationale ? (
+                  {item.review.rationale || item.review.nextAction ? (
                     <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                      {item.review.rationale}
+                      {item.review.rationale ?? item.review.nextAction}
                     </p>
                   ) : null}
                 </div>
