@@ -164,9 +164,11 @@ export function enBody(product: SalesProductForOutreach) {
 
 export function mailtoHref(
   product: SalesProductForOutreach,
-  language: "ja" | "en"
+  language: "ja" | "en",
+  to?: string | null
 ) {
   const subject = language === "ja" ? jaSubject(product) : enSubject(product);
   const body = language === "ja" ? jaBody(product) : enBody(product);
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const recipient = to ? encodeURIComponent(to) : "";
+  return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

@@ -15,12 +15,14 @@ import { reddit } from "./sources/reddit.test";
 import { hn } from "./sources/hackernews.test";
 import { scoring } from "./scout-scoring.test";
 import { minimal } from "./minimal-scout.test";
+import { salesExecution } from "./sales-execution.test";
 
 const suites: TestSuite[] = [
   reddit.suite,
   hn.suite,
   scoring.suite,
   minimal.suite,
+  salesExecution.suite,
 ];
 
 runSuites(suites)

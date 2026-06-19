@@ -2,6 +2,7 @@ import {
   CircleDollarSign,
   ExternalLink,
   Mail,
+  Save,
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
@@ -10,6 +11,7 @@ import { SummaryCard } from "@/components/summary-card";
 import { DbErrorState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ProductStatusBadge, StageBadge } from "@/components/status-badge";
 import { getPipelineProductsByStage, safe } from "@/lib/db/queries";
 import type { Product } from "@/lib/db/schema";
@@ -20,6 +22,13 @@ import {
   jaBody,
   mailtoHref,
 } from "@/lib/sales/outreach-kit";
+import {
+  SALES_EXECUTION_LABELS,
+  SALES_EXECUTION_STATUSES,
+  salesExecutionFromMetadata,
+  type SalesExecution,
+} from "@/lib/sales/execution";
+import { updateSalesExecution } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +137,17 @@ function regulationRequired(product: SalesProduct) {
   return flags.pse || flags.giteki || flags.food;
 }
 
+function dateInputValue(value: string | null) {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
+function salesStatusVariant(status: SalesExecution["status"]) {
+  if (status === "won") return "default";
+  if (status === "lost" || status === "uncontacted") return "outline";
+  return "secondary";
+}
+
 export default async function SalesPage() {
   const grouped = await safe(() => getPipelineProductsByStage());
 
@@ -147,6 +167,10 @@ export default async function SalesPage() {
 
   const products = rankProducts(grouped).slice(0, 30);
   const regulatedCount = products.filter(regulationRequired).length;
+  const activeOutreachCount = products.filter((product) => {
+    const execution = salesExecutionFromMetadata(product.metadata);
+    return execution.status !== "uncontacted" && execution.status !== "lost";
+  }).length;
 
   return (
     <>
@@ -175,8 +199,8 @@ export default async function SalesPage() {
           />
           <SummaryCard
             label="メール草案"
-            value={products.length}
-            hint="日本語/英語"
+            value={activeOutreachCount}
+            hint="商談進行中"
             accent="default"
           />
         </div>
@@ -188,6 +212,7 @@ export default async function SalesPage() {
             const unit = grossProfitAtTarget(price.min);
             const flags = complianceFlags(product);
             const needs = complianceNeeds(product);
+            const execution = salesExecutionFromMetadata(product.metadata);
             return (
               <article
                 key={product.id}
@@ -212,6 +237,9 @@ export default async function SalesPage() {
                       <StageBadge stage={product.stage} />
                       <ProductStatusBadge status={product.status} />
                       <Badge variant="outline">{categoryFor(product)}</Badge>
+                      <Badge variant={salesStatusVariant(execution.status)}>
+                        {SALES_EXECUTION_LABELS[execution.status]}
+                      </Badge>
                     </div>
 
                     <div>
@@ -310,7 +338,15 @@ export default async function SalesPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         nativeButton={false}
-                        render={<a href={mailtoHref(product, "ja")} />}
+                        render={
+                          <a
+                            href={mailtoHref(
+                              product,
+                              "ja",
+                              execution.supplierEmail
+                            )}
+                          />
+                        }
                         size="sm"
                       >
                         <Mail className="size-3.5" />
@@ -318,7 +354,15 @@ export default async function SalesPage() {
                       </Button>
                       <Button
                         nativeButton={false}
-                        render={<a href={mailtoHref(product, "en")} />}
+                        render={
+                          <a
+                            href={mailtoHref(
+                              product,
+                              "en",
+                              execution.supplierEmail
+                            )}
+                          />
+                        }
                         variant="outline"
                         size="sm"
                       >
@@ -345,6 +389,95 @@ export default async function SalesPage() {
                     </div>
                   </div>
                 </div>
+
+                <form
+                  action={updateSalesExecution}
+                  className="mt-4 rounded-md border bg-muted/20 p-3"
+                >
+                  <input type="hidden" name="productId" value={product.id} />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-medium">販売記録</div>
+                      {execution.updatedAt ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          最終更新 {new Date(execution.updatedAt).toLocaleString("ja-JP")}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Button type="submit" size="sm">
+                      <Save className="size-3.5" />
+                      記録
+                    </Button>
+                  </div>
+                  <div className="mt-3 grid gap-2 lg:grid-cols-[160px_1fr_1fr_160px]">
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">状態</span>
+                      <select
+                        name="salesStatus"
+                        defaultValue={execution.status}
+                        className="h-8 w-full rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        {SALES_EXECUTION_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {SALES_EXECUTION_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">メール</span>
+                      <Input
+                        name="supplierEmail"
+                        type="email"
+                        defaultValue={execution.supplierEmail ?? ""}
+                        placeholder="supplier@example.com"
+                      />
+                    </label>
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">担当/URL</span>
+                      <Input
+                        name="contactName"
+                        defaultValue={execution.contactName ?? ""}
+                        placeholder="担当者名"
+                      />
+                    </label>
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">次回確認</span>
+                      <Input
+                        name="nextFollowUpAt"
+                        type="date"
+                        defaultValue={dateInputValue(execution.nextFollowUpAt)}
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-2 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">連絡先URL</span>
+                      <Input
+                        name="contactUrl"
+                        type="url"
+                        defaultValue={execution.contactUrl ?? ""}
+                        placeholder="https://..."
+                      />
+                    </label>
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">メモ</span>
+                      <textarea
+                        name="note"
+                        defaultValue={execution.note ?? ""}
+                        className="min-h-8 w-full resize-y rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                        placeholder="条件、返信内容、次アクション"
+                      />
+                    </label>
+                  </div>
+                  {execution.history[0] ? (
+                    <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
+                      履歴: {SALES_EXECUTION_LABELS[execution.history[0].status]} /{" "}
+                      {new Date(execution.history[0].createdAt).toLocaleString("ja-JP")}
+                      {execution.history[0].note ? ` / ${execution.history[0].note}` : ""}
+                    </p>
+                  ) : null}
+                </form>
 
                 <details className="mt-4 rounded-md border bg-muted/20 p-3">
                   <summary className="cursor-pointer text-xs font-medium">
