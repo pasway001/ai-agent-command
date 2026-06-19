@@ -1,7 +1,7 @@
 import "./_loadenv";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { count, isNull } from "drizzle-orm";
 import { closeDb, db } from "../src/lib/db";
 import { agents, approvalQueue, products } from "../src/lib/db/schema";
@@ -17,12 +17,38 @@ type Check = {
 type JsonRecord = Record<string, unknown>;
 
 const REPORTS_DIR = "reports";
+const DEFAULT_REPORT = `reports/local-acceptance-${new Date()
+  .toISOString()
+  .slice(0, 10)}.md`;
 const REQUIRED_FILES = [
   "src/app/(app)/sales/page.tsx",
   "src/app/(app)/sales/actions.ts",
   "src/lib/sales/execution.ts",
   "src/lib/sales/outreach-kit.ts",
 ];
+
+type Args = {
+  markdown: string | null;
+};
+
+function parseArgs(argv: string[]): Args {
+  const args: Args = { markdown: DEFAULT_REPORT };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    const next = argv[i + 1];
+    if (arg === "--markdown" && next) {
+      args.markdown = next;
+      i++;
+    } else if (arg === "--no-markdown") {
+      args.markdown = null;
+    }
+  }
+  return args;
+}
+
+function abs(path: string) {
+  return isAbsolute(path) ? path : join(process.cwd(), path);
+}
 
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -93,7 +119,43 @@ async function fileSize(path: string) {
   return info.size;
 }
 
+function tableCell(value: string) {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+}
+
+function toMarkdown(checks: Check[]) {
+  const failed = checks.filter((item) => item.status === "fail");
+  const warned = checks.filter((item) => item.status === "warn");
+  const passed = checks.length - failed.length - warned.length;
+  const lines = [
+    "# Local Acceptance Report",
+    "",
+    `Generated at: ${new Date().toISOString()}`,
+    "",
+    "## Summary",
+    "",
+    `- Passed: ${passed}`,
+    `- Warnings: ${warned.length}`,
+    `- Failures: ${failed.length}`,
+    `- Total checks: ${checks.length}`,
+    "",
+    "## Checks",
+    "",
+    "| Status | Check | Detail |",
+    "| --- | --- | --- |",
+  ];
+
+  for (const item of checks) {
+    lines.push(
+      `| ${item.status.toUpperCase()} | ${tableCell(item.name)} | ${tableCell(item.detail)} |`
+    );
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 async function main() {
+  const args = parseArgs(process.argv.slice(2));
   const checks: Check[] = [];
 
   const productRows = await db
@@ -259,6 +321,13 @@ async function main() {
   console.log(
     `\nAcceptance: ${checks.length - failed.length - warned.length}/${checks.length} passed, ${warned.length} warning(s), ${failed.length} failure(s).`
   );
+
+  if (args.markdown) {
+    const reportPath = abs(args.markdown);
+    await mkdir(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, toMarkdown(checks), "utf8");
+    console.log(`wrote ${reportPath}`);
+  }
 
   if (failed.length > 0) {
     process.exitCode = 1;

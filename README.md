@@ -112,7 +112,7 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 pnpm local:bootstrap   # .env.local生成、Postgres起動、schema適用、30商品Inbox投入
 pnpm local:db          # ローカルPostgres role/database作成 + schema適用
 pnpm local:smoke:pipeline # 一時商品でScout承認後のLP生成を検証して削除
-pnpm local:acceptance  # 30商品/レポート/販売デスク成果物の受け入れチェック
+pnpm local:acceptance  # 30商品/レポート/販売デスク成果物の受け入れチェック + MD出力
 pnpm dev               # 開発サーバー
 pnpm build             # 本番ビルド
 pnpm lint              # ESLint
