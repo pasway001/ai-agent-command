@@ -146,6 +146,7 @@ pnpm research:products -- --limit 30 --json --out reports/scout-products.json
 pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sales-pack.md
 pnpm research:import -- --input reports/scout-products.json --dry-run
 pnpm sales:board
+pnpm sales:outreach
 ```
 
 `env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.
