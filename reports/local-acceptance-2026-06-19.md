@@ -1,13 +1,13 @@
 # Local Acceptance Report
 
-Generated at: 2026-06-19T13:06:11.643Z
+Generated at: 2026-06-19T13:12:30.707Z
 
 ## Summary
 
-- Passed: 27
+- Passed: 33
 - Warnings: 0
 - Failures: 0
-- Total checks: 27
+- Total checks: 33
 
 ## Checks
 
@@ -23,8 +23,10 @@ Generated at: 2026-06-19T13:06:11.643Z
 | PASS | 実装ファイル src/app/(app)/sales/actions.ts | src/app/(app)/sales/actions.ts |
 | PASS | 実装ファイル src/lib/sales/execution.ts | src/lib/sales/execution.ts |
 | PASS | 実装ファイル src/lib/sales/tasks.ts | src/lib/sales/tasks.ts |
+| PASS | 実装ファイル src/lib/sales/contact-leads.ts | src/lib/sales/contact-leads.ts |
 | PASS | 実装ファイル src/lib/sales/outreach-kit.ts | src/lib/sales/outreach-kit.ts |
 | PASS | 実装ファイル scripts/export-sales-tasks.ts | scripts/export-sales-tasks.ts |
+| PASS | 実装ファイル scripts/export-contact-leads.ts | scripts/export-contact-leads.ts |
 | PASS | レポート scout-products-2026-06-19.json | reports/scout-products-2026-06-19.json (29689 bytes) |
 | PASS | レポート sales-board-2026-06-19.csv | reports/sales-board-2026-06-19.csv (15602 bytes) |
 | PASS | レポート sales-board-2026-06-19.md | reports/sales-board-2026-06-19.md (19817 bytes) |
@@ -32,6 +34,8 @@ Generated at: 2026-06-19T13:06:11.643Z
 | PASS | レポート outreach-kit-2026-06-19.md | reports/outreach-kit-2026-06-19.md (101229 bytes) |
 | PASS | レポート sales-tasks-2026-06-19.csv | reports/sales-tasks-2026-06-19.csv (31804 bytes) |
 | PASS | レポート sales-tasks-2026-06-19.md | reports/sales-tasks-2026-06-19.md (35323 bytes) |
+| PASS | レポート contact-leads-2026-06-19.csv | reports/contact-leads-2026-06-19.csv (30241 bytes) |
+| PASS | レポート contact-leads-2026-06-19.md | reports/contact-leads-2026-06-19.md (35474 bytes) |
 | PASS | レポート sales-pack-2026-06-19.md | reports/sales-pack-2026-06-19.md (32400 bytes) |
 | PASS | リサーチJSON | 30 researched item(s) |
 | PASS | Sales Board CSV行数 | 30 data row(s) |
@@ -40,3 +44,5 @@ Generated at: 2026-06-19T13:06:11.643Z
 | PASS | Outreachメール列 | rank,title,score,stage,source,source_url,contact_lookup_hint,next_action,required_checks,first_questions,ja_subject,ja_body,en_subject,en_body |
 | PASS | Sales Tasks CSV行数 | 30 data row(s) |
 | PASS | Sales Tasks実行列 | rank,task_priority,task_type,task_action,title,score,sales_priority,stage,product_status,sales_status,follow_up_state,next_follow_up_at,supplier_email,contact_lookup_hint,source,source_url,next_action,japan_angle,required_checks,ja_subject,en_subject,sales_note |
+| PASS | Contact Leads CSV行数 | 30 data row(s) |
+| PASS | Contact Leads連絡先列 | rank,title,score,stage,source,source_url,fetch_status,primary_contact_type,primary_contact,emails,contact_pages,official_sites,crowdfunding_links,social_links,external_links,contact_lookup_hint,ja_subject,en_subject,next_action |
