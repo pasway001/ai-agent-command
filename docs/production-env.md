@@ -140,6 +140,7 @@ pnpm env:check
 pnpm env:check:production
 pnpm env:check:ai
 pnpm local:bootstrap
+pnpm local:smoke:pipeline
 pnpm research:products -- --limit 30
 pnpm research:products -- --limit 30 --json --out reports/scout-products.json
 pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sales-pack.md

@@ -10,6 +10,7 @@
     "lint": "eslint",
     "local:bootstrap": "tsx scripts/local-bootstrap.ts",
     "local:db": "bash scripts/setup-db.sh",
+    "local:smoke:pipeline": "tsx scripts/local-pipeline-smoke.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
