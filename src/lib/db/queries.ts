@@ -377,6 +377,85 @@ export async function getProductsByStage() {
   return grouped;
 }
 
+function pipelineSummary(metadataValue: unknown) {
+  const metadata = asRecord(metadataValue);
+  const signals = asRecord(metadata?.signals);
+  const shortlist = asRecord(metadata?.shortlist);
+  const salesReadiness = asRecord(metadata?.salesReadiness);
+  const overseas = asRecord(signals?.overseas);
+  const lp = asRecord(metadata?.lp);
+  const copy = asRecord(lp?.copy);
+  const compliance = asRecord(lp?.compliance);
+  const ad = asRecord(metadata?.ad);
+  const adHeadlines = asRecord(ad?.headlines);
+  const outreachMessages = asRecord(asRecord(metadata?.outreach)?.messages);
+  const csTemplates = asRecord(asRecord(metadata?.cs)?.templates);
+
+  return {
+    sourceName: stringValue(overseas, "source"),
+    sourceUrl: stringValue(overseas, "url"),
+    shortlistRank: numberValue(shortlist, "rank"),
+    shortlistScore: numberValue(shortlist, "score"),
+    salesPriority: numberValue(salesReadiness, "priority"),
+    nextAction:
+      stringValue(salesReadiness, "nextAction") ??
+      stringValue(shortlist, "nextAction"),
+    japanAngle:
+      stringValue(shortlist, "japanAngle") ??
+      stringValue(asRecord(signals?.japan), "searchSummary"),
+    salesReasons:
+      stringArrayValue(salesReadiness, "reasons").length > 0
+        ? stringArrayValue(salesReadiness, "reasons")
+        : stringArrayValue(shortlist, "reasons"),
+    salesRisks:
+      stringArrayValue(salesReadiness, "risks").length > 0
+        ? stringArrayValue(salesReadiness, "risks")
+        : stringArrayValue(shortlist, "risks"),
+    lpHeadline: stringValue(copy, "headline"),
+    lpCta: stringValue(copy, "cta"),
+    lpRiskLevel: stringValue(compliance, "riskLevel"),
+    lpFaqCount: recordArrayValue(lp, "faqs").length,
+    lpImageCount: recordArrayValue(lp, "images").length,
+    adHeadlineCount: stringArrayValue(adHeadlines, "headlines").length,
+    outreachReady: Boolean(outreachMessages?.ja || outreachMessages?.en),
+    csReady: Boolean(
+      csTemplates?.inquiry || csTemplates?.complaint || csTemplates?.refund
+    ),
+  };
+}
+
+export async function getPipelineProductsByStage() {
+  const rows = await db
+    .select({
+      stage: products.stage,
+      product: products,
+    })
+    .from(products)
+    .orderBy(desc(products.updatedAt));
+
+  type PipelineProduct = Product & {
+    pipelineSummary: ReturnType<typeof pipelineSummary>;
+  };
+
+  const grouped: Record<Product["stage"], PipelineProduct[]> = {
+    scout: [],
+    lp: [],
+    ad: [],
+    outreach: [],
+    cs: [],
+    archived: [],
+  };
+
+  for (const row of rows) {
+    grouped[row.stage].push({
+      ...row.product,
+      pipelineSummary: pipelineSummary(row.product.metadata),
+    });
+  }
+
+  return grouped;
+}
+
 export async function getAgentsWithStats() {
   // Last 24h run counts per agent
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
