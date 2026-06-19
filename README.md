@@ -75,7 +75,12 @@ DBや本番API設定がまだ無い状態で、公開ソースから先に30件�
 
 ```bash
 pnpm research:products -- --limit 30
+pnpm research:products -- --limit 30 --json --out reports/scout-products.json
+pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sales-pack.md
 ```
+
+`pnpm scout:minimal` はDB-backed運用コマンドです。`DATABASE_URL` または `DATABASE_POOL_URL`
+が未設定の場合は、成功に見せかけず明示的に失敗します。
 
 ## 画面構成
 
@@ -120,6 +125,7 @@ pnpm db:seed           # System 1〜5 全エージェント投入 (idempotent)
 pnpm scout:minimal     # 無料RSS → Claudeスコアリング → Inbox
 pnpm scout:score       # JSON候補ファイル → Claudeスコアリング → Inbox
 pnpm research:products # DBなしで公開ソースから商品候補を抽出
+pnpm research:sales-pack # 抽出JSONから販売準備パックを生成
 ```
 
 ## 24/7運用 (Mac mini想定)

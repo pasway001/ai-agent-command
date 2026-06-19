@@ -195,6 +195,10 @@ function positiveInt(value: number | undefined, fallback: number) {
   return Math.floor(value as number);
 }
 
+function hasDatabaseConfig() {
+  return Boolean(process.env.DATABASE_POOL_URL || process.env.DATABASE_URL);
+}
+
 // ---- cross-source merge ----
 
 type MergedCandidate = {
@@ -593,6 +597,13 @@ async function updateScoutRunFinish(
 export async function runMinimalScout(
   opts: MinimalScoutRunOptions = {}
 ): Promise<MinimalScoutRunResult> {
+  if (!opts.skipPersistence && !hasDatabaseConfig()) {
+    throw new Error(
+      "DATABASE_POOL_URL or DATABASE_URL must be set for DB-backed scout runs. " +
+        "Use `pnpm research:products -- --limit 30` for DB-free live source discovery."
+    );
+  }
+
   // Resolve limits. New env vars take precedence; legacy MINIMAL_SCOUT_LIMIT
   // is used only when the new ones are unset (backward compat).
   const legacyLimit = Number(process.env.MINIMAL_SCOUT_LIMIT ?? "");

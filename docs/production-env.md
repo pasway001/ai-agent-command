@@ -120,7 +120,9 @@ pnpm env:check
 pnpm env:check:production
 pnpm env:check:ai
 pnpm research:products -- --limit 30
+pnpm research:products -- --limit 30 --json --out reports/scout-products.json
+pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sales-pack.md
 ```
 
 `env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.
-`research:products` is a DB-free live-source shortlist command for quick product discovery; the DB-backed production path remains `pnpm scout:minimal`.
+`research:products` is a DB-free live-source shortlist command for quick product discovery, and `research:sales-pack` turns its JSON output into LP/ad/outreach hypotheses. The DB-backed production path remains `pnpm scout:minimal`; it requires `DATABASE_URL` or `DATABASE_POOL_URL` and fails early when neither is configured.

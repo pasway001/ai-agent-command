@@ -105,7 +105,7 @@ function strip(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function rulesReject(item: NormalizedCandidate): string | null {
+function rulesReject(item: NormalizedCandidate, source?: SourceConfig): string | null {
   const title = item.title.toLowerCase();
   if (!title.trim()) return "empty title";
   if (/^(ask|tell|poll)\s+hn[:]/i.test(item.title)) return "HN discussion";
@@ -126,6 +126,13 @@ function rulesReject(item: NormalizedCandidate): string | null {
   }
   if (/\b(sex\s+toys?|adult\s+toys?|erotic|pornographic|firearms?|guns?|knives|knife|weapons?|ammo|ammunition|cbd|cannabis|nicotine|vape|tobacco)\b/i.test(title)) {
     return "restricted/adult product";
+  }
+  if (
+    source &&
+    !/kicktraq/i.test(source.name) &&
+    /\b(apple|samsung|lenovo|sony|xiaomi|google|microsoft|lg|dell|hp|asus|acer|huawei|tesla|nintendo)\b/i.test(title)
+  ) {
+    return "major-brand news, low exclusive resale potential";
   }
   return null;
 }
@@ -300,7 +307,7 @@ async function main() {
     }
     const { source, items } = settled.value;
     for (const item of items) {
-      if (rulesReject(item)) continue;
+      if (rulesReject(item, source)) continue;
       const classification = classifyProductText({
         title: item.title,
         description: item.description,
