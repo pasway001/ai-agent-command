@@ -674,6 +674,56 @@ export type ScoreCandidateResult = {
   enqueuedApprovalId: string | null;
 };
 
+function salesNextActionForScore(data: ScoringOutput, signals: CandidateSignals) {
+  if (data.verdict === "reject") {
+    return "現時点では販売候補から外し、類似カテゴリの別商品を確認";
+  }
+  const risk = signals.perplexity?.regulatoryRisk;
+  if (risk === "high") {
+    return "規制リスク、認証書類、日本販売可否を先に確認";
+  }
+  if (signals.overseas?.url) {
+    return "メーカー連絡先、日本販売権、卸条件、サンプル可否を確認";
+  }
+  return "一次ソースとメーカー連絡先を確認";
+}
+
+function shortlistMetadataFromScore(
+  data: ScoringOutput,
+  signals: CandidateSignals
+) {
+  const score100 = Math.round(data.score * 100);
+  const priority =
+    data.verdict === "reject"
+      ? 0
+      : Math.max(1, Math.min(9, Math.round(data.score * 9)));
+  return {
+    shortlist: {
+      score: score100,
+      rawScore: data.score,
+      totalScore: data.totalScore,
+      verdict: data.verdict,
+      reasons: data.pros,
+      risks: data.cons,
+      nextAction: salesNextActionForScore(data, signals),
+      japanAngle:
+        signals.japan?.searchSummary ??
+        signals.perplexity?.summary ??
+        "日本クラウドファンディングで需要・差別化を検証",
+      source: signals.overseas?.source,
+      sourceUrl: signals.overseas?.url,
+    },
+    salesReadiness: {
+      priority,
+      reasons: data.pros,
+      risks: data.cons,
+      nextAction: salesNextActionForScore(data, signals),
+      score: score100,
+      rawScore: data.score,
+    },
+  };
+}
+
 /** Re-score an existing product by reading signals from products.metadata. */
 export async function scoreExistingProduct(productId: string) {
   const { db } = await import("../db");
@@ -792,6 +842,7 @@ export async function scoreCandidate(
     // Run our backward-compat normalizer. If the LLM emitted invalid output,
     // parseScoringOutput synthesizes a reject so the pipeline never crashes.
     const data: ScoringOutput = parseScoringOutput(rawData);
+    await mergeProductMetadata(product.id, shortlistMetadataFromScore(data, signals));
 
     await recordAutoEvaluation({
       runId: run.id,

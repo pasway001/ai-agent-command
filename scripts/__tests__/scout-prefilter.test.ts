@@ -12,10 +12,29 @@ t.test("mock prefilter keeps app-connected physical gadgets", async () => {
   assertEqual(result.viable, true);
 });
 
+t.test("mock prefilter keeps physical clocks from HN-style text", async () => {
+  const result = await runPrefilter(
+    "Capacitor Alarm Clock",
+    "An open hardware clock device for your desk."
+  );
+
+  assertEqual(result.viable, true);
+});
+
 t.test("mock prefilter still rejects pure software", async () => {
   const result = await runPrefilter(
     "AI Workflow Platform",
     "A SaaS app and API for automating internal software operations."
+  );
+
+  assertEqual(result.viable, false);
+  assertEqual(result.confidence, "high");
+});
+
+t.test("mock prefilter rejects SEO audit tools", async () => {
+  const result = await runPrefilter(
+    "Crawlie - Free open-source SEO audit tool for humans and agents",
+    "A crawler and website audit tool for web teams."
   );
 
   assertEqual(result.viable, false);

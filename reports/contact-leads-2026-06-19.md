@@ -1,6 +1,6 @@
 # Contact Leads
 
-Generated at: 2026-06-19T13:17:41.480Z
+Generated at: 2026-06-19T13:39:45.477Z
 Products: 30
 
 ## Summary
@@ -9,7 +9,7 @@ Products: 30
 - Products with any lead: 30
 - Direct email found: 1
 - Contact page found: 0
-- Crowdfunding link found: 30
+- Crowdfunding link found: 29
 
 ## Leads
 
@@ -489,24 +489,7 @@ Products: 30
 - EN subject: Japan Launch Opportunity for Sychedelic Headphones: From Stress to Focus In Minutes
 - Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
 
-### 29. Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-
-- Score: 82 / Stage: scout
-- Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/>
-- Fetch: ok:200
-- Primary: crowdfunding / https://www.kickstarter.com/profile/twelvetooo
-- Emails: -
-- Contact pages: -
-- Official sites: -
-- Crowdfunding: https://www.kickstarter.com/profile/twelvetooo / https://www.kickstarter.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/creator_bio / http://kickstarter.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere
-- Social: -
-- Other external: -
-- Contact lookup: Kicktraqの商品ページからKickstarter本体へ遷移し、Creator profile / campaign contact / official site / Instagramを確認
-- JA subject: 【日本展開のご相談】Twelvetooo Smart Projection Bulb: Light & Motion Anywhere のMakuake販売について
-- EN subject: Japan Launch Opportunity for Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-- Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
-
-### 30. Vimow: Wire-Free Vision AI Robot Lawn Mower
+### 29. Vimow: Wire-Free Vision AI Robot Lawn Mower
 
 - Score: 82 / Stage: scout
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/vimow/vimow-the-boundary-free-visionary-mower/>
@@ -522,3 +505,20 @@ Products: 30
 - JA subject: 【日本展開のご相談】Vimow: Wire-Free Vision AI Robot Lawn Mower のMakuake販売について
 - EN subject: Japan Launch Opportunity for Vimow: Wire-Free Vision AI Robot Lawn Mower
 - Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
+
+### 30. The AI Music Device That Finally Asked Artists First
+
+- Score: 62 / Stage: scout
+- Source: Yanko Design <https://www.yankodesign.com/2026/06/19/the-ai-music-device-that-finally-asked-artists-first/?utm_source=rss&utm_medium=rss&utm_campaign=the-ai-music-device-that-finally-asked-artists-first>
+- Fetch: ok:200
+- Primary: official_site / https://bit.ly/358A9kJ
+- Emails: -
+- Contact pages: -
+- Official sites: https://bit.ly/358A9kJ
+- Crowdfunding: -
+- Social: -
+- Other external: -
+- Contact lookup: Yanko Design記事内のブランド名・公式サイト・掲載元リンクからメーカー連絡先を確認
+- JA subject: 【日本展開のご相談】The AI Music Device That Finally Asked Artists First のMakuake販売について
+- EN subject: Japan Launch Opportunity for The AI Music Device That Finally Asked Artists First
+- Next action: メーカー連絡先、日本販売権、卸条件、サンプル可否を確認

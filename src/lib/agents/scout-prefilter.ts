@@ -76,6 +76,17 @@ function mockPrefilter(title: string, description?: string): PrefilterResult {
     };
   }
 
+  if (!physicalLikely) {
+    return {
+      viable: false,
+      confidence: classification.productType === "unknown" ? "medium" : "high",
+      reason:
+        classification.exclusionReason ??
+        "物理的に製造・発送できる商品か判断できないため対象外",
+      blockers: [classification.productType],
+    };
+  }
+
   const regulatoryKeywords = ["supplement", "サプリ", "beauty", "pharma", "医薬", "medical device"];
   const hasRegFlag = regulatoryKeywords.some((k) => text.includes(k));
   if (hasRegFlag) {

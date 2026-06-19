@@ -32,6 +32,7 @@ import {
   jaBody,
   mailtoHref,
 } from "@/lib/sales/outreach-kit";
+import { rankSalesProducts } from "@/lib/sales/product-selection";
 import {
   SALES_EXECUTION_LABELS,
   SALES_EXECUTION_STATUSES,
@@ -61,18 +62,7 @@ type SalesProductRow = {
 };
 
 function rankProducts(grouped: GroupedProducts) {
-  return Object.values(grouped)
-    .flat()
-    .filter((product) => !product.title.startsWith("[SMOKE]"))
-    .sort((a, b) => {
-      const scoreA = a.pipelineSummary.shortlistScore ?? 0;
-      const scoreB = b.pipelineSummary.shortlistScore ?? 0;
-      if (scoreA !== scoreB) return scoreB - scoreA;
-      const priorityA = a.pipelineSummary.salesPriority ?? 0;
-      const priorityB = b.pipelineSummary.salesPriority ?? 0;
-      if (priorityA !== priorityB) return priorityB - priorityA;
-      return a.title.localeCompare(b.title);
-    });
+  return rankSalesProducts(grouped);
 }
 
 function textFor(product: SalesProduct) {

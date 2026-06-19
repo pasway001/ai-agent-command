@@ -1,6 +1,6 @@
 # Sales Tasks
 
-Generated at: 2026-06-19T13:05:59.029Z
+Generated at: 2026-06-19T13:39:39.601Z
 Tasks: 30
 
 ## Summary
@@ -65,7 +65,21 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for UKNIGHT: A Pixel Lantern Speaker for Your Desk
 - Note: -
 
-### 5. [通常] EVERLITE 3-in-1 Outdoor Flashlight
+### 5. [通常] The AI Music Device That Finally Asked Artists First
+
+- Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
+- Sales: 未連絡 / Follow-up: none
+- Score: 62 / Priority: 6 / Stage: scout
+- Contact lookup: Yanko Design記事内のブランド名・公式サイト・掲載元リンクからメーカー連絡先を確認
+- Checks: 卸価格/希望小売価格 / MOQ / サンプル提供可否 / 量産リードタイム / 日本での販売権/独占可否 / 商品画像・動画の利用許諾 / 保証/初期不良対応条件 / 商標登録/日本代理店の有無
+- Next action: メーカー連絡先、日本販売権、卸条件、サンプル可否を確認
+- Japan angle: 国内クラファンに類似なし（中立 0.3）
+- Source: Yanko Design <https://www.yankodesign.com/2026/06/19/the-ai-music-device-that-finally-asked-artists-first/?utm_source=rss&utm_medium=rss&utm_campaign=the-ai-music-device-that-finally-asked-artists-first>
+- JA subject: 【日本展開のご相談】The AI Music Device That Finally Asked Artists First のMakuake販売について
+- EN subject: Japan Launch Opportunity for The AI Music Device That Finally Asked Artists First
+- Note: -
+
+### 6. [通常] EVERLITE 3-in-1 Outdoor Flashlight
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -79,7 +93,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for EVERLITE 3-in-1 Outdoor Flashlight
 - Note: -
 
-### 6. [通常] FlexTorch Duo - The World's First Modular Flashlight
+### 7. [通常] FlexTorch Duo - The World's First Modular Flashlight
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -93,7 +107,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for FlexTorch Duo - The World's First Modular Flashlight
 - Note: -
 
-### 7. [通常] Magical Trainers Pocket! ✦ Vol.2 Satchel Bags & Mini bags
+### 8. [通常] Magical Trainers Pocket! ✦ Vol.2 Satchel Bags & Mini bags
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -107,7 +121,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Magical Trainers Pocket! ✦ Vol.2 Satchel Bags & Mini bags
 - Note: -
 
-### 8. [通常] Pocket Shower: A Dual-Formula Reset for Anywhere
+### 9. [通常] Pocket Shower: A Dual-Formula Reset for Anywhere
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -121,7 +135,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Pocket Shower: A Dual-Formula Reset for Anywhere
 - Note: -
 
-### 9. [通常] 3I Atlas Space Terminal - Digital Life AI Companion Hub
+### 10. [通常] 3I Atlas Space Terminal - Digital Life AI Companion Hub
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -135,7 +149,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for 3I Atlas Space Terminal - Digital Life AI Companion Hub
 - Note: -
 
-### 10. [通常] Atmos: Personal Air purifier built for real life
+### 11. [通常] Atmos: Personal Air purifier built for real life
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -149,7 +163,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Atmos: Personal Air purifier built for real life
 - Note: -
 
-### 11. [通常] Bruegel's Wearable Art: Enamel Pins, Pendants & Earrings
+### 12. [通常] Bruegel's Wearable Art: Enamel Pins, Pendants & Earrings
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -163,7 +177,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Bruegel's Wearable Art: Enamel Pins, Pendants & Earrings
 - Note: -
 
-### 12. [通常] Craftphilia: World's First Fully Automated Tufting Machine
+### 13. [通常] Craftphilia: World's First Fully Automated Tufting Machine
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -177,7 +191,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Craftphilia: World's First Fully Automated Tufting Machine
 - Note: -
 
-### 13. [通常] Critter Collector ITA Bag
+### 14. [通常] Critter Collector ITA Bag
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -191,7 +205,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Critter Collector ITA Bag
 - Note: -
 
-### 14. [通常] D1 Milano x Peter Tarka: The Impossible Watch
+### 15. [通常] D1 Milano x Peter Tarka: The Impossible Watch
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -205,7 +219,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for D1 Milano x Peter Tarka: The Impossible Watch
 - Note: -
 
-### 15. [通常] DUSQ - The World’s Only Sleep Regulation System
+### 16. [通常] DUSQ - The World’s Only Sleep Regulation System
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -219,7 +233,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for DUSQ - The World’s Only Sleep Regulation System
 - Note: -
 
-### 16. [通常] ILC1/7 VFD clock large Soviet vacuum fluorescent display DIY
+### 17. [通常] ILC1/7 VFD clock large Soviet vacuum fluorescent display DIY
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -233,7 +247,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for ILC1/7 VFD clock large Soviet vacuum fluorescent display DIY
 - Note: -
 
-### 17. [通常] Kieslect AI NotePods 10S: Earbuds with AI Meeting Summaries
+### 18. [通常] Kieslect AI NotePods 10S: Earbuds with AI Meeting Summaries
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -247,7 +261,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Kieslect AI NotePods 10S: Earbuds with AI Meeting Summaries
 - Note: -
 
-### 18. [通常] Kinderbox – The Smart Audio Box for Children
+### 19. [通常] Kinderbox – The Smart Audio Box for Children
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -261,7 +275,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Kinderbox – The Smart Audio Box for Children
 - Note: -
 
-### 19. [通常] Lemoreleexpand: View Dock with Real-Time Status Display
+### 20. [通常] Lemoreleexpand: View Dock with Real-Time Status Display
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -275,7 +289,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Lemoreleexpand: View Dock with Real-Time Status Display
 - Note: -
 
-### 20. [通常] MorningBlues SonicGlass A1 — Floating Lyric Speaker
+### 21. [通常] MorningBlues SonicGlass A1 — Floating Lyric Speaker
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -289,7 +303,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for MorningBlues SonicGlass A1 — Floating Lyric Speaker
 - Note: -
 
-### 21. [通常] OFFROAD 35
+### 22. [通常] OFFROAD 35
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -303,7 +317,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for OFFROAD 35
 - Note: -
 
-### 22. [通常] Pest Memo: The Smart Bed Bug Detector That Gives Back
+### 23. [通常] Pest Memo: The Smart Bed Bug Detector That Gives Back
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -317,7 +331,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Pest Memo: The Smart Bed Bug Detector That Gives Back
 - Note: -
 
-### 23. [通常] PlantSenso — Turns plant care into play
+### 24. [通常] PlantSenso — Turns plant care into play
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -331,7 +345,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for PlantSenso — Turns plant care into play
 - Note: -
 
-### 24. [通常] Rokibot G7: Ultimate AWD Robotic Mower for Challenging Lawns
+### 25. [通常] Rokibot G7: Ultimate AWD Robotic Mower for Challenging Lawns
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -345,7 +359,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Rokibot G7: Ultimate AWD Robotic Mower for Challenging Lawns
 - Note: -
 
-### 25. [通常] Smart Joystick Controller -ESP32-S3 for Robotics & Gaming
+### 26. [通常] Smart Joystick Controller -ESP32-S3 for Robotics & Gaming
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -359,7 +373,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Smart Joystick Controller -ESP32-S3 for Robotics & Gaming
 - Note: -
 
-### 26. [通常] Sou: Jewelry Wearable For Effortless Presence & Calm
+### 27. [通常] Sou: Jewelry Wearable For Effortless Presence & Calm
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -373,7 +387,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for Sou: Jewelry Wearable For Effortless Presence & Calm
 - Note: -
 
-### 27. [通常] StrokeKeeper: Your Golf Score Made Easy
+### 28. [通常] StrokeKeeper: Your Golf Score Made Easy
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -387,7 +401,7 @@ Tasks: 30
 - EN subject: Japan Launch Opportunity for StrokeKeeper: Your Golf Score Made Easy
 - Note: -
 
-### 28. [通常] Sychedelic Headphones: From Stress to Focus In Minutes
+### 29. [通常] Sychedelic Headphones: From Stress to Focus In Minutes
 
 - Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
 - Sales: 未連絡 / Follow-up: none
@@ -399,20 +413,6 @@ Tasks: 30
 - Source: Kicktraq Wearables <http://www.kicktraq.com/projects/riarus/sychedelic-neuroacoustic-headphones/>
 - JA subject: 【日本展開のご相談】Sychedelic Headphones: From Stress to Focus In Minutes のMakuake販売について
 - EN subject: Japan Launch Opportunity for Sychedelic Headphones: From Stress to Focus In Minutes
-- Note: -
-
-### 29. [通常] Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-
-- Task: 初回連絡 / 連絡先を特定し、日本語/英語の初回打診メールを送る。
-- Sales: 未連絡 / Follow-up: none
-- Score: 82 / Priority: 5 / Stage: scout
-- Contact lookup: Kicktraqの商品ページからKickstarter本体へ遷移し、Creator profile / campaign contact / official site / Instagramを確認
-- Checks: 卸価格/希望小売価格 / MOQ / サンプル提供可否 / 量産リードタイム / 日本での販売権/独占可否 / 商品画像・動画の利用許諾 / 保証/初期不良対応条件 / 商標登録/日本代理店の有無
-- Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
-- Japan angle: ガジェット好き・クリエイター・仕事効率化層で検証
-- Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/>
-- JA subject: 【日本展開のご相談】Twelvetooo Smart Projection Bulb: Light & Motion Anywhere のMakuake販売について
-- EN subject: Japan Launch Opportunity for Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
 - Note: -
 
 ### 30. [通常] Vimow: Wire-Free Vision AI Robot Lawn Mower

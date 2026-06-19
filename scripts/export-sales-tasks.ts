@@ -21,6 +21,7 @@ import {
   enSubject,
   jaSubject,
 } from "../src/lib/sales/outreach-kit";
+import { rankSalesProducts } from "../src/lib/sales/product-selection";
 
 type Args = {
   csv: string;
@@ -121,9 +122,7 @@ function buildTaskRows(
   includeClosed: boolean
 ) {
   const now = new Date();
-  const rows = Object.values(grouped)
-    .flat()
-    .filter((product) => !product.title.startsWith("[SMOKE]"))
+  const rows = rankSalesProducts(grouped)
     .map((product) => {
       const execution = salesExecutionFromMetadata(product.metadata);
       return {

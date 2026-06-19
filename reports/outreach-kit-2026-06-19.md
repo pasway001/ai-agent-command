@@ -1,6 +1,6 @@
 # Outreach Kit
 
-Generated at: 2026-06-19T12:26:12.805Z
+Generated at: 2026-06-19T13:39:38.667Z
 Products: 30
 
 ## Product Outreach Drafts
@@ -1716,68 +1716,7 @@ Best regards,
 [YOUR_COMPANY]
 ```
 
-### 29. Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-
-- Score: 82 / Stage: scout
-- Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/>
-- Contact lookup: Kicktraqの商品ページからKickstarter本体へ遷移し、Creator profile / campaign contact / official site / Instagramを確認
-- Required checks: 卸価格/希望小売価格 / MOQ / サンプル提供可否 / 量産リードタイム / 日本での販売権/独占可否 / 商品画像・動画の利用許諾 / 保証/初期不良対応条件 / 商標登録/日本代理店の有無
-- Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
-
-#### 日本語メール
-
-Subject: 【日本展開のご相談】Twelvetooo Smart Projection Bulb: Light & Motion Anywhere のMakuake販売について
-
-```text
-突然のご連絡失礼いたします。
-
-私たちは日本市場向けに海外発プロダクトのクラウドファンディング展開を支援している [YOUR_COMPANY] です。御社の「Twelvetooo Smart Projection Bulb: Light & Motion Anywhere」を拝見し、ガジェット好き・クリエイター・仕事効率化層という切り口で日本市場に提案できると感じ、ご連絡いたしました。
-
-日本向け展開の可能性を検討したく、まず以下を確認させてください。
-- 日本でのMakuake/クラウドファンディング展開は可能でしょうか。
-- 日本での既存代理店、販売制限、商標上の制限はありますか。
-- 初回ロットのMOQ、卸価格、サンプル費用、量産リードタイムを教えてください。
-- 日本語LP/広告で商品画像・動画・レビュー素材を使用できますか。
-
-条件が合えば、商品サンプル確認後に日本語LP、広告、初期顧客対応、販売後サポートまで弊社側で進行可能です。
-ご担当者様と20分ほどオンラインでお話しできる候補日時をいただけますと幸いです。
-
-どうぞよろしくお願いいたします。
-[YOUR_NAME]
-[YOUR_COMPANY]
-```
-
-#### English Email
-
-Subject: Japan Launch Opportunity for Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-
-```text
-Hello,
-
-My name is [YOUR_NAME] from [YOUR_COMPANY], a Japan-based team helping overseas products launch through Japanese crowdfunding platforms such as Makuake.
-
-We found Twelvetooo Smart Projection Bulb: Light & Motion Anywhere and believe it could fit the Japanese market because it has a clear problem-solution angle for Japanese crowdfunding supporters.
-
-Could you let us know whether a Japan launch or authorized distribution partnership would be possible? We would like to confirm:
-- Wholesale price / suggested retail price
-- MOQ
-- Sample availability and sample cost
-- Mass-production lead time
-- Availability of Japan distribution or crowdfunding rights
-- Permission to use product images, videos, and review materials
-- Warranty and defect-handling terms
-- Trademark status and existing Japan distributors
-
-If there is a fit, we can support Japanese localization, campaign page preparation, ad testing, compliance checks, fulfillment coordination, and customer support for the Japan launch.
-
-Would you be open to a short 20-minute video call next week?
-
-Best regards,
-[YOUR_NAME]
-[YOUR_COMPANY]
-```
-
-### 30. Vimow: Wire-Free Vision AI Robot Lawn Mower
+### 29. Vimow: Wire-Free Vision AI Robot Lawn Mower
 
 - Score: 82 / Stage: scout
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/vimow/vimow-the-boundary-free-visionary-mower/>
@@ -1818,6 +1757,67 @@ Hello,
 My name is [YOUR_NAME] from [YOUR_COMPANY], a Japan-based team helping overseas products launch through Japanese crowdfunding platforms such as Makuake.
 
 We found Vimow: Wire-Free Vision AI Robot Lawn Mower and believe it could fit the Japanese market because it has a clear problem-solution angle for Japanese crowdfunding supporters.
+
+Could you let us know whether a Japan launch or authorized distribution partnership would be possible? We would like to confirm:
+- Wholesale price / suggested retail price
+- MOQ
+- Sample availability and sample cost
+- Mass-production lead time
+- Availability of Japan distribution or crowdfunding rights
+- Permission to use product images, videos, and review materials
+- Warranty and defect-handling terms
+- Trademark status and existing Japan distributors
+
+If there is a fit, we can support Japanese localization, campaign page preparation, ad testing, compliance checks, fulfillment coordination, and customer support for the Japan launch.
+
+Would you be open to a short 20-minute video call next week?
+
+Best regards,
+[YOUR_NAME]
+[YOUR_COMPANY]
+```
+
+### 30. The AI Music Device That Finally Asked Artists First
+
+- Score: 62 / Stage: scout
+- Source: Yanko Design <https://www.yankodesign.com/2026/06/19/the-ai-music-device-that-finally-asked-artists-first/?utm_source=rss&utm_medium=rss&utm_campaign=the-ai-music-device-that-finally-asked-artists-first>
+- Contact lookup: Yanko Design記事内のブランド名・公式サイト・掲載元リンクからメーカー連絡先を確認
+- Required checks: 卸価格/希望小売価格 / MOQ / サンプル提供可否 / 量産リードタイム / 日本での販売権/独占可否 / 商品画像・動画の利用許諾 / 保証/初期不良対応条件 / 商標登録/日本代理店の有無
+- Next action: メーカー連絡先、日本販売権、卸条件、サンプル可否を確認
+
+#### 日本語メール
+
+Subject: 【日本展開のご相談】The AI Music Device That Finally Asked Artists First のMakuake販売について
+
+```text
+突然のご連絡失礼いたします。
+
+私たちは日本市場向けに海外発プロダクトのクラウドファンディング展開を支援している [YOUR_COMPANY] です。御社の「The AI Music Device That Finally Asked Artists First」を拝見し、国内クラファンに類似なし（中立 0.3）という切り口で日本市場に提案できると感じ、ご連絡いたしました。
+
+日本向け展開の可能性を検討したく、まず以下を確認させてください。
+- 日本でのMakuake/クラウドファンディング展開は可能でしょうか。
+- 日本での既存代理店、販売制限、商標上の制限はありますか。
+- 初回ロットのMOQ、卸価格、サンプル費用、量産リードタイムを教えてください。
+- 日本語LP/広告で商品画像・動画・レビュー素材を使用できますか。
+
+条件が合えば、商品サンプル確認後に日本語LP、広告、初期顧客対応、販売後サポートまで弊社側で進行可能です。
+ご担当者様と20分ほどオンラインでお話しできる候補日時をいただけますと幸いです。
+
+どうぞよろしくお願いいたします。
+[YOUR_NAME]
+[YOUR_COMPANY]
+```
+
+#### English Email
+
+Subject: Japan Launch Opportunity for The AI Music Device That Finally Asked Artists First
+
+```text
+Hello,
+
+My name is [YOUR_NAME] from [YOUR_COMPANY], a Japan-based team helping overseas products launch through Japanese crowdfunding platforms such as Makuake.
+
+We found The AI Music Device That Finally Asked Artists First and believe it could fit the Japanese market because it has a clear problem-solution angle for Japanese crowdfunding supporters.
 
 Could you let us know whether a Japan launch or authorized distribution partnership would be possible? We would like to confirm:
 - Wholesale price / suggested retail price

@@ -124,6 +124,8 @@ pnpm db:studio         # Drizzle Studio (Web UIでテーブル閲覧)
 pnpm db:apply-rls      # drizzle/policies.sql を適用
 pnpm db:seed-minimal   # 最小Scoutのみ投入
 pnpm db:seed           # System 1〜5 全エージェント投入 (idempotent)
+pnpm products:dedupe   # 同タイトルで重複した商品候補を統合
+pnpm products:prune-nonphysical # 無形商材を販売候補から除外
 pnpm scout:minimal     # 無料RSS → Claudeスコアリング → Inbox
 pnpm scout:score       # JSON候補ファイル → Claudeスコアリング → Inbox
 pnpm research:products # DBなしで公開ソースから商品候補を抽出

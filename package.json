@@ -24,6 +24,8 @@
     "db:seed-skills": "tsx scripts/seed-skills.ts",
     "db:reset-data": "tsx scripts/reset-data.ts",
     "db:apply-migration": "tsx scripts/apply-migration.ts",
+    "products:dedupe": "tsx scripts/dedupe-products.ts",
+    "products:prune-nonphysical": "tsx scripts/prune-nonphysical-products.ts",
     "env:check": "tsx scripts/check-env.ts",
     "env:check:production": "tsx scripts/check-env.ts --production",
     "env:check:ai": "tsx scripts/check-env.ts --ai",

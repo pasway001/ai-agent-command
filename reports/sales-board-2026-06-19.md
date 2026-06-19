@@ -1,6 +1,6 @@
 # Sales Board
 
-Generated at: 2026-06-19T12:48:03.847Z
+Generated at: 2026-06-19T13:39:28.933Z
 Products: 30
 
 ## Priority List
@@ -397,21 +397,7 @@ Products: 30
 - Sales: 未連絡
 - LP asset: not generated
 
-### 29. Twelvetooo Smart Projection Bulb: Light & Motion Anywhere
-
-- Stage: scout / Status: pending / Score: 82 / Priority: 5
-- Category: ガジェット/家電
-- Target retail: 4,980円〜14,800円
-- Target landed cost max: 1,743円 (gross margin 65%)
-- Next action: Makuake/楽天/Amazon JP類似、卸条件、商標を確認
-- Japan angle: ガジェット好き・クリエイター・仕事効率化層で検証
-- Checks: 商標/代理店
-- Risks: 通常の輸入/PL保険/商標確認
-- Source: Kicktraq Gadgets <http://www.kicktraq.com/projects/twelvetooo/twelvetooo-smart-projection-bulb-light-and-motion-anywhere/>
-- Sales: 未連絡
-- LP asset: not generated
-
-### 30. Vimow: Wire-Free Vision AI Robot Lawn Mower
+### 29. Vimow: Wire-Free Vision AI Robot Lawn Mower
 
 - Stage: scout / Status: pending / Score: 82 / Priority: 5
 - Category: ガジェット/家電
@@ -422,5 +408,19 @@ Products: 30
 - Checks: 商標/代理店
 - Risks: 通常の輸入/PL保険/商標確認
 - Source: Kicktraq Product Design <http://www.kicktraq.com/projects/vimow/vimow-the-boundary-free-visionary-mower/>
+- Sales: 未連絡
+- LP asset: not generated
+
+### 30. The AI Music Device That Finally Asked Artists First
+
+- Stage: scout / Status: pending / Score: 62 / Priority: 6
+- Category: 生活改善プロダクト
+- Target retail: 8,800円〜24,800円
+- Target landed cost max: 3,080円 (gross margin 65%)
+- Next action: メーカー連絡先、日本販売権、卸条件、サンプル可否を確認
+- Japan angle: 国内クラファンに類似なし（中立 0.3）
+- Checks: 商標推奨
+- Risks: -
+- Source: Yanko Design <https://www.yankodesign.com/2026/06/19/the-ai-music-device-that-finally-asked-artists-first/?utm_source=rss&utm_medium=rss&utm_campaign=the-ai-music-device-that-finally-asked-artists-first>
 - Sales: 未連絡
 - LP asset: not generated

@@ -30,6 +30,8 @@ const HARD_DIGITAL_PATTERNS: Pattern[] = [
   { pattern: /\b(api|sdk)\b/i, label: "API/SDK" },
   { pattern: /\b(stl|3d\s+printable|printable\s+files?|digital\s+files?|3d\s+models?|model\s+packs?)\b/i, label: "3D printable/digital file" },
   { pattern: /\b(ai\s+tools?|developer\s+tools?|devtools?)\b/i, label: "AI/developer tool" },
+  { pattern: /\b(seo|website|web|site)\s+(audit|auditor|crawler|analytics?|analysis|optimizer|optimization|tools?)\b/i, label: "SEO/web tool" },
+  { pattern: /\b(audit|crawler)\s+tools?\b/i, label: "SEO/web tool" },
   { pattern: /\b(llm|chatgpt|claude|ai\s+(workspace|writing|research|coding|chat|editor|generator|automation|agent|apps?))\b/i, label: "AI software" },
   { pattern: /\b(chatbots?|copilots?)\b/i, label: "AI software" },
   { pattern: /\b(newsletters?|courses?|masterclasses?|webinars?)\b/i, label: "content/course" },
@@ -60,12 +62,12 @@ const PROHIBITED_PATTERNS: Pattern[] = [
 const PHYSICAL_PATTERNS: Pattern[] = [
   {
     pattern:
-      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bulbs?|projectors?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|docks?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|tools?|kits?|toys?|robots?|watches?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|sneakers?|sandals?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?|showers?|pillows?|shelves?|sensors?|humidifiers?|stationery|notebooks?)\b/i,
+      /\b(products?|gadgets?|devices?|hardware|electronics?|chargers?|power\s+banks?|batter(?:y|ies)|cables?|adapters?|cameras?|lights?|lamps?|bulbs?|projectors?|bags?|backpacks?|wallets?|cases?|stands?|mounts?|docks?|desks?|chairs?|bottles?|cups?|mugs?|kitchen|hand\s+tools?|power\s+tools?|fabrication\s+tools?|woodworking\s+tools?|garden\s+tools?|kitchen\s+tools?|beauty\s+tools?|kits?|toys?|robots?|watches?|clocks?|wearables?|rings?|headphones?|earbuds?|speakers?|keyboards?|mice|drones?|bikes?|cycling|gear|tents?|shoes?|sneakers?|sandals?|apparel|jackets?|gloves?|organizers?|scanners?|printers?|supplements?|sprays?|tea|pajamas?|showers?|pillows?|shelves?|sensors?|humidifiers?|stationery|notebooks?)\b/i,
     label: "physical product keyword",
   },
   {
     pattern:
-      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|電球|プロジェクター|バッグ|リュック|財布|ケース|スタンド|マウント|ドック|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー|シャワー|枕|ピロー|棚|センサー|加湿器|文具|ノート/i,
+      /商品|製品|ガジェット|デバイス|ハードウェア|家電|充電器|モバイルバッテリー|バッテリー|電池|ケーブル|アダプター|カメラ|ライト|ランプ|電球|プロジェクター|バッグ|リュック|財布|ケース|スタンド|マウント|ドック|デスク|机|椅子|チェア|ボトル|タンブラー|キッチン|調理|工具|キット|玩具|おもちゃ|ロボット|時計|置き時計|目覚まし時計|ウェアラブル|指輪|イヤホン|ヘッドホン|スピーカー|キーボード|マウス|ドローン|自転車|キャンプ|アウトドア|靴|シューズ|服|アパレル|収納|スキャナー|プリンター|サプリ|プロテイン|スプレー|食洗機|パジャマ|ティー|シャワー|枕|ピロー|棚|センサー|加湿器|文具|ノート/i,
     label: "physical product keyword",
   },
 ];
@@ -107,6 +109,8 @@ export function classifyProductText(
   ]);
   const sourceText = input.source ?? "";
   const text = compactText([productText, sourceText]);
+  const titlePhysical = firstMatch(PHYSICAL_PATTERNS, input.title);
+  const sourceHint = firstMatch(PHYSICAL_SOURCE_HINTS, sourceText);
 
   const prohibited = firstMatch(PROHIBITED_PATTERNS, text);
   if (prohibited) {
@@ -144,17 +148,8 @@ export function classifyProductText(
     };
   }
 
-  const physical = firstMatch(PHYSICAL_PATTERNS, productText);
-  const sourceHint = firstMatch(PHYSICAL_SOURCE_HINTS, sourceText);
-  if (physical || sourceHint || isDeclaredPhysical(input)) {
-    return {
-      productType: "physical",
-      physicalProductLikely: true,
-    };
-  }
-
   const hardDigital = firstMatch(HARD_DIGITAL_PATTERNS, text);
-  if (hardDigital) {
+  if (hardDigital && !titlePhysical && !sourceHint && !isDeclaredPhysical(input)) {
     return {
       productType: "digital",
       physicalProductLikely: false,
@@ -163,6 +158,30 @@ export function classifyProductText(
   }
 
   const service = firstMatch(SERVICE_PATTERNS, text);
+  if (service && !titlePhysical && !sourceHint && !isDeclaredPhysical(input)) {
+    return {
+      productType: "service",
+      physicalProductLikely: false,
+      exclusionReason: `${service.label} のため物販対象外`,
+    };
+  }
+
+  const physical = firstMatch(PHYSICAL_PATTERNS, productText);
+  if (physical || sourceHint || isDeclaredPhysical(input)) {
+    return {
+      productType: "physical",
+      physicalProductLikely: true,
+    };
+  }
+
+  if (hardDigital) {
+    return {
+      productType: "digital",
+      physicalProductLikely: false,
+      exclusionReason: `${hardDigital.label} のため無形商材と判定`,
+    };
+  }
+
   if (service) {
     return {
       productType: "service",

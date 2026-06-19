@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import {
   agents,
@@ -164,23 +164,23 @@ export async function findProductByAsin(asin: string) {
   return row ?? null;
 }
 
-/** Find by ASIN if provided, else create. Returns the row. */
+export async function findProductByTitle(title: string) {
+  const [row] = await db
+    .select()
+    .from(products)
+    .where(eq(products.title, title))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Find by ASIN or title if provided, else create. Returns the row. */
 export async function findOrCreateProduct(input: NewProduct) {
   if (input.asin) {
     const existing = await findProductByAsin(input.asin);
     if (existing) return existing;
   }
-  if (!input.asin) {
-    const sourceCondition = input.sourceAgentId
-      ? eq(products.sourceAgentId, input.sourceAgentId)
-      : isNull(products.sourceAgentId);
-    const [existing] = await db
-      .select()
-      .from(products)
-      .where(and(eq(products.title, input.title), sourceCondition))
-      .limit(1);
-    if (existing) return existing;
-  }
+  const existingByTitle = await findProductByTitle(input.title);
+  if (existingByTitle) return existingByTitle;
   const [row] = await db.insert(products).values(input).returning();
   return row;
 }

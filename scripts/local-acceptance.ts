@@ -6,6 +6,7 @@ import { count, desc, isNull } from "drizzle-orm";
 import { closeDb, db } from "../src/lib/db";
 import { agents, approvalQueue, products, scoutRuns } from "../src/lib/db/schema";
 import { contactLeadsFromMetadata } from "../src/lib/sales/contact-leads";
+import { isSellableProductRecord } from "../src/lib/sales/product-selection";
 
 type CheckStatus = "pass" | "warn" | "fail";
 
@@ -32,6 +33,8 @@ const REQUIRED_FILES = [
   "scripts/export-sales-tasks.ts",
   "scripts/export-contact-leads.ts",
   "scripts/sync-contact-leads.ts",
+  "scripts/dedupe-products.ts",
+  "scripts/prune-nonphysical-products.ts",
 ];
 
 type Args = {
@@ -177,6 +180,7 @@ async function main() {
   const nonSmokeProducts = productRows.filter(
     (product) => !product.title.startsWith("[SMOKE]")
   );
+  const salesProducts = nonSmokeProducts.filter(isSellableProductRecord);
   const stageCounts = nonSmokeProducts.reduce<Record<string, number>>(
     (acc, product) => {
       acc[product.stage] = (acc[product.stage] ?? 0) + 1;
@@ -201,17 +205,29 @@ async function main() {
     .orderBy(desc(scoutRuns.startedAt))
     .limit(1);
 
-  const productsWithScore = nonSmokeProducts.filter((product) => {
+  const productsWithScore = salesProducts.filter((product) => {
     const metadata = asRecord(product.metadata);
     return numberValue(asRecord(metadata?.shortlist), "score") !== null;
   });
-  const productsWithSourceUrl = nonSmokeProducts.filter((product) => {
+  const productsWithSalesScaleScore = salesProducts.filter((product) => {
+    const metadata = asRecord(product.metadata);
+    const score = numberValue(asRecord(metadata?.shortlist), "score");
+    return score !== null && score >= 1 && score <= 100;
+  });
+  const duplicateTitleCount = Array.from(
+    salesProducts.reduce<Map<string, number>>((acc, product) => {
+      const key = product.title.trim().replace(/\s+/g, " ").toLowerCase();
+      acc.set(key, (acc.get(key) ?? 0) + 1);
+      return acc;
+    }, new Map())
+  ).filter(([, value]) => value > 1).length;
+  const productsWithSourceUrl = salesProducts.filter((product) => {
     const metadata = asRecord(product.metadata);
     const signals = asRecord(metadata?.signals);
     const overseas = asRecord(signals?.overseas);
     return stringValue(overseas, "url") !== null;
   });
-  const productsWithNextAction = nonSmokeProducts.filter((product) => {
+  const productsWithNextAction = salesProducts.filter((product) => {
     const metadata = asRecord(product.metadata);
     const salesReadiness = asRecord(metadata?.salesReadiness);
     const shortlist = asRecord(metadata?.shortlist);
@@ -220,7 +236,7 @@ async function main() {
       stringValue(shortlist, "nextAction") !== null
     );
   });
-  const productsWithContactLeads = nonSmokeProducts.filter((product) => {
+  const productsWithContactLeads = salesProducts.filter((product) => {
     const snapshot = contactLeadsFromMetadata(product.metadata);
     return snapshot !== null && snapshot.candidates.length > 0;
   });
@@ -228,13 +244,23 @@ async function main() {
   checks.push(
     check(
       "DB商品数",
-      nonSmokeProducts.length >= 30,
-      `${nonSmokeProducts.length} non-smoke product(s), stages=${JSON.stringify(stageCounts)}`
+      salesProducts.length >= 30,
+      `${salesProducts.length}/30 sellable physical product(s), all stages=${JSON.stringify(stageCounts)}`
     ),
     check(
       "スコア付き商品",
       productsWithScore.length >= 30,
       `${productsWithScore.length}/30 products include shortlist.score`
+    ),
+    check(
+      "販売スコア尺度",
+      productsWithSalesScaleScore.length >= 30,
+      `${productsWithSalesScaleScore.length}/30 products include 1-100 sales score`
+    ),
+    check(
+      "重複商品タイトル",
+      duplicateTitleCount === 0,
+      `${duplicateTitleCount} duplicate title group(s)`
     ),
     check(
       "一次ソースURL",

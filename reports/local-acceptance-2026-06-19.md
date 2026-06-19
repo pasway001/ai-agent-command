@@ -1,26 +1,28 @@
 # Local Acceptance Report
 
-Generated at: 2026-06-19T13:23:55.851Z
+Generated at: 2026-06-19T13:41:02.148Z
 
 ## Summary
 
-- Passed: 37
+- Passed: 41
 - Warnings: 0
 - Failures: 0
-- Total checks: 37
+- Total checks: 41
 
 ## Checks
 
 | Status | Check | Detail |
 | --- | --- | --- |
-| PASS | DB商品数 | 35 non-smoke product(s), stages={"scout":34,"lp":1} |
-| PASS | スコア付き商品 | 30/30 products include shortlist.score |
+| PASS | DB商品数 | 32/30 sellable physical product(s), all stages={"scout":31,"archived":4,"lp":1} |
+| PASS | スコア付き商品 | 32/30 products include shortlist.score |
+| PASS | 販売スコア尺度 | 32/30 products include 1-100 sales score |
+| PASS | 重複商品タイトル | 0 duplicate title group(s) |
 | PASS | 一次ソースURL | 32/30 products include source URL |
-| PASS | 次アクション | 30/30 products include next action |
-| PASS | 連絡先候補同期 | 30/30 products include synced contact leads |
+| PASS | 次アクション | 32/30 products include next action |
+| PASS | 連絡先候補同期 | 31/30 products include synced contact leads |
 | PASS | エージェント | 10 agent(s) seeded |
 | PASS | 承認待ち | 32 open approval(s); can be lower after real review work |
-| PASS | 最新Scout実行 | run=ed346d54-8568-49e8-97f2-2dcdb36591f2 scored=3 enqueued=2 errors=0 |
+| PASS | 最新Scout実行 | run=ec76f6a6-c78a-44d3-acd2-6a1521865c08 scored=3 enqueued=2 errors=0 |
 | PASS | 実装ファイル src/app/(app)/sales/page.tsx | src/app/(app)/sales/page.tsx |
 | PASS | 実装ファイル src/app/(app)/sales/actions.ts | src/app/(app)/sales/actions.ts |
 | PASS | 実装ファイル src/lib/sales/execution.ts | src/lib/sales/execution.ts |
@@ -31,15 +33,17 @@ Generated at: 2026-06-19T13:23:55.851Z
 | PASS | 実装ファイル scripts/export-sales-tasks.ts | scripts/export-sales-tasks.ts |
 | PASS | 実装ファイル scripts/export-contact-leads.ts | scripts/export-contact-leads.ts |
 | PASS | 実装ファイル scripts/sync-contact-leads.ts | scripts/sync-contact-leads.ts |
+| PASS | 実装ファイル scripts/dedupe-products.ts | scripts/dedupe-products.ts |
+| PASS | 実装ファイル scripts/prune-nonphysical-products.ts | scripts/prune-nonphysical-products.ts |
 | PASS | レポート scout-products-2026-06-19.json | reports/scout-products-2026-06-19.json (29689 bytes) |
-| PASS | レポート sales-board-2026-06-19.csv | reports/sales-board-2026-06-19.csv (15602 bytes) |
-| PASS | レポート sales-board-2026-06-19.md | reports/sales-board-2026-06-19.md (19817 bytes) |
-| PASS | レポート outreach-kit-2026-06-19.csv | reports/outreach-kit-2026-06-19.csv (108252 bytes) |
-| PASS | レポート outreach-kit-2026-06-19.md | reports/outreach-kit-2026-06-19.md (101229 bytes) |
-| PASS | レポート sales-tasks-2026-06-19.csv | reports/sales-tasks-2026-06-19.csv (31804 bytes) |
-| PASS | レポート sales-tasks-2026-06-19.md | reports/sales-tasks-2026-06-19.md (35323 bytes) |
-| PASS | レポート contact-leads-2026-06-19.csv | reports/contact-leads-2026-06-19.csv (30241 bytes) |
-| PASS | レポート contact-leads-2026-06-19.md | reports/contact-leads-2026-06-19.md (35474 bytes) |
+| PASS | レポート sales-board-2026-06-19.csv | reports/sales-board-2026-06-19.csv (15650 bytes) |
+| PASS | レポート sales-board-2026-06-19.md | reports/sales-board-2026-06-19.md (19859 bytes) |
+| PASS | レポート outreach-kit-2026-06-19.csv | reports/outreach-kit-2026-06-19.csv (108297 bytes) |
+| PASS | レポート outreach-kit-2026-06-19.md | reports/outreach-kit-2026-06-19.md (101274 bytes) |
+| PASS | レポート sales-tasks-2026-06-19.csv | reports/sales-tasks-2026-06-19.csv (31850 bytes) |
+| PASS | レポート sales-tasks-2026-06-19.md | reports/sales-tasks-2026-06-19.md (35369 bytes) |
+| PASS | レポート contact-leads-2026-06-19.csv | reports/contact-leads-2026-06-19.csv (30035 bytes) |
+| PASS | レポート contact-leads-2026-06-19.md | reports/contact-leads-2026-06-19.md (35268 bytes) |
 | PASS | レポート sales-pack-2026-06-19.md | reports/sales-pack-2026-06-19.md (32400 bytes) |
 | PASS | リサーチJSON | 30 researched item(s) |
 | PASS | Sales Board CSV行数 | 30 data row(s) |
