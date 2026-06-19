@@ -104,6 +104,47 @@ ANTHROPIC_WEB_SEARCH_USD_PER_1K=10
 
 For a zero-cost rehearsal, temporarily set `LLM_PROVIDER=mock`.
 
+## 4.1 Vercel Deployment Setup
+
+When deploying to a dedicated Vercel project, set environment variables in the
+Vercel dashboard or with `vercel env add`. At minimum:
+
+| Key | Required | Notes |
+| --- | --- | --- |
+| `AUTH_PROVIDER` | Yes | Use `local` unless Supabase Auth is configured. |
+| `APP_AUTH_EMAIL` | Yes | Login email. |
+| `APP_AUTH_PASSWORD` | Yes | Strong login password. |
+| `APP_SESSION_SECRET` | Yes | 32+ random chars. |
+| `DATABASE_URL` or `DATABASE_POOL_URL` or `DATABASE_URL_DIRECT` | Yes | Must be reachable from Vercel. A local `localhost` Postgres URL will not work in Vercel production. |
+| `NEXT_PUBLIC_APP_URL` | Yes | Production URL, no trailing slash. |
+| `CRON_SECRET` | Yes | Required by `/api/cron/scout` and `/api/cron/learn`. |
+| `LLM_PROVIDER` | Yes | `mock` for dry runs, `anthropic` for real Claude-powered agents. |
+| `ANTHROPIC_API_KEY` | When `LLM_PROVIDER=anthropic` | Required for real Claude research/scoring. |
+| `PERPLEXITY_API_KEY` | Optional | Preferred by `scout.perplexity_jp_market` when present. |
+
+The repository includes `vercel.json` with:
+
+- `framework: nextjs`
+- `installCommand: pnpm install`
+- `buildCommand: pnpm build`
+- daily cron for `/api/cron/scout`
+
+Before deploying, validate locally:
+
+```bash
+pnpm env:check:production
+pnpm env:check:ai
+pnpm build
+```
+
+If using the CLI, link explicitly to avoid deploying to the wrong team/project:
+
+```bash
+vercel link --yes --project <project-name-or-id> --scope <team-or-user>
+vercel env pull .env.production.local --environment=production
+vercel build --prod
+```
+
 ## 5. Scout Sources
 
 The minimum scout uses free RSS feeds by default and writes promising candidates

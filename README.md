@@ -58,6 +58,33 @@ pnpm db:seed-minimal  # Scout/LP/広告/仕入れ/CSのローカル最小agent�
 
 Supabase Auth を使う場合だけ `pnpm db:apply-rls` を実行してください。System 2〜5 も同時運用する段階では `pnpm db:seed` で17件のエージェントを投入できます。
 
+## Vercelへアップする前の確認
+
+コードはVercelにそのまま接続できる状態です。専用Vercelプロジェクト側には、最低限以下の環境変数を登録してください。
+
+```env
+AUTH_PROVIDER=local
+APP_AUTH_EMAIL=<login-email>
+APP_AUTH_PASSWORD=<strong-password>
+APP_SESSION_SECRET=<32+ random chars>
+DATABASE_URL=<Vercelから接続できるPostgres URL>
+NEXT_PUBLIC_APP_URL=https://<your-project>.vercel.app
+CRON_SECRET=<32+ random chars>
+LLM_PROVIDER=mock
+```
+
+実APIでリサーチを回す場合は `LLM_PROVIDER=anthropic` と `ANTHROPIC_API_KEY`、日本市場リサーチをPerplexityへ寄せる場合は `PERPLEXITY_API_KEY` も登録します。DBはVercelから到達できるPostgresが必要です。手元のMacだけの `localhost` DBはVercel本番からは接続できません。
+
+アップ前のローカル確認:
+
+```bash
+pnpm env:check:production
+pnpm env:check:ai
+pnpm build
+```
+
+既存の `.vercel` はローカルリンク情報でGitには入りません。別の専用Vercelへ上げる場合は、そのプロジェクトで新しくリンクしてください。
+
 ## 最小Scout
 
 無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、スコアリングし、承認候補だけ `/inbox` に入れます。`LLM_PROVIDER=mock` のままなら外部AI APIなしでドライランできます。Claude / Perplexity のAPIキーを入れると実リサーチへ切り替わります。
