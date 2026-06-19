@@ -23,6 +23,7 @@
     "env:check": "tsx scripts/check-env.ts",
     "env:check:production": "tsx scripts/check-env.ts --production",
     "env:check:ai": "tsx scripts/check-env.ts --ai",
+    "vercel:audit": "tsx scripts/audit-vercel-env.ts",
     "agent:run": "tsx scripts/run-agent.ts",
     "budget:summary": "tsx scripts/budget-summary.ts",
     "budget:summary:dry": "tsx scripts/budget-summary.ts --dry-run",

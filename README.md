@@ -37,6 +37,7 @@ ANTHROPIC_API_KEY=...
 pnpm env:check
 pnpm env:check:production
 pnpm env:check:ai
+pnpm vercel:audit
 ```
 
 ### 2. 依存インストール
@@ -83,6 +84,7 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 `pnpm scout:minimal` はDB-backed運用コマンドです。`DATABASE_URL` / `DATABASE_POOL_URL` / `DATABASE_URL_DIRECT`
 が未設定の場合は、成功に見せかけず明示的に失敗します。DB設定後は `pnpm research:import`
 で抽出済み候補を `/inbox` の承認待ちへ投入できます。
+デプロイ後は `/api/readiness?db=1` で、DB/Auth/Cron/AI設定とDB接続を値を漏らさず確認できます。
 
 ## 画面構成
 
@@ -116,6 +118,7 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 pnpm dev               # 開発サーバー
 pnpm build             # 本番ビルド
 pnpm lint              # ESLint
+pnpm vercel:audit      # リンク中Vercelプロジェクトの必要env名を監査
 
 pnpm db:generate       # マイグレーションSQL生成 (drizzle/0000_*.sql)
 pnpm db:push           # スキーマを直接適用 (開発時に便利)
