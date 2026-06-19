@@ -10,63 +10,57 @@ System1〜5の複数AIエージェントを24/7運用するためのオペレー
 - Drizzle ORM (postgres-js) + Postgres
 - 認証: 最小構成はローカル1ユーザー認証、必要に応じて Supabase Auth
 
-## 初期セットアップ
+## ローカル最短起動
 
-### 1. `.env.local` を埋める
-
-`.env.example` を参考に、まずは以下の最小構成を `.env.local` に書く。詳しい本番チェックリストは
-[`docs/production-env.md`](docs/production-env.md) を参照。
-
-```
-AUTH_PROVIDER=local
-APP_AUTH_EMAIL=admin@example.com
-APP_AUTH_PASSWORD=...
-APP_SESSION_SECRET=...
-DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-CRON_SECRET=...
-LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=...
-```
-
-この構成では契約が必要な外部APIは Claude API のみです。Supabase / Lark / Apify / Keepa / SellerSprite / Perplexity は任意です。
-
-値を入れたら、秘密値を表示せずに状態だけ確認できる：
-
-```bash
-pnpm env:check
-pnpm env:check:production
-pnpm env:check:ai
-pnpm vercel:audit
-```
-
-### 2. 依存インストール
+Vercel / Supabase 契約がなくても、このMacだけでDB・認証・Scout Inboxまで動きます。
+Homebrew版Postgres 16が未インストールの場合だけ先に `brew install postgresql@16` を実行してください。
 
 ```bash
 pnpm install
+pnpm local:bootstrap
+pnpm dev
 ```
 
-### 3. DBマイグレーション + シード
+`pnpm local:bootstrap` は以下をまとめて実行します。
+
+- `.env.local` を生成または不足分だけ補完
+- ローカルPostgresを起動し、`pathway` role/databaseを作成
+- Drizzle schemaを非対話で適用
+- `scout.scoring` agentをseed
+- `reports/scout-products-2026-06-19.json` の30商品を `/inbox` 承認待ちへ投入
+- `pnpm env:check` でローカル実行に必要な設定を確認
+
+起動後は http://localhost:3000 にアクセスします。ログインメールは `admin@example.com`、パスワードは `.env.local` の `APP_AUTH_PASSWORD` です。
+
+## 手動セットアップ
+
+bootstrapを使わずに進める場合は、`.env.example` を参考に `.env.local` を作成します。詳しいチェックリストは
+[`docs/production-env.md`](docs/production-env.md) を参照してください。
+
+```env
+AUTH_PROVIDER=local
+APP_AUTH_EMAIL=admin@example.com
+APP_AUTH_PASSWORD=<strong-password>
+APP_SESSION_SECRET=<32+ random chars>
+DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+CRON_SECRET=<32+ random chars>
+LLM_PROVIDER=mock
+```
+
+値を入れたら、秘密値を表示せずに状態だけ確認できます。
 
 ```bash
-pnpm db:push
-pnpm db:apply-migration drizzle/0004_budget_alerts.sql  # System 8 budget_alerts
-pnpm db:seed-minimal  # scout.scoring だけ投入
+pnpm env:check
+pnpm local:db
+pnpm db:seed-minimal
 ```
 
 Supabase Auth を使う場合だけ `pnpm db:apply-rls` を実行してください。System 2〜5 も同時運用する段階では `pnpm db:seed` で17件のエージェントを投入できます。
 
-### 4. 開発サーバー起動
+## 最小Scout
 
-```bash
-pnpm dev
-```
-
-→ http://localhost:3000  (`/inbox` にリダイレクト)
-
-### 5. 最小Scoutを実行
-
-無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、Claudeでスコアリングし、承認候補だけ `/inbox` に入れます。Vercelでは `/api/cron/scout` が毎日08:30 JSTに同じ処理を起動します。
+無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、スコアリングし、承認候補だけ `/inbox` に入れます。`LLM_PROVIDER=mock` のままなら外部AI APIなしでドライランできます。Claude / Perplexity のAPIキーを入れると実リサーチへ切り替わります。
 
 ```bash
 pnpm scout:minimal
@@ -84,7 +78,7 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 `pnpm scout:minimal` はDB-backed運用コマンドです。`DATABASE_URL` / `DATABASE_POOL_URL` / `DATABASE_URL_DIRECT`
 が未設定の場合は、成功に見せかけず明示的に失敗します。DB設定後は `pnpm research:import`
 で抽出済み候補を `/inbox` の承認待ちへ投入できます。
-デプロイ後は `/api/readiness?db=1` で、DB/Auth/Cron/AI設定とDB接続を値を漏らさず確認できます。
+ローカル起動後は `/api/readiness?db=1` で、DB/Auth/Cron/AI設定とDB接続を値を漏らさず確認できます。
 
 ## 画面構成
 
@@ -115,10 +109,11 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 ## 開発時のよく使うコマンド
 
 ```bash
+pnpm local:bootstrap   # .env.local生成、Postgres起動、schema適用、30商品Inbox投入
+pnpm local:db          # ローカルPostgres role/database作成 + schema適用
 pnpm dev               # 開発サーバー
 pnpm build             # 本番ビルド
 pnpm lint              # ESLint
-pnpm vercel:audit      # リンク中Vercelプロジェクトの必要env名を監査
 
 pnpm db:generate       # マイグレーションSQL生成 (drizzle/0000_*.sql)
 pnpm db:push           # スキーマを直接適用 (開発時に便利)
@@ -132,6 +127,7 @@ pnpm scout:score       # JSON候補ファイル → Claudeスコアリング →
 pnpm research:products # DBなしで公開ソースから商品候補を抽出
 pnpm research:sales-pack # 抽出JSONから販売準備パックを生成
 pnpm research:import     # 抽出JSONをproducts/runs/evaluations/approval_queueへ投入
+pnpm vercel:audit      # 任意: リンク中Vercelプロジェクトの必要env名を監査
 ```
 
 ## 24/7運用 (Mac mini想定)

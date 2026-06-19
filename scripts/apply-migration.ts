@@ -2,6 +2,7 @@ import "./_loadenv";
 import { readFile } from "node:fs/promises";
 import { join, isAbsolute } from "node:path";
 import postgres from "postgres";
+import { requireDatabaseUrl } from "../src/lib/db/url";
 
 async function main() {
   const arg = process.argv[2];
@@ -12,8 +13,7 @@ async function main() {
   const path = isAbsolute(arg) ? arg : join(process.cwd(), arg);
   const sqlText = await readFile(path, "utf8");
 
-  const url = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_POOL_URL or DATABASE_URL is not set");
+  const url = requireDatabaseUrl();
 
   const sql = postgres(url, { max: 1, prepare: false });
   await sql.unsafe(sqlText);

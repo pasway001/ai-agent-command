@@ -2,11 +2,9 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config();
 import { defineConfig } from "drizzle-kit";
+import { requireDatabaseUrl } from "./src/lib/db/url";
 
-const dbUrl = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
-if (!dbUrl) {
-  throw new Error("DATABASE_POOL_URL or DATABASE_URL must be set");
-}
+const dbUrl = requireDatabaseUrl();
 
 export default defineConfig({
   schema: "./src/lib/db/schema/index.ts",

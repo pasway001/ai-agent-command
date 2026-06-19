@@ -217,7 +217,7 @@ function summary(items: ShortlistItem[]) {
     "",
     "- This is a pre-sales pack for quick human review, supplier outreach, LP angle testing, and ad hypothesis setup.",
     "- Final go/no-go still requires manufacturer confirmation, Japan compliance checks, landed-cost calculation, and direct competitor validation.",
-    "- Push S/A items into the DB-backed Scout pipeline once `DATABASE_URL` and API keys are configured in Vercel.",
+    "- Push S/A items into the DB-backed Scout pipeline with `pnpm local:bootstrap` or `pnpm research:import` once `DATABASE_URL` is configured.",
     "",
   ].join("\n");
 }

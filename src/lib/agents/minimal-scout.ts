@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { scoutRuns, type PerFeedEntry } from "@/lib/db/schema/scoutRuns";
+import { hasDatabaseUrl } from "@/lib/db/url";
 import {
   scoreCandidate,
   type CandidateSignals,
@@ -196,11 +197,7 @@ function positiveInt(value: number | undefined, fallback: number) {
 }
 
 function hasDatabaseConfig() {
-  return Boolean(
-    process.env.DATABASE_POOL_URL ||
-      process.env.DATABASE_URL ||
-      process.env.DATABASE_URL_DIRECT
-  );
+  return hasDatabaseUrl();
 }
 
 // ---- cross-source merge ----

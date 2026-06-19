@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "./db";
 import { getAuthProvider, hasSupabaseAuthEnv, localAuthIsConfigured } from "./auth/session";
+import { DB_ENV_KEYS, hasDatabaseUrl } from "./db/url";
+
+export { DB_ENV_KEYS };
 
 export type ReadinessCheck = {
   name: string;
@@ -12,12 +15,6 @@ export type ReadinessReport = {
   ok: boolean;
   checks: ReadinessCheck[];
 };
-
-export const DB_ENV_KEYS = [
-  "DATABASE_POOL_URL",
-  "DATABASE_URL",
-  "DATABASE_URL_DIRECT",
-] as const;
 
 export const AI_ENV_KEYS = [
   "ANTHROPIC_API_KEY",
@@ -36,7 +33,7 @@ export function getRuntimeReadinessChecks(): ReadinessCheck[] {
   return [
     {
       name: "database_env",
-      ok: hasAnyEnv(DB_ENV_KEYS),
+      ok: hasDatabaseUrl(),
       detail: `requires one of ${DB_ENV_KEYS.join(", ")}`,
     },
     {

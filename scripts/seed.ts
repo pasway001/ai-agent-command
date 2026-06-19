@@ -2,6 +2,7 @@ import "./_loadenv";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { agents, type NewAgent } from "../src/lib/db/schema";
+import { requireDatabaseUrl } from "../src/lib/db/url";
 
 const seedAgents: NewAgent[] = [
   // System 1: Scout
@@ -33,8 +34,7 @@ const seedAgents: NewAgent[] = [
 ];
 
 async function main() {
-  const url = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_POOL_URL or DATABASE_URL is not set");
+  const url = requireDatabaseUrl();
 
   const client = postgres(url, { max: 1, prepare: false });
   const db = drizzle(client, { casing: "snake_case" });

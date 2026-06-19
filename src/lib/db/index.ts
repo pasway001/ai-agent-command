@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { requireDatabaseUrl } from "./url";
 
 const globalForDb = globalThis as unknown as {
   client?: ReturnType<typeof postgres>;
@@ -8,18 +9,7 @@ const globalForDb = globalThis as unknown as {
 };
 
 function getConnectionString() {
-  const connectionString =
-    process.env.DATABASE_POOL_URL ??
-    process.env.DATABASE_URL ??
-    process.env.DATABASE_URL_DIRECT;
-
-  if (!connectionString) {
-    throw new Error(
-      "DATABASE_POOL_URL, DATABASE_URL, or DATABASE_URL_DIRECT must be set"
-    );
-  }
-
-  return connectionString;
+  return requireDatabaseUrl();
 }
 
 function getClient() {

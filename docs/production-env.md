@@ -1,7 +1,22 @@
-# Production Environment Setup
+# Local / Production Environment Setup
 
 This file is the deployment checklist for `agent-command-center`.
 Do not paste real secrets into GitHub issues, chat, or committed files.
+
+## 0. Local One-Command Bootstrap
+
+For the current local-only operation path, start here:
+
+```bash
+pnpm install
+pnpm local:bootstrap
+pnpm dev
+```
+
+`pnpm local:bootstrap` creates or completes `.env.local`, starts local
+Postgres when needed, creates the `pathway` role/database, applies the Drizzle
+schema, seeds `scout.scoring`, imports the bundled 30-product shortlist into
+`/inbox`, and runs `pnpm env:check`.
 
 ## 1. Core Runtime
 
@@ -16,9 +31,9 @@ local Postgres, local one-user auth, and Claude as the only paid API.
 | `APP_SESSION_SECRET` | Local secret store | 32+ random chars for signed session cookies. |
 | `DATABASE_URL` | Local Postgres | Direct/runtime connection for the Mac mini Postgres. |
 | `DATABASE_POOL_URL` | Hosted Postgres/Supabase | Optional. Leave empty for local Postgres. |
-| `DATABASE_URL_DIRECT` | Vercel/hosted Postgres alias | Optional alias accepted when `DATABASE_URL` is not present. |
+| `DATABASE_URL_DIRECT` | Hosted Postgres alias | Optional alias accepted when `DATABASE_URL` is not present. |
 | `NEXT_PUBLIC_APP_URL` | Local/production URL | No trailing slash. Used in alert links. |
-| `CRON_SECRET` | Secret generator | Required for Vercel Cron `/api/cron/scout`. Use 32+ random chars. |
+| `CRON_SECRET` | Secret generator | Required for `/api/cron/scout` and `/api/cron/learn`. Use 32+ random chars. |
 
 Optional Supabase mode:
 
@@ -107,11 +122,14 @@ to the in-app Inbox. Paid research APIs are intentionally not required.
 | `SCOUT_RESEARCH_PROVIDER` | Optional override for Japan market research. Defaults to Perplexity when configured, else Anthropic, else mock. |
 | `SCOUT_DEEP_RESEARCH_PROVIDER` | Optional override for high-score deep research. Defaults to Perplexity when configured, else Anthropic, else mock. |
 
-## 6. Vercel Cron
+## 6. Scheduled Runs
 
-`vercel.json` runs `/api/cron/scout` once per day at `30 23 * * *`
-(08:30 JST). The endpoint rejects requests unless
-`Authorization: Bearer <CRON_SECRET>` is present.
+The cron endpoints can be triggered locally or by any scheduler. They reject
+requests unless `Authorization: Bearer <CRON_SECRET>` is present.
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/scout
+```
 
 ## 7. Local Validation
 
@@ -121,7 +139,7 @@ Run:
 pnpm env:check
 pnpm env:check:production
 pnpm env:check:ai
-pnpm vercel:audit
+pnpm local:bootstrap
 pnpm research:products -- --limit 30
 pnpm research:products -- --limit 30 --json --out reports/scout-products.json
 pnpm research:sales-pack -- --input reports/scout-products.json --out reports/sales-pack.md
@@ -129,5 +147,5 @@ pnpm research:import -- --input reports/scout-products.json --dry-run
 ```
 
 `env:check` validates the current local runtime. `env:check:production` reports production-operation gaps such as Lark. `env:check:ai` adds the minimum AI key check for the first real provider.
-`vercel:audit` checks the linked Vercel project for required environment variable names without printing secret values. After deployment, `/api/readiness?db=1` checks runtime readiness and DB connectivity.
+`/api/readiness?db=1` checks runtime readiness and DB connectivity after the local server is running.
 `research:products` is a DB-free live-source shortlist command for quick product discovery, and `research:sales-pack` turns its JSON output into LP/ad/outreach hypotheses. `research:import` writes the JSON into `products`, `agent_runs`, `agent_evaluations`, and `approval_queue` so reviewers can process the items in `/inbox`. The DB-backed production path remains `pnpm scout:minimal`; it requires `DATABASE_URL`, `DATABASE_POOL_URL`, or `DATABASE_URL_DIRECT` and fails early when none is configured.

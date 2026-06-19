@@ -12,6 +12,7 @@ import {
 } from "../src/lib/agent-sdk";
 import { closeDb, db } from "../src/lib/db";
 import { agents, approvalQueue } from "../src/lib/db/schema";
+import { hasDatabaseUrl } from "../src/lib/db/url";
 
 const AGENT_ID = "scout.scoring";
 
@@ -70,11 +71,7 @@ function abs(path: string) {
 }
 
 function requireDatabaseConfig() {
-  if (
-    !process.env.DATABASE_POOL_URL &&
-    !process.env.DATABASE_URL &&
-    !process.env.DATABASE_URL_DIRECT
-  ) {
+  if (!hasDatabaseUrl()) {
     throw new Error(
       "DATABASE_POOL_URL, DATABASE_URL, or DATABASE_URL_DIRECT must be set to import products into the DB. " +
         "Use --dry-run to inspect the import plan without DB writes."
@@ -182,6 +179,26 @@ async function importItem(item: ResearchItem, generatedAt: string | undefined) {
     },
   });
 
+  const [existingOpen] = await db
+    .select({ id: approvalQueue.id })
+    .from(approvalQueue)
+    .where(
+      and(
+        eq(approvalQueue.productId, product.id),
+        isNull(approvalQueue.decision)
+      )
+    )
+    .limit(1);
+
+  if (existingOpen) {
+    return {
+      productId: product.id,
+      runId: null,
+      approvalId: existingOpen.id,
+      reusedApproval: true,
+    };
+  }
+
   const run = await startRun({
     agentId: AGENT_ID,
     productId: product.id,
@@ -218,21 +235,6 @@ async function importItem(item: ResearchItem, generatedAt: string | undefined) {
       imported: true,
     },
   });
-
-  const [existingOpen] = await db
-    .select({ id: approvalQueue.id })
-    .from(approvalQueue)
-    .where(
-      and(
-        eq(approvalQueue.productId, product.id),
-        isNull(approvalQueue.decision)
-      )
-    )
-    .limit(1);
-
-  if (existingOpen) {
-    return { productId: product.id, runId: run.id, approvalId: existingOpen.id, reusedApproval: true };
-  }
 
   const approval = await enqueueApproval({
     runId: run.id,

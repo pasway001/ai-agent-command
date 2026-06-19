@@ -2,10 +2,10 @@ import "./_loadenv";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import postgres from "postgres";
+import { requireDatabaseUrl } from "../src/lib/db/url";
 
 async function main() {
-  const url = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_POOL_URL or DATABASE_URL is not set");
+  const url = requireDatabaseUrl();
 
   // prepare:false lets us use the transaction pooler (port 6543) too.
   const sql = postgres(url, { max: 1, prepare: false });

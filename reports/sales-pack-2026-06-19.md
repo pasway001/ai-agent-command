@@ -1,6 +1,6 @@
 # Japan Sales Readiness Pack
 
-Generated at: 2026-06-19T11:38:29.353Z
+Generated at: 2026-06-19T12:00:16.436Z
 Input items: 30
 Category mix: ガジェット/家電: 13 / ウェルネス/睡眠: 5 / 生活改善プロダクト: 5 / ファッション/アクセサリー: 4 / 工具/ホビー: 3
 Top 5: 1. BURTRAN Smart Sleep Mask | Recharge in Minutes. Anywhere / 2. UKNIGHT: A Pixel Lantern Speaker for Your Desk / 3. HUBi32 – The Cyberpunk ESP32-S3 Smart Desk & Dev Hub / 4. This Revolver-Style Titanium Driver’s Fidgety Design Is Both Eye and Hand Candy / 5. Pocket Shower: A Dual-Formula Reset for Anywhere
@@ -9,7 +9,7 @@ Top 5: 1. BURTRAN Smart Sleep Mask | Recharge in Minutes. Anywhere / 2. UKNIGHT:
 
 - This is a pre-sales pack for quick human review, supplier outreach, LP angle testing, and ad hypothesis setup.
 - Final go/no-go still requires manufacturer confirmation, Japan compliance checks, landed-cost calculation, and direct competitor validation.
-- Push S/A items into the DB-backed Scout pipeline once `DATABASE_URL` and API keys are configured in Vercel.
+- Push S/A items into the DB-backed Scout pipeline with `pnpm local:bootstrap` or `pnpm research:import` once `DATABASE_URL` is configured.
 
 ## 1. BURTRAN Smart Sleep Mask | Recharge in Minutes. Anywhere
 
