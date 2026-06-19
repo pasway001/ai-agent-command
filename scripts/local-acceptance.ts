@@ -1,0 +1,275 @@
+import "./_loadenv";
+import { readdir, readFile, stat } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { count, isNull } from "drizzle-orm";
+import { closeDb, db } from "../src/lib/db";
+import { agents, approvalQueue, products } from "../src/lib/db/schema";
+
+type CheckStatus = "pass" | "warn" | "fail";
+
+type Check = {
+  name: string;
+  status: CheckStatus;
+  detail: string;
+};
+
+type JsonRecord = Record<string, unknown>;
+
+const REPORTS_DIR = "reports";
+const REQUIRED_FILES = [
+  "src/app/(app)/sales/page.tsx",
+  "src/app/(app)/sales/actions.ts",
+  "src/lib/sales/execution.ts",
+  "src/lib/sales/outreach-kit.ts",
+];
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as JsonRecord;
+}
+
+function stringValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function numberValue(record: JsonRecord | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function check(name: string, ok: boolean, detail: string): Check {
+  return { name, status: ok ? "pass" : "fail", detail };
+}
+
+function warn(name: string, ok: boolean, detail: string): Check {
+  return { name, status: ok ? "pass" : "warn", detail };
+}
+
+function latestReport(files: string[], prefix: string, suffix: string) {
+  return files
+    .filter((file) => file.startsWith(prefix) && file.endsWith(suffix))
+    .sort()
+    .at(-1);
+}
+
+function parseCsv(content: string) {
+  const rows: string[][] = [[]];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    const next = content[i + 1];
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      rows[rows.length - 1].push(cell);
+      cell = "";
+    } else if (char === "\n" && !inQuotes) {
+      rows[rows.length - 1].push(cell);
+      cell = "";
+      rows.push([]);
+    } else if (char !== "\r") {
+      cell += char;
+    }
+  }
+
+  if (cell.length > 0 || rows[rows.length - 1].length > 0) {
+    rows[rows.length - 1].push(cell);
+  }
+
+  return rows.filter((row) => row.some((value) => value.length > 0));
+}
+
+async function fileSize(path: string) {
+  const info = await stat(path);
+  return info.size;
+}
+
+async function main() {
+  const checks: Check[] = [];
+
+  const productRows = await db
+    .select({
+      id: products.id,
+      title: products.title,
+      stage: products.stage,
+      status: products.status,
+      metadata: products.metadata,
+    })
+    .from(products);
+  const nonSmokeProducts = productRows.filter(
+    (product) => !product.title.startsWith("[SMOKE]")
+  );
+  const stageCounts = nonSmokeProducts.reduce<Record<string, number>>(
+    (acc, product) => {
+      acc[product.stage] = (acc[product.stage] ?? 0) + 1;
+      return acc;
+    },
+    {}
+  );
+
+  const [agentCount] = await db.select({ c: count() }).from(agents);
+  const [openApprovalCount] = await db
+    .select({ c: count() })
+    .from(approvalQueue)
+    .where(isNull(approvalQueue.decision));
+
+  const productsWithScore = nonSmokeProducts.filter((product) => {
+    const metadata = asRecord(product.metadata);
+    return numberValue(asRecord(metadata?.shortlist), "score") !== null;
+  });
+  const productsWithSourceUrl = nonSmokeProducts.filter((product) => {
+    const metadata = asRecord(product.metadata);
+    const signals = asRecord(metadata?.signals);
+    const overseas = asRecord(signals?.overseas);
+    return stringValue(overseas, "url") !== null;
+  });
+  const productsWithNextAction = nonSmokeProducts.filter((product) => {
+    const metadata = asRecord(product.metadata);
+    const salesReadiness = asRecord(metadata?.salesReadiness);
+    const shortlist = asRecord(metadata?.shortlist);
+    return (
+      stringValue(salesReadiness, "nextAction") !== null ||
+      stringValue(shortlist, "nextAction") !== null
+    );
+  });
+
+  checks.push(
+    check(
+      "DB商品数",
+      nonSmokeProducts.length >= 30,
+      `${nonSmokeProducts.length} non-smoke product(s), stages=${JSON.stringify(stageCounts)}`
+    ),
+    check(
+      "スコア付き商品",
+      productsWithScore.length >= 30,
+      `${productsWithScore.length}/30 products include shortlist.score`
+    ),
+    check(
+      "一次ソースURL",
+      productsWithSourceUrl.length >= 30,
+      `${productsWithSourceUrl.length}/30 products include source URL`
+    ),
+    check(
+      "次アクション",
+      productsWithNextAction.length >= 30,
+      `${productsWithNextAction.length}/30 products include next action`
+    ),
+    check(
+      "エージェント",
+      Number(agentCount?.c ?? 0) >= 8,
+      `${Number(agentCount?.c ?? 0)} agent(s) seeded`
+    ),
+    warn(
+      "承認待ち",
+      Number(openApprovalCount?.c ?? 0) >= 30,
+      `${Number(openApprovalCount?.c ?? 0)} open approval(s); can be lower after real review work`
+    )
+  );
+
+  for (const file of REQUIRED_FILES) {
+    checks.push(check(`実装ファイル ${file}`, existsSync(file), file));
+  }
+
+  const reportFiles = await readdir(REPORTS_DIR);
+  const scoutJson = latestReport(reportFiles, "scout-products-", ".json");
+  const salesBoardCsv = latestReport(reportFiles, "sales-board-", ".csv");
+  const salesBoardMd = latestReport(reportFiles, "sales-board-", ".md");
+  const outreachCsv = latestReport(reportFiles, "outreach-kit-", ".csv");
+  const outreachMd = latestReport(reportFiles, "outreach-kit-", ".md");
+  const salesPackMd = latestReport(reportFiles, "sales-pack-", ".md");
+
+  for (const file of [
+    scoutJson,
+    salesBoardCsv,
+    salesBoardMd,
+    outreachCsv,
+    outreachMd,
+    salesPackMd,
+  ]) {
+    checks.push(
+      check(
+        `レポート ${file ?? "missing"}`,
+        Boolean(file),
+        file ? `${join(REPORTS_DIR, file)} (${await fileSize(join(REPORTS_DIR, file))} bytes)` : "missing"
+      )
+    );
+  }
+
+  if (scoutJson) {
+    const parsed = JSON.parse(
+      await readFile(join(REPORTS_DIR, scoutJson), "utf8")
+    ) as { items?: unknown[] };
+    checks.push(
+      check(
+        "リサーチJSON",
+        Array.isArray(parsed.items) && parsed.items.length >= 30,
+        `${parsed.items?.length ?? 0} researched item(s)`
+      )
+    );
+  }
+
+  if (salesBoardCsv) {
+    const rows = parseCsv(await readFile(join(REPORTS_DIR, salesBoardCsv), "utf8"));
+    const header = rows[0] ?? [];
+    checks.push(
+      check("Sales Board CSV行数", rows.length >= 31, `${rows.length - 1} data row(s)`),
+      check(
+        "Sales Board商談列",
+        ["sales_status", "next_follow_up_at", "follow_up_state"].every((name) =>
+          header.includes(name)
+        ),
+        header.join(",")
+      )
+    );
+  }
+
+  if (outreachCsv) {
+    const rows = parseCsv(await readFile(join(REPORTS_DIR, outreachCsv), "utf8"));
+    const header = rows[0] ?? [];
+    checks.push(
+      check("Outreach CSV行数", rows.length >= 31, `${rows.length - 1} data row(s)`),
+      check(
+        "Outreachメール列",
+        ["ja_subject", "ja_body", "en_subject", "en_body"].every((name) =>
+          header.includes(name)
+        ),
+        header.join(",")
+      )
+    );
+  }
+
+  const failed = checks.filter((item) => item.status === "fail");
+  const warned = checks.filter((item) => item.status === "warn");
+
+  for (const item of checks) {
+    const mark =
+      item.status === "pass" ? "PASS" : item.status === "warn" ? "WARN" : "FAIL";
+    console.log(`${mark} ${item.name} - ${item.detail}`);
+  }
+
+  console.log(
+    `\nAcceptance: ${checks.length - failed.length - warned.length}/${checks.length} passed, ${warned.length} warning(s), ${failed.length} failure(s).`
+  );
+
+  if (failed.length > 0) {
+    process.exitCode = 1;
+  }
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await closeDb();
+  });
