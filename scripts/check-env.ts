@@ -91,14 +91,20 @@ const keys: EnvKey[] = [
   {
     key: "LARK_WEBHOOK_TIMEOUT_MS",
     requiredFor: "production",
+    optional: true,
+    note: "optional; defaults to 5000ms",
   },
   {
     key: "BUDGET_SOFT_THRESHOLD_PCT",
     requiredFor: "production",
+    optional: true,
+    note: "optional; defaults to 80",
   },
   {
     key: "BUDGET_HARD_THRESHOLD_PCT",
     requiredFor: "production",
+    optional: true,
+    note: "optional; defaults to 100",
   },
   {
     key: "LLM_PROVIDER",
