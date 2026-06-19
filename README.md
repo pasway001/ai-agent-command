@@ -133,6 +133,8 @@ pnpm sales:outreach      # DB内候補から仕入れ打診メール/確認項�
 pnpm vercel:audit      # 任意: リンク中Vercelプロジェクトの必要env名を監査
 ```
 
+ローカル起動後は `/sales` で30商品の販売デスクを確認できます。
+
 ## 24/7運用 (Mac mini想定)
 
 - アプリ本体: `pm2` または `launchd` で `pnpm start` を常駐

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Inbox,
   Kanban,
+  Handshake,
   Bot,
   ScrollText,
   Coins,
@@ -39,6 +40,7 @@ function buildSections(inboxCount: number): Section[] {
       items: [
         { href: "/inbox", label: "承認待ち", icon: Inbox, badge: inboxCount },
         { href: "/pipeline", label: "パイプライン", icon: Kanban },
+        { href: "/sales", label: "販売デスク", icon: Handshake },
       ],
     },
     {
