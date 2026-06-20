@@ -23,12 +23,12 @@ export function formatNum(n: number | string): string {
 }
 
 const SYSTEM_LABELS_MAP: Record<number, string> = {
-  1: "Scout",
+  1: "調査",
   2: "LP",
-  3: "Ad",
-  4: "Outreach",
+  3: "広告",
+  4: "営業",
   5: "CS",
-  6: "Review",
+  6: "審査",
 };
 
 export function systemLabel(no: number): string {

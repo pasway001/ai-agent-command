@@ -30,7 +30,7 @@ export async function claimItem(id: string): Promise<ActionResult> {
       )
       .returning();
     if (!updated) {
-      return { ok: false, error: "他のレビュアーがすでにクレーム済みです" };
+      return { ok: false, error: "他のレビュアーがすでに担当済みです" };
     }
     revalidatePath("/inbox");
     return { ok: true };

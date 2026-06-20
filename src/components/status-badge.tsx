@@ -53,12 +53,12 @@ const RUN_STATUS: Record<string, Tone> = {
 };
 
 const STAGE_LABELS: Record<string, string> = {
-  scout: "Scout",
+  scout: "調査",
   lp: "LP",
-  ad: "Ad",
-  outreach: "Outreach",
+  ad: "広告",
+  outreach: "営業",
   cs: "CS",
-  archived: "Archived",
+  archived: "保管",
 };
 
 export function ProductStatusBadge({

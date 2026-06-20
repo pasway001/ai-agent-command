@@ -41,7 +41,7 @@ const VERDICT_META: Record<
   { label: string; icon: typeof CheckCircle2; className: string }
 > = {
   approve: {
-    label: "AI承認",
+    label: "承認推奨",
     icon: CheckCircle2,
     className:
       "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300",
@@ -53,7 +53,7 @@ const VERDICT_META: Record<
       "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300",
   },
   reject: {
-    label: "AI却下",
+    label: "却下推奨",
     icon: XCircle,
     className:
       "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300",
@@ -101,6 +101,13 @@ function productTypeLabel(type: Review["productType"]) {
   if (type === "service") return "サービス";
   if (type === "unknown") return "判断不能";
   return null;
+}
+
+export function reviewCategoryLabel(value: string | null) {
+  if (!value) return null;
+  return value
+    .replace(/\bshortlist rank\s+(\d+)/i, "候補順位 $1")
+    .replace(/\((\d+)\s+sources?\)/i, "（$1ソース）");
 }
 
 export function AiScoreBadge({
@@ -170,14 +177,14 @@ export function SourceLink({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "inline-flex min-w-0 items-center gap-1 text-xs underline-offset-3 hover:underline",
+        "inline-flex min-w-0 max-w-full items-center gap-1 text-xs underline-offset-3 hover:underline",
         className
       )}
     >
       <Badge
         variant="outline"
         className={cn(
-          "h-5 px-2 text-[10.5px] font-medium tracking-wide",
+          "h-5 max-w-[14rem] px-2 text-[10.5px] font-medium tracking-wide",
           badgeClass
         )}
       >
@@ -196,7 +203,7 @@ function DetailLine({
   value: string | number | null;
 }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr] gap-3 text-sm">
+    <div className="grid grid-cols-[6rem_1fr] gap-3 text-sm sm:grid-cols-[7rem_1fr]">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-words">{value ?? "—"}</dd>
     </div>
@@ -204,14 +211,14 @@ function DetailLine({
 }
 
 const AXIS_LABELS: Record<ScoutAxisKey, string> = {
-  overseasTraction: "海外トラクション",
-  crossSourceMentions: "クロスソース言及",
-  japanValidationLevel: "日本クラファン検証",
-  domesticTrend: "国内需要トレンド",
-  regulatoryRisk: "規制リスク (1=安全)",
-  competitionDensity: "競合密度 (1=空白)",
+  overseasTraction: "海外反応",
+  crossSourceMentions: "複数ソース",
+  japanValidationLevel: "国内参照",
+  domesticTrend: "国内需要",
+  regulatoryRisk: "規制安全性",
+  competitionDensity: "競合余白",
   priceFit: "価格適合",
-  physicalLikely: "物理商品確度",
+  physicalLikely: "物理商品",
   novelty: "新規性",
 };
 
@@ -238,7 +245,7 @@ function AxisBars({ scores }: { scores: ScoutAxisScores | null }) {
           return (
             <div
               key={key}
-              className="grid grid-cols-[10rem_1fr_3rem] items-center gap-2 text-xs"
+              className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_1fr_3rem]"
             >
               <span className="truncate text-muted-foreground">
                 {AXIS_LABELS[key]}
@@ -254,7 +261,7 @@ function AxisBars({ scores }: { scores: ScoutAxisScores | null }) {
         return (
           <div
             key={key}
-            className="grid grid-cols-[10rem_1fr_3rem] items-center gap-2 text-xs"
+            className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_1fr_3rem]"
             title={ax.rationale}
           >
             <span className="truncate" title={AXIS_LABELS[key]}>
@@ -398,13 +405,13 @@ function LpAssets({
           <div className="rounded-md border bg-muted/20 p-3">
             <div className="mb-2 flex items-center gap-2">
               <span className="text-sm font-medium">コンプライアンス</span>
-              <Badge variant="outline">risk={compliance.riskLevel ?? "—"}</Badge>
+              <Badge variant="outline">リスク {compliance.riskLevel ?? "—"}</Badge>
             </div>
             {compliance.violations.length > 0 ? (
               <ul className="space-y-1.5 text-sm">
                 {compliance.violations.map((violation, index) => (
                   <li key={index} className="break-words">
-                    {violation.severity ?? "risk"}: {violation.snippet ?? "—"} /{" "}
+                    {violation.severity ?? "リスク"}: {violation.snippet ?? "—"} /{" "}
                     {violation.regulation ?? "—"}
                   </li>
                 ))}
@@ -439,10 +446,10 @@ function LpAssets({
             <ul className="space-y-2">
               {images.map((image, index) => (
                 <li key={`${image.slot}-${index}`} className="text-sm">
-                  <span className="font-medium">{image.slot ?? "image"}</span>
+                  <span className="font-medium">{image.slot ?? "画像"}</span>
                   <span className="text-muted-foreground">
                     {" "}
-                    ({image.source ?? "source未定"})
+                    ({image.source ?? "未定"})
                   </span>
                   <p className="mt-0.5 break-words text-muted-foreground">
                     {image.prompt ?? "プロンプトなし"}
@@ -483,11 +490,11 @@ function OutreachAssets({ outreach }: { outreach: OutreachAsset | null }) {
       <h3 className="mb-3 font-medium">仕入れ連絡文面</h3>
       <div className="grid gap-3 md:grid-cols-2">
         <TextBlock
-          label={`JA: ${outreach.ja.subject ?? "件名なし"}`}
+          label={`日本語: ${outreach.ja.subject ?? "件名なし"}`}
           value={outreach.ja.body}
         />
         <TextBlock
-          label={`EN: ${outreach.en.subject ?? "No subject"}`}
+          label={`英語: ${outreach.en.subject ?? "件名なし"}`}
           value={outreach.en.body}
         />
       </div>
@@ -538,7 +545,7 @@ export function ReviewDetailsDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <div className="flex flex-wrap items-center gap-2">
             <AiScoreBadge review={review} />
@@ -550,8 +557,8 @@ export function ReviewDetailsDialog({
           <DialogDescription className="break-words">
             {review.description ??
               review.japanAngle ??
-              review.category ??
-              "Scoutが取得した候補の詳細です。"}
+              reviewCategoryLabel(review.category) ??
+              "調査エージェントが取得した候補の詳細です。"}
           </DialogDescription>
         </DialogHeader>
 
@@ -567,12 +574,12 @@ export function ReviewDetailsDialog({
           ) : null}
           {review.shortlistRank !== null ? (
             <Badge variant="outline" className="h-6 font-mono text-[11px]">
-              Rank {review.shortlistRank}
+              順位 {review.shortlistRank}
             </Badge>
           ) : null}
           {review.shortlistScore !== null ? (
             <Badge variant="outline" className="h-6 font-mono text-[11px]">
-              Shortlist {review.shortlistScore}点
+              候補 {review.shortlistScore}点
             </Badge>
           ) : null}
         </div>
@@ -630,20 +637,20 @@ export function ReviewDetailsDialog({
           <AxisBars scores={review.axisScores} />
           {review.mentionSources.length > 0 ? (
             <p className="mt-3 text-xs text-muted-foreground">
-              クロスソース言及: {review.mentionSources.join(" / ")}（
+              複数ソース: {review.mentionSources.join(" / ")}（
               {review.mentionSources.length} 件）
             </p>
           ) : null}
           {review.japanValidationLevel !== null ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              日本クラファン検証スコア:{" "}
+              国内参照スコア:{" "}
               {(review.japanValidationLevel * 100).toFixed(0)}/100
             </p>
           ) : null}
         </section>
 
         <section className="border-t pt-4">
-          <h3 className="mb-3 font-medium">引用情報源 (evidence)</h3>
+          <h3 className="mb-3 font-medium">根拠リンク</h3>
           <EvidenceList items={review.evidence} />
         </section>
 
@@ -659,10 +666,10 @@ export function ReviewDetailsDialog({
         </div>
 
         <section className="border-t pt-4">
-          <h3 className="mb-3 font-medium">Scoutシグナル</h3>
+          <h3 className="mb-3 font-medium">調査シグナル</h3>
           <dl className="space-y-2">
             <DetailLine label="取得元" value={review.sourceName} />
-            <DetailLine label="カテゴリ" value={review.category} />
+            <DetailLine label="カテゴリ" value={reviewCategoryLabel(review.category)} />
             <DetailLine
               label="商品種別"
               value={productTypeLabel(review.productType)}
@@ -701,7 +708,7 @@ export function ReviewDetailsDialog({
                   : null
               }
             />
-            <DetailLine label="LLM" value={review.model ?? review.provider} />
+            <DetailLine label="モデル" value={review.model ?? review.provider} />
           </dl>
         </section>
 
@@ -714,7 +721,7 @@ export function ReviewDetailsDialog({
               className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-border bg-background px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted"
             >
               <ExternalLink className="size-3.5" />
-              商品URLを開く
+              元ページを開く
             </a>
           </div>
         ) : null}

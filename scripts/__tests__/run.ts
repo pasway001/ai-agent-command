@@ -13,6 +13,7 @@ process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
 import { runSuites, type TestSuite } from "./_assert";
 import { reddit } from "./sources/reddit.test";
 import { hn } from "./sources/hackernews.test";
+import { registry } from "./sources/registry.test";
 import { scoring } from "./scout-scoring.test";
 import { scoutPrefilter } from "./scout-prefilter.test";
 import { minimal } from "./minimal-scout.test";
@@ -23,6 +24,7 @@ import { contactLeads } from "./contact-leads.test";
 const suites: TestSuite[] = [
   reddit.suite,
   hn.suite,
+  registry.suite,
   scoring.suite,
   scoutPrefilter.suite,
   minimal.suite,

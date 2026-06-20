@@ -195,6 +195,14 @@ function contactLeadDisplay(candidate: ContactLeadCandidate) {
   }
 }
 
+function contactLeadStatusLabel(status: string) {
+  if (status === "missing_source_url") return "URLなし";
+  if (status.startsWith("ok:")) return "取得済";
+  if (status.startsWith("http:")) return status.replace("http:", "HTTP ");
+  if (status.startsWith("error:")) return "取得失敗";
+  return status;
+}
+
 function countForView(
   rows: SalesProductRow[],
   view: SalesExecutionView,
@@ -267,7 +275,7 @@ export default async function SalesPage({
           <SummaryCard
             label="平均スコア"
             value={scoreAverage(products)}
-            hint="shortlist score"
+            hint="候補スコア"
             accent="emerald"
           />
           <SummaryCard
@@ -373,7 +381,7 @@ export default async function SalesPage({
                           className="mt-1 inline-flex max-w-full items-center gap-1 text-xs text-muted-foreground underline-offset-3 hover:underline"
                         >
                           <span className="truncate">
-                            {summary.sourceName ?? "source"}
+                            {summary.sourceName ?? "取得元"}
                           </span>
                           <ExternalLink className="size-3 shrink-0" />
                         </a>
@@ -467,7 +475,7 @@ export default async function SalesPage({
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
                           <span>連絡先候補</span>
                           <Badge variant="outline">
-                            {contactLeads.fetchStatus}
+                            {contactLeadStatusLabel(contactLeads.fetchStatus)}
                           </Badge>
                         </div>
                         {primaryLead ? (
@@ -524,7 +532,7 @@ export default async function SalesPage({
                         size="sm"
                       >
                         <Mail className="size-3.5" />
-                        JP下書き
+                        日本語
                       </Button>
                       <Button
                         nativeButton={false}
@@ -541,7 +549,7 @@ export default async function SalesPage({
                         size="sm"
                       >
                         <Mail className="size-3.5" />
-                        EN draft
+                        英語
                       </Button>
                       {summary.sourceUrl ? (
                         <Button
@@ -557,7 +565,7 @@ export default async function SalesPage({
                           size="sm"
                         >
                           <TrendingUp className="size-3.5" />
-                          Source
+                          元ページ
                         </Button>
                       ) : null}
                     </div>
@@ -658,12 +666,22 @@ export default async function SalesPage({
                     メール本文
                   </summary>
                   <div className="mt-3 grid gap-3 xl:grid-cols-2">
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-3 text-[11px] leading-5 text-foreground/80">
-                      {jaBody(product)}
-                    </pre>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-3 text-[11px] leading-5 text-foreground/80">
-                      {enBody(product)}
-                    </pre>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        日本語
+                      </div>
+                      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-3 text-[11px] leading-5 text-foreground/80">
+                        {jaBody(product)}
+                      </pre>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        英語
+                      </div>
+                      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-3 text-[11px] leading-5 text-foreground/80">
+                        {enBody(product)}
+                      </pre>
+                    </div>
                   </div>
                 </details>
               </article>

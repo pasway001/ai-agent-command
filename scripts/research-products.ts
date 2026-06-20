@@ -163,9 +163,17 @@ function scoreItem(item: NormalizedCandidate, source: SourceConfig) {
     score += 12;
     reasons.push("海外クラファン初動を確認できる");
   }
-  if (/yanko/i.test(source.name)) {
+  if (/yanko|cool hunting|design milk|core77/i.test(source.name)) {
     score += 8;
     reasons.push("デザイン性の高いプロダクト文脈");
+  }
+  if (/trendhunter|thisiswhyimbroke/i.test(source.name)) {
+    score += 7;
+    reasons.push("海外の商品キュレーションで発見");
+  }
+  if (/new atlas|make magazine|hackaday/i.test(source.name)) {
+    score += 6;
+    reasons.push("海外テック/メーカー文脈からの候補");
   }
   if (item.url) {
     score += 5;

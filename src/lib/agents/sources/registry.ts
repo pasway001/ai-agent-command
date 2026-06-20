@@ -16,7 +16,7 @@ import type {
  * To add a new source: append a SourceConfig below. minimal-scout.ts iterates
  * registry entries directly — no other code needs to change.
  *
- * `enabled` can be flipped via env (SCOUT_DISABLED_SOURCE_IDS=ph,indiegogo)
+ * `enabled` can be flipped via env (SCOUT_DISABLED_SOURCE_IDS=ph,cool-hunting)
  * without removing the entry.
  */
 
@@ -144,6 +144,78 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     rateLimitPerHour: 60,
   },
   {
+    id: "trendhunter",
+    name: "TrendHunter",
+    type: "rss",
+    endpoint: "https://www.trendhunter.com/rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "thisiswhyimbroke",
+    name: "ThisIsWhyImBroke",
+    type: "rss",
+    endpoint: "https://www.thisiswhyimbroke.com/feed/",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "cool-hunting",
+    name: "Cool Hunting",
+    type: "rss",
+    endpoint: "https://coolhunting.com/feed/",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "design-milk",
+    name: "Design Milk",
+    type: "rss",
+    endpoint: "https://design-milk.com/feed/",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "core77",
+    name: "Core77",
+    type: "rss",
+    endpoint: "https://feeds.feedburner.com/core77/blog",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "new-atlas",
+    name: "New Atlas",
+    type: "rss",
+    endpoint: "https://newatlas.com/index.rss",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "make-magazine",
+    name: "Make Magazine",
+    type: "rss",
+    endpoint: "https://makezine.com/feed/",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "hackaday",
+    name: "Hackaday",
+    type: "rss",
+    endpoint: "https://hackaday.com/blog/feed/",
+    enabled: true,
+    category: "primary",
+    rateLimitPerHour: 30,
+  },
+  {
     id: "reddit-gadgets",
     name: "Reddit r/gadgets",
     type: "reddit_json",
@@ -188,8 +260,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     id: "greenfunding",
     name: "GREEN FUNDING",
     type: "rss",
-    // RSS URL is unverified — if it 404s the run surfaces the error in
-    // perFeed.errorMessage. Used as Japan reference (makuake validation).
+    // Currently returns 404 for anonymous RSS fetches. Keep listed for a quick
+    // enable if GREEN FUNDING exposes a public feed again.
     endpoint: "https://greenfunding.jp/feed",
     enabled: false,
     category: "japan_reference",
@@ -199,8 +271,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     id: "campfire",
     name: "CAMPFIRE",
     type: "rss",
-    // CAMPFIRE has no documented public RSS. This endpoint is unverified;
-    // if it 404s, disable via SCOUT_DISABLED_SOURCE_IDS=campfire.
+    // This endpoint currently returns an empty RSS envelope; keep enabled so it
+    // starts contributing automatically if CAMPFIRE adds items again.
     endpoint: "https://camp-fire.jp/projects.rss",
     enabled: true,
     category: "japan_reference",
@@ -223,6 +295,60 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "Makuake",
     type: "rss",
     endpoint: "https://www.makuake.com/rss/",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "getnavi",
+    name: "GetNavi",
+    type: "rss",
+    endpoint: "https://getnavi.jp/feed/",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "gizmodo-jp",
+    name: "Gizmodo Japan",
+    type: "rss",
+    endpoint: "https://www.gizmodo.jp/index.xml",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "roomie",
+    name: "ROOMIE",
+    type: "rss",
+    endpoint: "https://www.roomie.jp/feed/",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "lifehacker-jp",
+    name: "Lifehacker Japan",
+    type: "rss",
+    endpoint: "https://www.lifehacker.jp/index.xml",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "kaden-watch",
+    name: "家電 Watch",
+    type: "rss",
+    endpoint: "https://kaden.watch.impress.co.jp/data/rss/1.0/kdw/feed.rdf",
+    enabled: true,
+    category: "japan_reference",
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "impress-watch",
+    name: "Impress Watch",
+    type: "rss",
+    endpoint: "https://www.watch.impress.co.jp/data/rss/1.0/ipw/feed.rdf",
     enabled: true,
     category: "japan_reference",
     rateLimitPerHour: 30,

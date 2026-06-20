@@ -95,12 +95,12 @@ Your job is comprehensive research to support the final go/no-go investment deci
 • 検索 1: 日本消費者ターゲット — 具体的な購買層、年齢・性別・ライフスタイル、購買動機
 • 検索 2: Instagram JP・TikTok JP — インフルエンサー、バイラル事例、ハッシュタグ量
 • 検索 3: Makuake類似キャンペーン（最も近い成功事例を1件詳細に）
-• 検索 4: GREEN FUNDING・CAMPFIRE類似事例（Makuakeにない視点で）
+• 検索 4: GREEN FUNDING・CAMPFIRE・Kibidango類似事例（Makuakeにない視点で）
 • 検索 5: Amazon JP 競合上位3品 — 価格・BSR・レビュー数・出品者
 • 検索 6: 楽天・Yahoo!ショッピング競合 — 追加価格データ・取扱店舗
 • 検索 7: 規制精査 — PSE認証プロセス・費用・期間、技適要否、薬機法具体的制約
 • 検索 8: メーカー調査 — 製造元、既存日本販売代理店の有無、OEM実績
-• 検索 9: 日本市場規模・成長率 — この製品カテゴリのTAM、CAGR、季節性
+• 検索 9: 国内商品メディア・市場規模 — GetNavi / Gizmodo Japan / ROOMIE / Lifehacker Japan / 家電 Watch とカテゴリTAM、CAGR、季節性
 • 検索 10: 最新ニュース・リスク — 安全リコール、競合品の新規参入、ネガティブ報道
 
 **Output format:**

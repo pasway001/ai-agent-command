@@ -12,12 +12,12 @@ import type { Product } from "@/lib/db/schema";
 export const dynamic = "force-dynamic";
 
 const STAGES: Array<{ key: Product["stage"]; label: string }> = [
-  { key: "scout", label: "Scout" },
+  { key: "scout", label: "調査" },
   { key: "lp", label: "LP" },
-  { key: "ad", label: "Ad" },
-  { key: "outreach", label: "Outreach" },
+  { key: "ad", label: "広告" },
+  { key: "outreach", label: "営業" },
   { key: "cs", label: "CS" },
-  { key: "archived", label: "Archived" },
+  { key: "archived", label: "保管" },
 ];
 
 export default async function PipelinePage() {
@@ -106,7 +106,7 @@ export default async function PipelinePage() {
                                     className="inline-flex min-w-0 items-center gap-1 underline-offset-3 hover:underline"
                                   >
                                     <span className="truncate">
-                                      {summary.sourceName ?? "source"}
+                                      {summary.sourceName ?? "取得元"}
                                     </span>
                                     <ExternalLink className="size-3 shrink-0" />
                                   </a>
@@ -138,7 +138,7 @@ export default async function PipelinePage() {
                                 ) : null}
                                 <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-muted-foreground">
                                   {summary.lpRiskLevel ? (
-                                    <span>risk={summary.lpRiskLevel}</span>
+                                    <span>リスク {summary.lpRiskLevel}</span>
                                   ) : null}
                                   {summary.lpFaqCount > 0 ? (
                                     <span>FAQ {summary.lpFaqCount}</span>

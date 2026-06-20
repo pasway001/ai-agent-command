@@ -89,7 +89,7 @@ export const CandidateSignalsSchema = z.object({
       similarProductCount: z.number().optional(),
       domesticExamples: z.array(z.string()).optional(),
       searchSummary: z.string().optional(),
-      /** 0..1, derived from japan_reference sources (Makuake / GREEN FUNDING / CAMPFIRE). */
+      /** 0..1, derived from Japan reference sources (CF platforms + product media). */
       japanValidationLevel: z.number().min(0).max(1).optional(),
     })
     .optional(),
@@ -520,7 +520,8 @@ ${PHYSICAL_PRODUCT_POLICY_PROMPT}
    0.8-1.0: 10k+ backers OR $100k+ pledged OR Reddit score >1000 OR Show HN >300pt.
 2. crossSourceMentions — Mentioned across multiple sources we monitor.
    1 source → 0.2, 2 → 0.5, 3+ → 0.8-1.0. Use the "Cross-source signal" hint provided.
-3. japanValidationLevel — Similar product on Makuake / GREEN FUNDING / CAMPFIRE.
+3. japanValidationLevel — Similar product or demand signal from Japan reference sources.
+   Sources include Makuake, CAMPFIRE, GREEN FUNDING when available, plus Japanese product media such as GetNavi, Gizmodo Japan, ROOMIE, Lifehacker Japan, and 家電 Watch.
    No match → 0.3 (neutral, not negative).
    Loose match → 0.6 (validated demand).
    Strong match → 0.8-1.0 (proven JP demand, opportunity to enter).
@@ -593,6 +594,7 @@ Strengthen regulatoryRisk scoring with these Japan-specific rules:
 ### 5. Evidence Quality Bonus
 When evaluating the evidence array from perplexity research:
 - If the evidence contains a reference to an actual Makuake, GREEN FUNDING, or CAMPFIRE campaign for a similar product that achieved >150% of its funding goal, treat this as a strong positive signal.
+- If the evidence comes from Japanese product media (GetNavi, Gizmodo Japan, ROOMIE, Lifehacker Japan, 家電 Watch, Impress Watch), treat it as weaker but useful domestic demand context, not proof of crowdfunding success.
 - Apply a score bump of +0.05 to +0.10 to the japanValidationLevel axis and note the specific campaign in rationale.
 - This bonus stacks with the normal japanValidationLevel rubric but may not push any single axis above 1.0.`;
 
@@ -660,7 +662,7 @@ function userPromptFromSignals(
   }
   if (s.japan?.japanValidationLevel !== undefined) {
     lines.push(
-      `Japan validation hint: japanValidationLevel ≈ ${s.japan.japanValidationLevel.toFixed(2)} (derived from Makuake / GREEN FUNDING / CAMPFIRE similarity).`
+      `Japan validation hint: japanValidationLevel ≈ ${s.japan.japanValidationLevel.toFixed(2)} (derived from Japan reference-source similarity).`
     );
   }
 

@@ -4,10 +4,8 @@ import { cn } from "@/lib/utils";
 /**
  * Source-coded color badge.
  *
- * Phase A — the universe of sources is tiny (Kicktraq Gadgets / Kicktraq
- * Product Design / Yanko Design / Makuake). We hand-map them to colors so
- * reviewers can spot at a glance which feed a card came from. Anything not
- * in the map falls through to a neutral outline.
+ * Reviewers should be able to spot the source family at a glance. Anything
+ * outside these families falls through to a neutral outline.
  */
 const SOURCE_STYLES: Array<{ test: RegExp; className: string }> = [
   {
@@ -19,6 +17,21 @@ const SOURCE_STYLES: Array<{ test: RegExp; className: string }> = [
     test: /yanko/i,
     className:
       "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300",
+  },
+  {
+    test: /cool hunting|design milk|core77/i,
+    className:
+      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300",
+  },
+  {
+    test: /trendhunter|thisiswhyimbroke/i,
+    className:
+      "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-500/20 dark:bg-fuchsia-500/10 dark:text-fuchsia-300",
+  },
+  {
+    test: /new atlas|make magazine|hackaday/i,
+    className:
+      "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300",
   },
   {
     test: /makuake/i,
@@ -39,6 +52,11 @@ const SOURCE_STYLES: Array<{ test: RegExp; className: string }> = [
     test: /indiegogo/i,
     className:
       "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300",
+  },
+  {
+    test: /getnavi|gizmodo|roomie|lifehacker|家電 watch|impress watch/i,
+    className:
+      "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/20 dark:bg-teal-500/10 dark:text-teal-300",
   },
 ];
 

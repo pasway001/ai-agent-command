@@ -27,6 +27,7 @@ import {
   ReviewDetailsDialog,
   SourceLink,
   VerdictBadge,
+  reviewCategoryLabel,
 } from "./review-details-dialog";
 
 function ProductReviewCell({ item }: { item: OpenApproval }) {
@@ -40,8 +41,10 @@ function ProductReviewCell({ item }: { item: OpenApproval }) {
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <SourceLink review={review} />
-        {review.category ? (
-          <span className="text-xs text-muted-foreground">{review.category}</span>
+        {reviewCategoryLabel(review.category) ? (
+          <span className="text-xs text-muted-foreground">
+            {reviewCategoryLabel(review.category)}
+          </span>
         ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -181,15 +184,15 @@ export function InboxList({
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block rounded-md border overflow-x-auto bg-card">
-        <Table className="min-w-[940px] table-fixed">
+      <div className="hidden overflow-x-auto rounded-md border bg-card md:block">
+        <Table className="min-w-[1160px] table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16">優先度</TableHead>
-              <TableHead className="w-[260px]">候補</TableHead>
-              <TableHead className="w-[300px]">AI評価</TableHead>
+              <TableHead className="w-[320px]">候補</TableHead>
+              <TableHead className="w-[360px]">AI評価</TableHead>
               <TableHead className="w-24">経過</TableHead>
-              <TableHead className="w-80 text-right">アクション</TableHead>
+              <TableHead className="w-[360px] text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -229,10 +232,10 @@ export function InboxList({
                       {ownedByMe ? (
                         <Badge>自分</Badge>
                       ) : claimedByOther ? (
-                        <Badge variant="secondary">他レビュアー</Badge>
+                        <Badge variant="secondary">他担当</Badge>
                       ) : (
                         <span className="text-muted-foreground/60 text-sm">
-                          未割当
+                          未担当
                         </span>
                       )}
                     </div>
@@ -255,7 +258,7 @@ export function InboxList({
                               item.id,
                               "claim",
                               () => claimItem(item.id),
-                              "クレームしました"
+                              "担当しました"
                             )
                           }
                         >
@@ -264,7 +267,7 @@ export function InboxList({
                           ) : (
                             <Hand className="size-3.5" />
                           )}
-                          担当する
+                          担当
                         </Button>
                       ) : ownedByMe ? (
                         <Button
@@ -362,9 +365,9 @@ export function InboxList({
                   </div>
                   <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     <SourceLink review={item.review} />
-                    {item.review.category ? (
+                    {reviewCategoryLabel(item.review.category) ? (
                       <span className="text-xs text-muted-foreground">
-                        {item.review.category}
+                        {reviewCategoryLabel(item.review.category)}
                       </span>
                     ) : null}
                   </div>
@@ -385,10 +388,10 @@ export function InboxList({
                 {ownedByMe ? (
                   <Badge>自分</Badge>
                 ) : claimedByOther ? (
-                  <Badge variant="secondary">他レビュアー</Badge>
+                  <Badge variant="secondary">他担当</Badge>
                 ) : (
                   <span className="text-muted-foreground/60 text-xs">
-                    未割当
+                    未担当
                   </span>
                 )}
               </div>
@@ -411,7 +414,7 @@ export function InboxList({
                         item.id,
                         "claim",
                         () => claimItem(item.id),
-                        "クレームしました"
+                        "担当しました"
                       )
                     }
                   >
@@ -420,7 +423,7 @@ export function InboxList({
                     ) : (
                       <Hand className="size-3.5" />
                     )}
-                    担当する
+                    担当
                   </Button>
                 ) : ownedByMe ? (
                   <Button

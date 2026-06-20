@@ -11,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import { createAgent } from "./actions";
 
 const AGENT_TYPES = [
-  { value: "scout", label: "Scout (System 1)" },
+  { value: "scout", label: "調査 (System 1)" },
   { value: "lp", label: "LP (System 2)" },
-  { value: "ad", label: "Ad (System 3)" },
-  { value: "outreach", label: "Outreach (System 4)" },
+  { value: "ad", label: "広告 (System 3)" },
+  { value: "outreach", label: "営業 (System 4)" },
   { value: "cs", label: "CS (System 5)" },
 ] as const;
 

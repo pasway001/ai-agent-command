@@ -74,7 +74,8 @@ const PHYSICAL_PATTERNS: Pattern[] = [
 
 const PHYSICAL_SOURCE_HINTS: Pattern[] = [
   { pattern: /kicktraq.*(gadgets|product design|hardware|wearables|home|camera equipment|diy electronics|fabrication tools|accessories|apparel|footwear|jewelry|woodworking|diy|pottery|candles|stationery|crochet|embroidery|glass|knitting|letterpress|printing|quilts|weaving|ready-to-wear|pet fashion|ceramics|sculpture|textiles|tabletop games|playing cards)/i, label: "physical crowdfunding category" },
-  { pattern: /yanko design/i, label: "product design source" },
+  { pattern: /yanko design|cool hunting|design milk|core77/i, label: "product design source" },
+  { pattern: /thisiswhyimbroke|this is why i'?m broke/i, label: "product curation source" },
   { pattern: /makuake/i, label: "crowdfunding source" },
 ];
 

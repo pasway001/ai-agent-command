@@ -88,8 +88,8 @@ For the given product, use all 8 web searches with this strategy:
 
 **検索戦略（8回を無駄なく使う）:**
 • 検索 1-2: Amazon JP・楽天・Yahoo!ショッピング — 競合品の価格帯・レビュー数・出品者数
-• 検索 3-4: Makuake・GREEN FUNDING・CAMPFIRE — 類似キャンペーンの達成率・調達総額・支援者数
-• 検索 5-6: 日本消費者需要 — SNS言及数・季節需要・ターゲット層の特定
+• 検索 3-4: Makuake・CAMPFIRE・GREEN FUNDING・Kibidango — 類似キャンペーンの達成率・調達総額・支援者数
+• 検索 5-6: 国内メディア・SNS需要 — GetNavi / Gizmodo Japan / ROOMIE / Lifehacker Japan / 家電 Watch / SNS言及・季節需要
 • 検索 7: 規制リスク詳細 — PSE認証要否・技適・薬機法・食品衛生法の具体的適用判断
 • 検索 8: 輸入障壁 — 関税分類・一般的な輸入量・既存輸入業者の有無
 
@@ -98,7 +98,7 @@ Return structured JSON covering six areas:
 1. jpCompetitors — similar products already sold in Japan (Amazon JP, Rakuten, Yahoo Shopping, Mercari).
    Focus on price range and review sentiment (not raw counts).
 
-2. jpCFHistory — similar campaigns on Makuake, GREEN FUNDING, or CAMPFIRE.
+2. jpCFHistory — similar campaigns on Makuake, GREEN FUNDING, CAMPFIRE, or Kibidango.
    Include pledgedJpy (JPY total raised) and achievementPct (% of goal).
 
 3. regulatoryFlags — potential Japan regulatory issues.
@@ -277,7 +277,7 @@ export async function runPerplexityResearch(
       : null,
     "",
     "Search for this product or close alternatives in the Japanese market.",
-    "Focus on Amazon Japan, Rakuten, Yahoo Shopping, Makuake, GREEN FUNDING, and CAMPFIRE.",
+    "Focus on Amazon Japan, Rakuten, Yahoo Shopping, Mercari, Makuake, GREEN FUNDING, CAMPFIRE, Kibidango, GetNavi, Gizmodo Japan, ROOMIE, Lifehacker Japan, and 家電 Watch.",
   ]
     .filter((l): l is string => l !== null)
     .join("\n");

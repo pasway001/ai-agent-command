@@ -245,7 +245,7 @@ function mergeCrossSource(
   return merged;
 }
 
-// ---- japanValidationLevel (Phase B Japan-CF positive signal) ----
+// ---- japanValidationLevel (Phase B Japan reference positive signal) ----
 
 function computeJapanValidationLevel(
   candidate: FeedItem,
@@ -255,7 +255,7 @@ function computeJapanValidationLevel(
     return {
       level: 0.3,
       matches: [],
-      summary: "Japan reference データなし（中立 0.3）",
+      summary: "国内参照データなし（中立 0.3）",
     };
   }
   const scored = japanRefItems
@@ -267,11 +267,11 @@ function computeJapanValidationLevel(
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
   if (scored.length === 0) {
-    return {
-      level: 0.3,
-      matches: [],
-      summary: "国内クラファンに類似なし（中立 0.3）",
-    };
+      return {
+        level: 0.3,
+        matches: [],
+        summary: "国内参照ソースに類似なし（中立 0.3）",
+      };
   }
   // 1 loose match → 0.6, 2 → 0.8, 3+ → 1.0. Strong title overlap bumps further.
   const base = Math.min(0.4 + scored.length * 0.2, 1.0);
@@ -280,7 +280,7 @@ function computeJapanValidationLevel(
   return {
     level,
     matches: scored.map((s) => s.title),
-    summary: `国内クラファンに類似 ${scored.length} 件（最大類似度 ${bestScore.toFixed(2)}） → ${level.toFixed(2)}`,
+    summary: `国内参照ソースに類似 ${scored.length} 件（最大類似度 ${bestScore.toFixed(2)}） → ${level.toFixed(2)}`,
   };
 }
 
