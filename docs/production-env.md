@@ -185,6 +185,19 @@ Then create the reviewer/admin user in Supabase Dashboard -> Authentication.
 If using local auth instead, set `AUTH_PROVIDER=local` plus
 `APP_AUTH_EMAIL`, `APP_AUTH_PASSWORD`, and `APP_SESSION_SECRET` in Vercel.
 
+If the production deployment has the correct env at runtime but the CLI cannot
+pull those secrets, use the protected maintenance endpoint from the deployed
+app. Copy `CRON_SECRET` from the real Vercel project first:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <CRON_SECRET>" \
+  https://<your-project>.vercel.app/api/maintenance/bootstrap
+```
+
+The response includes a fresh readiness report. `db_seed_data` should show at
+least `sellable_scored_products=30/30`.
+
 ## 5. Scout Sources
 
 The minimum scout uses free RSS feeds by default and writes promising candidates

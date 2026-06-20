@@ -107,6 +107,16 @@ ENV_FILE=.env.production.local pnpm sales:contacts:sync
 
 Supabase Authを使う場合は、schema反映後に `ENV_FILE=.env.production.local pnpm db:apply-rls` を実行し、Supabase DashboardのAuthenticationでログインユーザーも作成してください。ローカル認証で進める場合は `AUTH_PROVIDER=local` をVercelに設定します。
 
+本番VercelのenvをCLIから取得できない場合でも、Vercel上の関数に補正投入させられます。Vercel Dashboardで `CRON_SECRET` を確認して実行してください。
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <CRON_SECRET>" \
+  https://<your-project>.vercel.app/api/maintenance/bootstrap
+```
+
+成功後、`/api/readiness?db=1` の `db_seed_data` が `sellable_scored_products=30/30` 以上になります。
+
 ## 最小Scout
 
 無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、スコアリングし、承認候補だけ `/inbox` に入れます。`LLM_PROVIDER=mock` のままなら外部AI APIなしでドライランできます。Claude / Perplexity のAPIキーを入れると実リサーチへ切り替わります。
