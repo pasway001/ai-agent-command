@@ -1,15 +1,7 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import bundledResearchProducts from "../../../reports/scout-products-2026-06-19.json";
-import {
-  enqueueApproval,
-  findOrCreateProduct,
-  finishRun,
-  mergeProductMetadata,
-  recordAutoEvaluation,
-  startRun,
-} from "../agent-sdk";
 import { db } from "../db";
-import { agents, approvalQueue, products } from "../db/schema";
+import { agents, products, type NewProduct, type Product } from "../db/schema";
 
 const AGENT_ID = "scout.scoring";
 const DEFAULT_INPUT = "reports/scout-products-2026-06-19.json";
@@ -37,6 +29,8 @@ export type BootstrapResearchProductsResult = {
   input: string;
   items: number;
   imported: number;
+  inserted: number;
+  updated: number;
   existingOpenApprovals: number;
 };
 
@@ -45,10 +39,6 @@ function priorityFor(score: number) {
   if (score >= 84) return 7;
   if (score >= 80) return 5;
   return 3;
-}
-
-function verdictFor(score: number): "approve" | "escalate" {
-  return score >= 84 ? "approve" : "escalate";
 }
 
 function signalsFor(item: ResearchItem) {
@@ -70,6 +60,58 @@ function signalsFor(item: ResearchItem) {
     },
     mentionSources: [item.source],
     crossSourceScore: 0.2,
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function deepMerge(
+  base: Record<string, unknown>,
+  patch: Record<string, unknown>
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    const current = out[key];
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      current !== null &&
+      typeof current === "object" &&
+      !Array.isArray(current)
+    ) {
+      out[key] = deepMerge(
+        current as Record<string, unknown>,
+        value as Record<string, unknown>
+      );
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function normalizedTitle(title: string) {
+  return title.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function productPatchFor(item: ResearchItem, generatedAt: string | undefined) {
+  const signals = signalsFor(item);
+  return {
+    signals,
+    shortlist: item,
+    salesReadiness: {
+      sourceReportGeneratedAt: generatedAt ?? null,
+      importedAt: new Date().toISOString(),
+      priority: priorityFor(item.score),
+      nextAction: item.nextAction,
+      risks: item.risks,
+      reasons: item.reasons,
+    },
   };
 }
 
@@ -106,105 +148,6 @@ async function ensureScoutAgent() {
     });
 }
 
-async function importItem(item: ResearchItem, generatedAt: string | undefined) {
-  const signals = signalsFor(item);
-  const salesReadiness = {
-    sourceReportGeneratedAt: generatedAt ?? null,
-    importedAt: new Date().toISOString(),
-    priority: priorityFor(item.score),
-    nextAction: item.nextAction,
-    risks: item.risks,
-    reasons: item.reasons,
-  };
-  const product = await findOrCreateProduct({
-    title: item.title,
-    sourceAgentId: AGENT_ID,
-    stage: "scout",
-    status: "pending",
-    metadata: {
-      signals,
-      shortlist: item,
-      salesReadiness,
-    },
-  });
-
-  await mergeProductMetadata(product.id, {
-    signals,
-    shortlist: item,
-    salesReadiness,
-  });
-
-  await db
-    .update(products)
-    .set({
-      stage: "scout",
-      status: "pending",
-      updatedAt: new Date(),
-    })
-    .where(eq(products.id, product.id));
-
-  const [existingOpen] = await db
-    .select({ id: approvalQueue.id })
-    .from(approvalQueue)
-    .where(
-      and(
-        eq(approvalQueue.productId, product.id),
-        isNull(approvalQueue.decision)
-      )
-    )
-    .limit(1);
-
-  if (existingOpen) {
-    return { reusedApproval: true };
-  }
-
-  const run = await startRun({
-    agentId: AGENT_ID,
-    productId: product.id,
-    inputPayload: {
-      source: "maintenance-bootstrap",
-      shortlistItem: item,
-      signals,
-    },
-  });
-
-  const verdict = verdictFor(item.score);
-  await recordAutoEvaluation({
-    runId: run.id,
-    productId: product.id,
-    verdict,
-    score: item.score / 100,
-    reasoning: `Bundled shortlist bootstrap. ${item.reasons.join(" / ")}. Next: ${item.nextAction}`,
-    evidence: {
-      source: item.source,
-      url: item.url,
-      risks: item.risks,
-      japanAngle: item.japanAngle,
-      rank: item.rank,
-    },
-  });
-
-  await finishRun({
-    runId: run.id,
-    agentId: AGENT_ID,
-    outputPayload: {
-      verdict,
-      score: item.score / 100,
-      shortlistItem: item,
-      imported: true,
-    },
-  });
-
-  await enqueueApproval({
-    runId: run.id,
-    productId: product.id,
-    priority: priorityFor(item.score),
-    requiredRole: "reviewer",
-  });
-
-  return { reusedApproval: false };
-}
-
 export async function bootstrapResearchProducts(
   options: { limit?: number } = {}
 ): Promise<BootstrapResearchProductsResult> {
@@ -218,18 +161,53 @@ export async function bootstrapResearchProducts(
 
   await ensureScoutAgent();
 
-  let imported = 0;
-  let existingOpenApprovals = 0;
+  const existingProducts = await db.select().from(products);
+  const byTitle = new Map<string, Product>();
+  for (const product of existingProducts) {
+    const key = normalizedTitle(product.title);
+    if (!byTitle.has(key)) byTitle.set(key, product);
+  }
+
+  const inserts: NewProduct[] = [];
+  let updated = 0;
   for (const item of items) {
-    const result = await importItem(item, parsed.generatedAt);
-    imported++;
-    if (result.reusedApproval) existingOpenApprovals++;
+    const patch = productPatchFor(item, parsed.generatedAt);
+    const existing = byTitle.get(normalizedTitle(item.title));
+
+    if (!existing) {
+      inserts.push({
+        title: item.title,
+        sourceAgentId: AGENT_ID,
+        stage: "scout",
+        status: "pending",
+        metadata: patch,
+      });
+      continue;
+    }
+
+    await db
+      .update(products)
+      .set({
+        sourceAgentId: existing.sourceAgentId ?? AGENT_ID,
+        stage: "scout",
+        status: "pending",
+        metadata: deepMerge(asRecord(existing.metadata), patch),
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, existing.id));
+    updated++;
+  }
+
+  if (inserts.length > 0) {
+    await db.insert(products).values(inserts);
   }
 
   return {
     input,
     items: items.length,
-    imported,
-    existingOpenApprovals,
+    imported: updated + inserts.length,
+    inserted: inserts.length,
+    updated,
+    existingOpenApprovals: 0,
   };
 }
