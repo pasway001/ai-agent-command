@@ -12,19 +12,23 @@ function getConnectionString() {
   return requireDatabaseUrl();
 }
 
-function getClient() {
-  const client =
-    globalForDb.client ??
-    postgres(getConnectionString(), {
-      prepare: false, // required when using Supabase pooler in transaction mode
-      max: 10,
-    });
+function getMaxConnections() {
+  const raw = process.env.DATABASE_MAX_CONNECTIONS;
+  const parsed = raw ? Number.parseInt(raw, 10) : 2;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 2;
+}
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.client = client;
+function getClient() {
+  if (!globalForDb.client) {
+    globalForDb.client = postgres(getConnectionString(), {
+      prepare: false, // required when using Supabase pooler in transaction mode
+      max: getMaxConnections(),
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
   }
 
-  return client;
+  return globalForDb.client;
 }
 
 function createDb() {
@@ -35,13 +39,11 @@ function createDb() {
 }
 
 export function getDb() {
-  const database = globalForDb.db ?? createDb();
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.db = database;
+  if (!globalForDb.db) {
+    globalForDb.db = createDb();
   }
 
-  return database;
+  return globalForDb.db;
 }
 
 export async function closeDb() {

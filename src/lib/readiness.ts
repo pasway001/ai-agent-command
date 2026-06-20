@@ -66,6 +66,22 @@ function hasShortlistScore(metadataValue: unknown) {
   return typeof score === "number" && Number.isFinite(score) && score > 0;
 }
 
+function errorDetail(err: unknown) {
+  if (!(err instanceof Error)) return String(err);
+  const cause = err.cause;
+  if (cause instanceof Error && cause.message !== err.message) {
+    return `${err.message}; cause: ${cause.message}`;
+  }
+  if (cause && typeof cause === "object") {
+    const code = "code" in cause ? String(cause.code) : null;
+    const message = "message" in cause ? String(cause.message) : null;
+    return [err.message, code ? `code=${code}` : null, message ? `cause=${message}` : null]
+      .filter(Boolean)
+      .join("; ");
+  }
+  return err.message;
+}
+
 async function getMissingCoreTables() {
   const db = getDb();
   const missing: string[] = [];
@@ -174,7 +190,7 @@ export async function getReadinessReport(options: { checkDb?: boolean } = {}) {
       checks.push({
         name: "database_connection",
         ok: false,
-        detail: err instanceof Error ? err.message : String(err),
+        detail: errorDetail(err),
       });
     }
   }
