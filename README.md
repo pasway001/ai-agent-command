@@ -85,6 +85,28 @@ pnpm build
 
 既存の `.vercel` はローカルリンク情報でGitには入りません。別の専用Vercelへ上げる場合は、そのプロジェクトで新しくリンクしてください。
 
+### Supabaseにデータが反映されない時
+
+本番URLの `/api/readiness?db=1` は、VercelからDBへ接続できるかだけでなく、必須テーブルと初期データも確認します。
+
+- `database_connection` がOKで `db_core_tables` がNG: Supabaseにschemaが未反映です
+- `db_core_tables` がOKで `db_seed_data` がNG: agentsや30商品データが未投入です
+- Supabase画面で別プロジェクトを見ている場合もあるため、Vercelの `DATABASE_URL` が同じSupabase projectを指しているか確認してください
+
+初回反映は、pasway側Vercelプロジェクトにlinkしたうえで実行します。
+
+```bash
+vercel link --yes --project ai-agent-command --scope <pasway-team-or-user-scope>
+vercel env pull .env.production.local --environment=production
+
+ENV_FILE=.env.production.local pnpm db:push
+ENV_FILE=.env.production.local pnpm db:seed
+ENV_FILE=.env.production.local pnpm research:import -- --input reports/scout-products-2026-06-19.json
+ENV_FILE=.env.production.local pnpm sales:contacts:sync
+```
+
+Supabase Authを使う場合は、schema反映後に `ENV_FILE=.env.production.local pnpm db:apply-rls` を実行し、Supabase DashboardのAuthenticationでログインユーザーも作成してください。ローカル認証で進める場合は `AUTH_PROVIDER=local` をVercelに設定します。
+
 ## 最小Scout
 
 無料RSSソースから海外の物理商品候補だけを拾い、Makuake RSS の直近タイトルと簡易比較して、スコアリングし、承認候補だけ `/inbox` に入れます。`LLM_PROVIDER=mock` のままなら外部AI APIなしでドライランできます。Claude / Perplexity のAPIキーを入れると実リサーチへ切り替わります。

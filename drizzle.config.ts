@@ -1,6 +1,12 @@
 import { config } from "dotenv";
-config({ path: ".env.local" });
-config();
+
+const explicitEnvFile =
+  process.env.ENV_FILE?.trim() || process.env.DOTENV_CONFIG_PATH?.trim();
+
+for (const path of explicitEnvFile ? [explicitEnvFile] : [".env.local", ".env"]) {
+  config({ path });
+}
+
 import { defineConfig } from "drizzle-kit";
 import { requireDatabaseUrl } from "./src/lib/db/url";
 

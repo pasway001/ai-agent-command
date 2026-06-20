@@ -145,6 +145,46 @@ vercel env pull .env.production.local --environment=production
 vercel build --prod
 ```
 
+## 4.2 Supabase First Data Sync
+
+If the Vercel deployment is ready but data is not visible in the app, first open:
+
+```text
+https://<your-project>.vercel.app/api/readiness?db=1
+```
+
+Interpret the DB checks:
+
+| Check | Meaning | Fix |
+| --- | --- | --- |
+| `database_connection` is OK | Vercel can connect to a Postgres/Supabase database. | If data is still missing, continue to the next checks. |
+| `db_core_tables` is missing tables | The Supabase database has not received the Drizzle schema. | Run `pnpm db:push` against the production `DATABASE_URL`. |
+| `db_seed_data` is below target | Tables exist, but agents or 30 scored product candidates are missing. | Run seed/import commands below. |
+
+For a first production database sync, make sure the CLI is linked to the
+dedicated Vercel project, not an old local `.vercel` link:
+
+```bash
+vercel link --yes --project ai-agent-command --scope <pasway-team-or-user-scope>
+vercel env pull .env.production.local --environment=production
+
+ENV_FILE=.env.production.local pnpm db:push
+ENV_FILE=.env.production.local pnpm db:seed
+ENV_FILE=.env.production.local pnpm research:import -- --input reports/scout-products-2026-06-19.json
+ENV_FILE=.env.production.local pnpm sales:contacts:sync
+ENV_FILE=.env.production.local pnpm local:acceptance -- --no-markdown
+```
+
+If `AUTH_PROVIDER=supabase`, also run the RLS policies after schema creation:
+
+```bash
+ENV_FILE=.env.production.local pnpm db:apply-rls
+```
+
+Then create the reviewer/admin user in Supabase Dashboard -> Authentication.
+If using local auth instead, set `AUTH_PROVIDER=local` plus
+`APP_AUTH_EMAIL`, `APP_AUTH_PASSWORD`, and `APP_SESSION_SECRET` in Vercel.
+
 ## 5. Scout Sources
 
 The minimum scout uses free RSS feeds by default and writes promising candidates
