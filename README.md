@@ -41,6 +41,7 @@ bootstrapを使わずに進める場合は、`.env.example` を参考に `.env.l
 AUTH_PROVIDER=local
 APP_AUTH_EMAIL=admin@example.com
 APP_AUTH_PASSWORD=<strong-password>
+APP_AUTH_USERS_JSON=[] # 任意: 共有用メンバーをJSON配列で追加
 APP_SESSION_SECRET=<32+ random chars>
 DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -66,6 +67,7 @@ Supabase Auth を使う場合だけ `pnpm db:apply-rls` を実行してくださ
 AUTH_PROVIDER=local
 APP_AUTH_EMAIL=<login-email>
 APP_AUTH_PASSWORD=<strong-password>
+APP_AUTH_USERS_JSON=[] # 任意: [{"email":"member@example.com","password":"...","name":"Member","id":"uuid"}]
 APP_SESSION_SECRET=<32+ random chars>
 DATABASE_URL=<Vercelから接続できるPostgres URL>
 NEXT_PUBLIC_APP_URL=https://<your-project>.vercel.app

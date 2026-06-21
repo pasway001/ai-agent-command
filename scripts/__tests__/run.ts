@@ -20,6 +20,7 @@ import { minimal } from "./minimal-scout.test";
 import { salesExecution } from "./sales-execution.test";
 import { salesTasks } from "./sales-tasks.test";
 import { contactLeads } from "./contact-leads.test";
+import { authSession } from "./auth-session.test";
 
 const suites: TestSuite[] = [
   reddit.suite,
@@ -31,6 +32,7 @@ const suites: TestSuite[] = [
   salesExecution.suite,
   salesTasks.suite,
   contactLeads.suite,
+  authSession.suite,
 ];
 
 runSuites(suites)

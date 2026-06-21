@@ -26,8 +26,9 @@ local Postgres, local one-user auth, and Claude as the only paid API.
 | Key | Source | Notes |
 | --- | --- | --- |
 | `AUTH_PROVIDER` | Local default | Use `local` for minimum-cost mode. |
-| `APP_AUTH_EMAIL` | Local secret store | Login email for the single reviewer/admin. |
-| `APP_AUTH_PASSWORD` | Local secret store | Login password. Use a strong unique value. |
+| `APP_AUTH_EMAIL` | Local secret store | Login email for the primary reviewer/admin. |
+| `APP_AUTH_PASSWORD` | Local secret store | Primary login password. Use a strong unique value. |
+| `APP_AUTH_USERS_JSON` | Local secret store | Optional server-only JSON array for additional local members. |
 | `APP_SESSION_SECRET` | Local secret store | 32+ random chars for signed session cookies. |
 | `DATABASE_URL` | Local Postgres | Direct/runtime connection for the Mac mini Postgres. |
 | `DATABASE_POOL_URL` | Hosted Postgres/Supabase | Optional. Leave empty for local Postgres. |
@@ -83,6 +84,7 @@ Recommended first production values for Mac mini / local Postgres:
 AUTH_PROVIDER=local
 APP_AUTH_EMAIL=admin@example.com
 APP_AUTH_PASSWORD=<strong-password>
+APP_AUTH_USERS_JSON=[]
 APP_SESSION_SECRET=<32+ random chars>
 DATABASE_URL=postgresql://pathway:pathway@localhost:5432/pathway
 # or DATABASE_URL_DIRECT=...
@@ -114,6 +116,7 @@ Vercel dashboard or with `vercel env add`. At minimum:
 | `AUTH_PROVIDER` | Yes | Use `local` unless Supabase Auth is configured. |
 | `APP_AUTH_EMAIL` | Yes | Login email. |
 | `APP_AUTH_PASSWORD` | Yes | Strong login password. |
+| `APP_AUTH_USERS_JSON` | Optional | Additional local members as JSON: `[{ "email": "...", "password": "...", "name": "...", "id": "uuid" }]`. |
 | `APP_SESSION_SECRET` | Yes | 32+ random chars. |
 | `DATABASE_URL` or `DATABASE_POOL_URL` or `DATABASE_URL_DIRECT` | Yes | Must be reachable from Vercel. A local `localhost` Postgres URL will not work in Vercel production. |
 | `NEXT_PUBLIC_APP_URL` | Yes | Production URL, no trailing slash. |
@@ -184,6 +187,8 @@ ENV_FILE=.env.production.local pnpm db:apply-rls
 Then create the reviewer/admin user in Supabase Dashboard -> Authentication.
 If using local auth instead, set `AUTH_PROVIDER=local` plus
 `APP_AUTH_EMAIL`, `APP_AUTH_PASSWORD`, and `APP_SESSION_SECRET` in Vercel.
+For shared local-auth access, add members with `APP_AUTH_USERS_JSON` rather
+than committing credentials to the repository.
 
 If the production deployment has the correct env at runtime but the CLI cannot
 pull those secrets, use the protected maintenance endpoint from the deployed

@@ -3,9 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   LOCAL_SESSION_COOKIE,
   createLocalSessionValue,
+  findLocalUserByCredentials,
   getAuthProvider,
-  getLocalLoginEmail,
-  getLocalUser,
   hasSupabaseAuthEnv,
   localAuthIsConfigured,
   verifyLocalSessionValue,
@@ -51,14 +50,13 @@ export async function signInWithPasswordAuth(email: string, password: string) {
     );
   }
 
-  const expectedEmail = getLocalLoginEmail();
-  const expectedPassword = process.env.APP_AUTH_PASSWORD;
-  if (email !== expectedEmail || password !== expectedPassword) {
+  const user = findLocalUserByCredentials(email, password);
+  if (!user) {
     throw new Error("メールアドレスまたはパスワードが違います");
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(LOCAL_SESSION_COOKIE, await createLocalSessionValue(getLocalUser()), {
+  cookieStore.set(LOCAL_SESSION_COOKIE, await createLocalSessionValue(user), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

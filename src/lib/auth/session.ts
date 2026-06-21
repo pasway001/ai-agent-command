@@ -6,6 +6,10 @@ export type AppUser = {
   name: string;
 };
 
+type LocalAuthUser = AppUser & {
+  password: string;
+};
+
 export const LOCAL_SESSION_COOKIE = "acc_local_session";
 const DEFAULT_LOCAL_USER_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -23,21 +27,154 @@ export function hasSupabaseAuthEnv() {
   );
 }
 
-export function getLocalLoginEmail() {
-  return process.env.APP_AUTH_EMAIL ?? "admin@example.com";
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
 }
 
-export function getLocalUser(): AppUser {
-  const email = getLocalLoginEmail();
+function fnv1a32(input: string, seed: number) {
+  let hash = seed >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+function uuidFromText(input: string) {
+  const bytes = new Uint8Array(16);
+  const normalized = input.trim().toLowerCase();
+  [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35].forEach((seed, index) => {
+    const hash = fnv1a32(`${normalized}:${index}`, seed);
+    bytes[index * 4] = (hash >>> 24) & 0xff;
+    bytes[index * 4 + 1] = (hash >>> 16) & 0xff;
+    bytes[index * 4 + 2] = (hash >>> 8) & 0xff;
+    bytes[index * 4 + 3] = hash & 0xff;
+  });
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
+}
+
+function stripPassword(user: LocalAuthUser): AppUser {
   return {
-    id: process.env.APP_LOCAL_USER_ID ?? DEFAULT_LOCAL_USER_ID,
-    email,
-    name: process.env.APP_AUTH_NAME ?? email,
+    id: user.id,
+    email: user.email,
+    name: user.name,
   };
 }
 
+function legacyLocalAuthUser(): LocalAuthUser | null {
+  const password = process.env.APP_AUTH_PASSWORD;
+  if (!password) return null;
+
+  const email = process.env.APP_AUTH_EMAIL ?? "admin@example.com";
+  const configuredId = process.env.APP_LOCAL_USER_ID;
+  return {
+    id: configuredId && isUuid(configuredId) ? configuredId : DEFAULT_LOCAL_USER_ID,
+    email,
+    name: process.env.APP_AUTH_NAME ?? email,
+    password,
+  };
+}
+
+function normalizeLocalAuthUser(value: unknown): LocalAuthUser | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (
+    typeof input.email !== "string" ||
+    !input.email.includes("@") ||
+    typeof input.password !== "string" ||
+    input.password.length === 0
+  ) {
+    return null;
+  }
+
+  const email = input.email.trim();
+  const name =
+    typeof input.name === "string" && input.name.trim().length > 0
+      ? input.name.trim()
+      : email;
+  const id = typeof input.id === "string" && isUuid(input.id) ? input.id : uuidFromText(email);
+
+  return {
+    id,
+    email,
+    name,
+    password: input.password,
+  };
+}
+
+function additionalLocalAuthUsers() {
+  const raw = process.env.APP_AUTH_USERS_JSON?.trim();
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => normalizeLocalAuthUser(item))
+      .filter((item): item is LocalAuthUser => item !== null);
+  } catch {
+    return [];
+  }
+}
+
+export function getLocalAuthUsers(): LocalAuthUser[] {
+  const users: LocalAuthUser[] = [];
+  const seen = new Set<string>();
+  const add = (user: LocalAuthUser | null) => {
+    if (!user) return;
+    const key = user.email.trim().toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    users.push({ ...user, email: user.email.trim() });
+  };
+
+  add(legacyLocalAuthUser());
+  additionalLocalAuthUsers().forEach(add);
+  return users;
+}
+
+export function getLocalLoginEmail() {
+  return getLocalAuthUsers()[0]?.email ?? process.env.APP_AUTH_EMAIL ?? "admin@example.com";
+}
+
+export function getLocalUser(email?: string): AppUser {
+  const normalized = email?.trim().toLowerCase();
+  const user =
+    (normalized
+      ? getLocalAuthUsers().find((candidate) => candidate.email.toLowerCase() === normalized)
+      : getLocalAuthUsers()[0]) ?? {
+      id: process.env.APP_LOCAL_USER_ID ?? DEFAULT_LOCAL_USER_ID,
+      email: process.env.APP_AUTH_EMAIL ?? "admin@example.com",
+      name: process.env.APP_AUTH_NAME ?? process.env.APP_AUTH_EMAIL ?? "admin@example.com",
+      password: "",
+    };
+
+  return stripPassword(user);
+}
+
+export function findLocalUserByCredentials(email: string, password: string): AppUser | null {
+  const normalized = email.trim().toLowerCase();
+  const user = getLocalAuthUsers().find(
+    (candidate) =>
+      candidate.email.trim().toLowerCase() === normalized && candidate.password === password
+  );
+  return user ? stripPassword(user) : null;
+}
+
 export function localAuthIsConfigured() {
-  return Boolean(process.env.APP_SESSION_SECRET && process.env.APP_AUTH_PASSWORD);
+  return Boolean(process.env.APP_SESSION_SECRET && getLocalAuthUsers().length > 0);
 }
 
 function getSessionSecret() {
@@ -132,3 +269,7 @@ export async function verifyLocalSessionValue(
     return null;
   }
 }
+
+export const __test = {
+  uuidFromText,
+};
