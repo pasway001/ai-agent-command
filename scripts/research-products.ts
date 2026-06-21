@@ -26,6 +26,7 @@ type ShortlistItem = {
   rank: number;
   title: string;
   source: string;
+  market: "global" | "japan";
   url: string;
   score: number;
   publishedAt: string | null;
@@ -159,6 +160,10 @@ function scoreItem(item: NormalizedCandidate, source: SourceConfig) {
   let score = 50;
   const reasons: string[] = [];
 
+  if (source.category === "japan_reference") {
+    score += 8;
+    reasons.push("国内メディア/国内CFで需要文脈を確認");
+  }
   if (/kicktraq/i.test(source.name)) {
     score += 12;
     reasons.push("海外クラファン初動を確認できる");
@@ -221,6 +226,9 @@ function scoreItem(item: NormalizedCandidate, source: SourceConfig) {
 
 function japanAngleFor(item: NormalizedCandidate) {
   const text = `${item.title} ${item.description}`.toLowerCase();
+  if (/makuake|campfire|green funding|getnavi|gizmodo japan|roomie|lifehacker japan|家電 watch|impress watch/i.test(item.sourceName)) {
+    return "国内で見えている需要を起点に、海外仕入れ元/独占代理店可否を確認";
+  }
   if (/\b(travel|portable|pocket|compact|foldable|edc)\b/i.test(text)) {
     return "Makuakeで「持ち運び/省スペース/出張・旅行」訴求を検証";
   }
@@ -247,6 +255,19 @@ function nextActionFor(risks: string[]) {
     return "効能表現を避けたLP訴求と法務チェック前提で確認";
   }
   return "Makuake/楽天/Amazon JP類似、卸条件、商標を確認";
+}
+
+function sourceGroups() {
+  const sources = [
+    ...getEnabledSources("primary"),
+    ...getEnabledSources("japan_reference"),
+  ];
+  const seen = new Set<string>();
+  return sources.filter((source) => {
+    if (seen.has(source.id)) return false;
+    seen.add(source.id);
+    return true;
+  });
 }
 
 async function fetchSource(source: SourceConfig, args: Args) {
@@ -290,7 +311,7 @@ function toMarkdown(items: ShortlistItem[], errors: string[]) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const sources = getEnabledSources("primary");
+  const sources = sourceGroups();
   const fetched = await Promise.allSettled(
     sources.map(async (source) => ({
       source,
@@ -344,6 +365,7 @@ async function main() {
       rank: index + 1,
       title: strip(entry.item.title),
       source: entry.source.name,
+      market: entry.source.category === "japan_reference" ? "japan" : "global",
       url: entry.item.url,
       score: entry.score,
       publishedAt: entry.item.publishedAt?.toISOString() ?? null,

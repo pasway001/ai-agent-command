@@ -59,7 +59,7 @@ export default async function PipelinePage() {
                         <p className="text-xs">商品なし</p>
                       </div>
                     ) : (
-                      items.slice(0, 30).map((p) => {
+                      items.slice(0, 100).map((p) => {
                         const summary = p.pipelineSummary;
                         return (
                           <article
@@ -174,9 +174,9 @@ export default async function PipelinePage() {
                         );
                       })
                     )}
-                    {items.length > 30 ? (
+                    {items.length > 100 ? (
                       <p className="text-[11px] text-center text-muted-foreground pt-1">
-                        +{items.length - 30} 件は表示されていません
+                        +{items.length - 100} 件は表示されていません
                       </p>
                     ) : null}
                   </CardContent>

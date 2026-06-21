@@ -1,5 +1,7 @@
 import { and, asc, count, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
+import bundledResearchProducts from "../../../reports/scout-products-2026-06-21.json";
 import { db } from "./index";
+import { hasDatabaseUrl } from "./url";
 import {
   agents,
   agentPrompts,
@@ -50,6 +52,26 @@ export async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 type JsonRecord = Record<string, unknown>;
+type StaticResearchJson = {
+  generatedAt?: string;
+  items?: StaticResearchItem[];
+};
+type StaticResearchItem = {
+  rank: number;
+  title: string;
+  source: string;
+  market?: "global" | "japan";
+  url: string;
+  score: number;
+  publishedAt: string | null;
+  reasons: string[];
+  risks: string[];
+  japanAngle: string;
+  nextAction: string;
+  description: string;
+};
+
+const STATIC_AGENT_ID = "scout.scoring";
 
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -309,6 +331,8 @@ function scoutReviewDetails(
 }
 
 export async function getOpenApprovals() {
+  if (!hasDatabaseUrl()) return getStaticOpenApprovals();
+
   const rows = await db
     .select({
       id: approvalQueue.id,
@@ -347,6 +371,8 @@ export async function getOpenApprovals() {
 export type OpenApproval = Awaited<ReturnType<typeof getOpenApprovals>>[number];
 
 export async function getOpenApprovalsCount(): Promise<number> {
+  if (!hasDatabaseUrl()) return getStaticOpenApprovals().length;
+
   const [row] = await db
     .select({ c: count() })
     .from(approvalQueue)
@@ -424,7 +450,167 @@ function pipelineSummary(metadataValue: unknown) {
   };
 }
 
+type PipelineProduct = Product & {
+  pipelineSummary: ReturnType<typeof pipelineSummary>;
+};
+
+function staticResearchData() {
+  return bundledResearchProducts as StaticResearchJson;
+}
+
+function priorityForScore(score: number) {
+  if (score >= 90) return 9;
+  if (score >= 84) return 7;
+  if (score >= 80) return 5;
+  return 3;
+}
+
+function verdictForScore(score: number): ScoutVerdict {
+  return score >= 84 ? "approve" : "escalate";
+}
+
+function staticId(prefix: string, rank: number) {
+  return `${prefix}-${String(rank).padStart(3, "0")}`;
+}
+
+function staticUuid(rank: number) {
+  return `00000000-0000-4000-8000-${String(rank).padStart(12, "0")}`;
+}
+
+function staticItemMetadata(item: StaticResearchItem, generatedAt: string | undefined) {
+  const signals = {
+    title: item.title,
+    category: `${item.source} shortlist rank ${item.rank}`,
+    productType: "physical" as const,
+    physicalProductLikely: true,
+    market: item.market ?? "global",
+    overseas: {
+      source: item.source,
+      url: item.url || undefined,
+      description: item.description,
+      publishedAt: item.publishedAt ?? undefined,
+    },
+    japan: {
+      notYetInJapan: undefined,
+      searchSummary: item.japanAngle,
+      japanValidationLevel: item.market === "japan" ? 0.7 : 0.3,
+    },
+    mentionSources: [item.source],
+    crossSourceScore: item.market === "japan" ? 0.4 : 0.2,
+  };
+
+  return {
+    signals,
+    shortlist: item,
+    salesReadiness: {
+      sourceReportGeneratedAt: generatedAt ?? null,
+      importedAt: generatedAt ?? new Date().toISOString(),
+      priority: priorityForScore(item.score),
+      nextAction: item.nextAction,
+      risks: item.risks,
+      reasons: item.reasons,
+    },
+  };
+}
+
+function staticRunOutputPayload(item: StaticResearchItem) {
+  return {
+    verdict: verdictForScore(item.score),
+    score: item.score / 100,
+    totalScore: item.score / 100,
+    rationale: item.reasons.join(" / ") || "公開ソースから抽出した物理商品候補",
+    pros: item.reasons,
+    cons: item.risks,
+    suggestedPriority: priorityForScore(item.score),
+    provider: "static",
+    model: "bundled-research-2026-06-21",
+    evidence: item.url
+      ? [
+          {
+            claim: "商品候補の一次ソース",
+            sourceUrl: item.url,
+            snippet: item.description || item.title,
+          },
+        ]
+      : [],
+  };
+}
+
+function staticProductForItem(
+  item: StaticResearchItem,
+  generatedAt: string | undefined
+): PipelineProduct {
+  const createdAt = item.publishedAt ? new Date(item.publishedAt) : new Date(generatedAt ?? 0);
+  const updatedAt = new Date(generatedAt ?? createdAt.toISOString());
+  const metadata = staticItemMetadata(item, generatedAt);
+  const product: Product = {
+    id: staticUuid(item.rank),
+    asin: null,
+    jan: null,
+    title: item.title,
+    sourceAgentId: STATIC_AGENT_ID,
+    stage: "scout",
+    status: "pending",
+    metadata,
+    createdAt,
+    updatedAt,
+  };
+  return {
+    ...product,
+    pipelineSummary: pipelineSummary(metadata),
+  };
+}
+
+function staticOpenApprovalForItem(item: StaticResearchItem, generatedAt: string | undefined) {
+  const metadata = staticItemMetadata(item, generatedAt);
+  const outputPayload = staticRunOutputPayload(item);
+  const createdAt = item.publishedAt ? new Date(item.publishedAt) : new Date(generatedAt ?? 0);
+  return {
+    id: staticId("static-approval", item.rank),
+    priority: priorityForScore(item.score),
+    assignedTo: null,
+    claimedAt: null,
+    slaDeadline: null,
+    createdAt,
+    productId: staticUuid(item.rank),
+    productTitle: item.title,
+    productStage: "scout" as Product["stage"],
+    agentId: STATIC_AGENT_ID,
+    runId: staticId("static-run", item.rank),
+    review: scoutReviewDetails(
+      metadata,
+      { source: "bundled-research", signals: metadata.signals },
+      outputPayload
+    ),
+  };
+}
+
+function getStaticOpenApprovals() {
+  const data = staticResearchData();
+  return (data.items ?? []).map((item) =>
+    staticOpenApprovalForItem(item, data.generatedAt)
+  );
+}
+
+function getStaticPipelineProductsByStage(): Record<Product["stage"], PipelineProduct[]> {
+  const data = staticResearchData();
+  const grouped: Record<Product["stage"], PipelineProduct[]> = {
+    scout: [],
+    lp: [],
+    ad: [],
+    outreach: [],
+    cs: [],
+    archived: [],
+  };
+  for (const item of data.items ?? []) {
+    grouped.scout.push(staticProductForItem(item, data.generatedAt));
+  }
+  return grouped;
+}
+
 export async function getPipelineProductsByStage() {
+  if (!hasDatabaseUrl()) return getStaticPipelineProductsByStage();
+
   const rows = await db
     .select({
       stage: products.stage,
@@ -432,10 +618,6 @@ export async function getPipelineProductsByStage() {
     })
     .from(products)
     .orderBy(desc(products.updatedAt));
-
-  type PipelineProduct = Product & {
-    pipelineSummary: ReturnType<typeof pipelineSummary>;
-  };
 
   const grouped: Record<Product["stage"], PipelineProduct[]> = {
     scout: [],

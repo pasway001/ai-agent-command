@@ -237,7 +237,7 @@ export default async function SalesPage({
     );
   }
 
-  const products = rankProducts(grouped).slice(0, 30);
+  const products = rankProducts(grouped).slice(0, 100);
   const rows = products.map((product, index) => {
     const execution = salesExecutionFromMetadata(product.metadata);
     return {

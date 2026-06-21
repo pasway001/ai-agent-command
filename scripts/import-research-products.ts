@@ -25,6 +25,7 @@ type ResearchItem = {
   rank: number;
   title: string;
   source: string;
+  market?: "global" | "japan";
   url: string;
   score: number;
   publishedAt: string | null;
@@ -96,6 +97,7 @@ function signalsFor(item: ResearchItem) {
     category: `${item.source} shortlist rank ${item.rank}`,
     productType: "physical" as const,
     physicalProductLikely: true,
+    market: item.market ?? "global",
     overseas: {
       source: item.source,
       url: item.url || undefined,
@@ -105,7 +107,7 @@ function signalsFor(item: ResearchItem) {
     japan: {
       notYetInJapan: undefined,
       searchSummary: item.japanAngle,
-      japanValidationLevel: 0.3,
+      japanValidationLevel: item.market === "japan" ? 0.7 : 0.3,
     },
     mentionSources: [item.source],
     crossSourceScore: 0.2,
