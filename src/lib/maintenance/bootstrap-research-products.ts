@@ -1,10 +1,23 @@
-import { eq } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import bundledResearchProducts from "../../../reports/scout-products-2026-06-21.json";
+import {
+  enqueueApproval,
+  finishRun,
+  recordAutoEvaluation,
+  startRun,
+} from "../agent-sdk";
 import { db } from "../db";
-import { agents, products, type NewProduct, type Product } from "../db/schema";
+import {
+  agents,
+  approvalQueue,
+  products,
+  type NewProduct,
+  type Product,
+} from "../db/schema";
 
 const AGENT_ID = "scout.scoring";
 const DEFAULT_INPUT = "reports/scout-products-2026-06-21.json";
+const TARGET_OPEN_APPROVALS = 100;
 
 type ResearchJson = {
   generatedAt?: string;
@@ -33,6 +46,9 @@ export type BootstrapResearchProductsResult = {
   inserted: number;
   updated: number;
   existingOpenApprovals: number;
+  queuedApprovals: number;
+  openApprovalsBefore: number;
+  openApprovalsAfter: number;
 };
 
 function priorityFor(score: number) {
@@ -40,6 +56,10 @@ function priorityFor(score: number) {
   if (score >= 84) return 7;
   if (score >= 80) return 5;
   return 3;
+}
+
+function verdictFor(score: number): "approve" | "escalate" {
+  return score >= 84 ? "approve" : "escalate";
 }
 
 function signalsFor(item: ResearchItem) {
@@ -150,6 +170,73 @@ async function ensureScoutAgent() {
     });
 }
 
+async function countOpenApprovals() {
+  const [row] = await db
+    .select({ value: count() })
+    .from(approvalQueue)
+    .where(isNull(approvalQueue.decision));
+  return Number(row?.value ?? 0);
+}
+
+async function hasOpenApproval(productId: string) {
+  const [row] = await db
+    .select({ id: approvalQueue.id })
+    .from(approvalQueue)
+    .where(
+      and(
+        eq(approvalQueue.productId, productId),
+        isNull(approvalQueue.decision)
+      )
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
+async function enqueueBootstrapApproval(product: Product, item: ResearchItem) {
+  const signals = signalsFor(item);
+  const run = await startRun({
+    agentId: AGENT_ID,
+    productId: product.id,
+    inputPayload: {
+      source: "research-products-bootstrap",
+      shortlistItem: item,
+      signals,
+    },
+  });
+  const verdict = verdictFor(item.score);
+  await recordAutoEvaluation({
+    runId: run.id,
+    productId: product.id,
+    verdict,
+    score: item.score / 100,
+    reasoning: `Bootstrap shortlist import. ${item.reasons.join(" / ")}. Next: ${item.nextAction}`,
+    evidence: {
+      source: item.source,
+      url: item.url,
+      risks: item.risks,
+      japanAngle: item.japanAngle,
+      rank: item.rank,
+    },
+  });
+  await finishRun({
+    runId: run.id,
+    agentId: AGENT_ID,
+    outputPayload: {
+      verdict,
+      score: item.score / 100,
+      shortlistItem: item,
+      imported: true,
+      source: "maintenance-bootstrap",
+    },
+  });
+  await enqueueApproval({
+    runId: run.id,
+    productId: product.id,
+    priority: priorityFor(item.score),
+    requiredRole: "reviewer",
+  });
+}
+
 export async function bootstrapResearchProducts(
   options: { limit?: number } = {}
 ): Promise<BootstrapResearchProductsResult> {
@@ -204,12 +291,43 @@ export async function bootstrapResearchProducts(
     await db.insert(products).values(inserts);
   }
 
+  const refreshedProducts = await db.select().from(products);
+  const refreshedByTitle = new Map<string, Product>();
+  for (const product of refreshedProducts) {
+    const key = normalizedTitle(product.title);
+    if (!refreshedByTitle.has(key)) refreshedByTitle.set(key, product);
+  }
+
+  const openApprovalsBefore = await countOpenApprovals();
+  let openApprovalCount = openApprovalsBefore;
+  let existingOpenApprovals = 0;
+  let queuedApprovals = 0;
+
+  for (const item of items) {
+    if (openApprovalCount >= TARGET_OPEN_APPROVALS) break;
+    const product = refreshedByTitle.get(normalizedTitle(item.title));
+    if (!product) continue;
+    if (await hasOpenApproval(product.id)) {
+      existingOpenApprovals++;
+      continue;
+    }
+
+    await enqueueBootstrapApproval(product, item);
+    queuedApprovals++;
+    openApprovalCount++;
+  }
+
+  const openApprovalsAfter = await countOpenApprovals();
+
   return {
     input,
     items: items.length,
     imported: updated + inserts.length,
     inserted: inserts.length,
     updated,
-    existingOpenApprovals: 0,
+    existingOpenApprovals,
+    queuedApprovals,
+    openApprovalsBefore,
+    openApprovalsAfter,
   };
 }
