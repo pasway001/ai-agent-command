@@ -70,7 +70,10 @@ function optionalNumber(value: unknown) {
 }
 
 function boundedText(max: number) {
-  return z.preprocess((value) => textFromUnknown(value), z.string().max(max));
+  return z.preprocess(
+    (value) => textFromUnknown(value).trim().slice(0, max),
+    z.string().max(max)
+  );
 }
 
 function boundedTextArray(maxItems: number, maxChars: number) {
@@ -81,6 +84,7 @@ function boundedTextArray(maxItems: number, maxChars: number) {
         return values
           .map((item) => textFromUnknown(item).trim())
           .filter(Boolean)
+          .map((item) => item.slice(0, maxChars))
           .slice(0, maxItems);
       },
       z.array(z.string().max(maxChars))
