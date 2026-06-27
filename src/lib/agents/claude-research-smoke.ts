@@ -84,7 +84,8 @@ function smokeSystemPrompt(maxUses: number) {
 
 Smoke-test constraint:
 Use at most ${maxUses} web searches even if the normal research prompt mentions 8 searches.
-Prefer fewer, higher-quality searches. Return the full schema shape.`;
+Prefer fewer, higher-quality searches. Return the full schema shape, but keep it concise:
+max 2 competitor examples, max 2 CF campaigns, max 3 evidence items, and short Japanese snippets.`;
 }
 
 export async function runClaudeResearchSmoke(

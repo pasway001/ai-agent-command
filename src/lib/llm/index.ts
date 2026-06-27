@@ -151,9 +151,56 @@ function getAnthropicApiKey() {
   return process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY;
 }
 
+function buildAnthropicHeaders(apiKey: string) {
+  return {
+    "x-api-key": apiKey,
+    "anthropic-version":
+      process.env.ANTHROPIC_VERSION ?? DEFAULT_ANTHROPIC_VERSION,
+    "anthropic-beta": buildAnthropicBetaHeader(),
+    "content-type": "application/json",
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Shared JSON extraction
 // ---------------------------------------------------------------------------
+
+function firstBalancedJsonObject(text: string) {
+  const start = text.indexOf("{");
+  if (start < 0) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") depth++;
+    if (char === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+
+  return null;
+}
 
 function extractJson(text: string): unknown {
   const trimmed = text.trim();
@@ -165,10 +212,9 @@ function extractJson(text: string): unknown {
     const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     if (fenced?.[1]) return JSON.parse(fenced[1].trim());
 
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      return JSON.parse(trimmed.slice(start, end + 1));
+    const balanced = firstBalancedJsonObject(trimmed);
+    if (balanced) {
+      return JSON.parse(balanced);
     }
     throw new Error(`LLM returned non-JSON: ${trimmed.slice(0, 200)}`);
   }
@@ -402,6 +448,91 @@ async function fetchAnthropicWithRetry(
     : new Error("Anthropic request failed before receiving a response");
 }
 
+async function repairJsonWithAnthropic(args: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  text: string;
+  timeoutMs: number;
+  maxRetries: number;
+}) {
+  const response = await fetchAnthropicWithRetry(
+    `${args.baseUrl}/v1/messages`,
+    {
+      method: "POST",
+      headers: buildAnthropicHeaders(args.apiKey),
+      body: JSON.stringify({
+        model: args.model,
+        max_tokens: positiveNumber(
+          process.env.ANTHROPIC_JSON_REPAIR_MAX_TOKENS,
+          8192
+        ),
+        ...(modelRejectsNonDefaultSampling(args.model) ? {} : { temperature: 0 }),
+        system:
+          "You repair malformed JSON. Return one valid JSON object only. " +
+          "Preserve the original keys and values as much as possible. " +
+          "Do not add new facts, commentary, markdown, or citations.",
+        messages: [
+          {
+            role: "user",
+            content:
+              "Repair this malformed JSON-like response into valid JSON:\n\n" +
+              args.text.slice(0, 60_000),
+          },
+        ],
+      }),
+    },
+    args.timeoutMs,
+    args.maxRetries
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    const requestId = response.headers.get("request-id");
+    throw new Error(
+      `Anthropic JSON repair failed: ${response.status}${
+        requestId ? ` request-id=${requestId}` : ""
+      } ${body.slice(0, 500)}`
+    );
+  }
+
+  const body = (await response.json()) as AnthropicResponseBody;
+  const text =
+    body.content
+      ?.filter((item) => item.type === "text")
+      .map((item) => item.text ?? "")
+      .join("")
+      .trim() ?? "";
+  const parsedJson = extractJson(text);
+  const usage = body.usage ?? {};
+  const tokensIn = usage.input_tokens ?? 0;
+  const tokensOut = usage.output_tokens ?? 0;
+  const cacheWriteTokens = usage.cache_creation_input_tokens ?? 0;
+  const cacheReadTokens = usage.cache_read_input_tokens ?? 0;
+  const webSearchRequests =
+    usage.server_tool_use?.web_search_requests ??
+    usage.server_tool_use?.web_fetch_requests ??
+    0;
+
+  return {
+    parsedJson,
+    usage: {
+      tokensIn,
+      tokensOut,
+      cacheWriteTokens,
+      cacheReadTokens,
+      webSearchRequests,
+      costUsd: estimateAnthropicCostUsd(
+        tokensIn,
+        tokensOut,
+        cacheWriteTokens,
+        cacheReadTokens,
+        webSearchRequests
+      ),
+    },
+  };
+}
+
 async function runAnthropic<T>(
   opts: StructuredCallOptions<T>
 ): Promise<StructuredCallResult<T>> {
@@ -417,7 +548,10 @@ async function runAnthropic<T>(
   const baseUrl =
     process.env.ANTHROPIC_API_BASE?.replace(/\/$/, "") ??
     DEFAULT_ANTHROPIC_BASE_URL;
-  const maxTokens = positiveNumber(process.env.ANTHROPIC_MAX_TOKENS, 4096);
+  const maxTokens = positiveNumber(
+    process.env.ANTHROPIC_MAX_TOKENS,
+    opts.webSearch ? 8192 : 4096
+  );
   const temperature = Number(process.env.ANTHROPIC_TEMPERATURE ?? "0.2");
   const timeoutMs = positiveNumber(
     process.env.ANTHROPIC_REQUEST_TIMEOUT_MS,
@@ -468,13 +602,7 @@ async function runAnthropic<T>(
     `${baseUrl}/v1/messages`,
     {
       method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version":
-          process.env.ANTHROPIC_VERSION ?? DEFAULT_ANTHROPIC_VERSION,
-        "anthropic-beta": buildAnthropicBetaHeader(),
-        "content-type": "application/json",
-      },
+      headers: buildAnthropicHeaders(apiKey),
       body: JSON.stringify(requestBody),
     },
     timeoutMs,
@@ -517,17 +645,50 @@ async function runAnthropic<T>(
     );
   }
 
-  const parsedJson = extractJson(text);
+  let parsedJson: unknown;
+  let repairUsage:
+    | Awaited<ReturnType<typeof repairJsonWithAnthropic>>["usage"]
+    | null = null;
+  try {
+    parsedJson = extractJson(text);
+  } catch (err) {
+    if (body.stop_reason === "max_tokens") {
+      throw new Error(
+        `Anthropic response hit max_tokens=${maxTokens} before valid JSON was complete. ` +
+          `Increase ANTHROPIC_MAX_TOKENS or reduce prompt scope. ${
+            err instanceof Error ? err.message : String(err)
+          }`
+      );
+    }
+
+    const repaired = await repairJsonWithAnthropic({
+      apiKey,
+      baseUrl,
+      model,
+      text,
+      timeoutMs,
+      maxRetries,
+    });
+    parsedJson = repaired.parsedJson;
+    repairUsage = repaired.usage;
+  }
   mergeEvidence(parsedJson, collectedCitations);
 
   const data = opts.schema.parse(parsedJson);
 
-  const tokensIn = body.usage?.input_tokens ?? 0;
-  const tokensOut = body.usage?.output_tokens ?? 0;
-  const cacheWriteTokens = body.usage?.cache_creation_input_tokens ?? 0;
-  const cacheReadTokens = body.usage?.cache_read_input_tokens ?? 0;
+  const tokensIn =
+    (body.usage?.input_tokens ?? 0) + (repairUsage?.tokensIn ?? 0);
+  const tokensOut =
+    (body.usage?.output_tokens ?? 0) + (repairUsage?.tokensOut ?? 0);
+  const cacheWriteTokens =
+    (body.usage?.cache_creation_input_tokens ?? 0) +
+    (repairUsage?.cacheWriteTokens ?? 0);
+  const cacheReadTokens =
+    (body.usage?.cache_read_input_tokens ?? 0) +
+    (repairUsage?.cacheReadTokens ?? 0);
   const webSearchRequests =
-    body.usage?.server_tool_use?.web_search_requests ?? 0;
+    (body.usage?.server_tool_use?.web_search_requests ?? 0) +
+    (repairUsage?.webSearchRequests ?? 0);
 
   const costUsd = estimateAnthropicCostUsd(
     tokensIn,
