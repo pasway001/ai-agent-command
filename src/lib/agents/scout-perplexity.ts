@@ -44,6 +44,12 @@ const CampaignItemSchema = z.object({
   url: z.string().optional(),
 });
 
+const EvidenceItemSchema = z.object({
+  claim: z.string(),
+  sourceUrl: z.string().url(),
+  snippet: z.string().max(300),
+});
+
 export const JpMarketResearchSchema = z.object({
   jpCompetitors: z.object({
     count: z.number().int().min(0),
@@ -59,6 +65,51 @@ export const JpMarketResearchSchema = z.object({
     successCount: z.number().int().min(0).default(0),
     totalFound: z.number().int().min(0).default(0),
   }),
+  marketSignals: z
+    .object({
+      demandDrivers: z.array(z.string().max(120)).max(5).default([]),
+      targetSegments: z.array(z.string().max(100)).max(4).default([]),
+      purchaseOccasions: z.array(z.string().max(100)).max(4).default([]),
+    })
+    .default({
+      demandDrivers: [],
+      targetSegments: [],
+      purchaseOccasions: [],
+    }),
+  positioning: z
+    .object({
+      makuakeAngle: z.string().max(200),
+      differentiation: z.string().max(200),
+      giftability: z.enum(["low", "medium", "high"]).default("medium"),
+      visualStoryPotential: z.enum(["low", "medium", "high"]).default("medium"),
+    })
+    .default({
+      makuakeAngle: "日本CFでの訴求角度は追加調査",
+      differentiation: "差別化要素は追加調査",
+      giftability: "medium",
+      visualStoryPotential: "medium",
+    }),
+  pricing: z
+    .object({
+      recommendedPriceJpy: z.number().optional(),
+      expectedMarginRisk: z.enum(["low", "medium", "high"]).default("medium"),
+      rationale: z.string().max(240),
+    })
+    .default({
+      expectedMarginRisk: "medium",
+      rationale: "価格根拠は追加調査",
+    }),
+  importFeasibility: z
+    .object({
+      certificationNeeds: z.array(z.string().max(80)).max(6).default([]),
+      logisticsNotes: z.array(z.string().max(120)).max(5).default([]),
+      blockerLikelihood: z.enum(["low", "medium", "high"]).default("medium"),
+    })
+    .default({
+      certificationNeeds: [],
+      logisticsNotes: [],
+      blockerLikelihood: "medium",
+    }),
   regulatoryFlags: z.array(
     z.object({
       law: z.string(),
@@ -67,14 +118,10 @@ export const JpMarketResearchSchema = z.object({
     })
   ).default([]),
   demandTrend: z.enum(["rising", "flat", "declining"]).default("flat"),
+  goNoGo: z.enum(["go", "watch", "no_go"]).default("watch"),
+  confidence: z.enum(["low", "medium", "high"]).default("medium"),
   summary: z.string().max(400),
-  evidence: z.array(
-    z.object({
-      claim: z.string(),
-      sourceUrl: z.string().url(),
-      snippet: z.string().max(300),
-    })
-  ).default([]),
+  evidence: z.array(EvidenceItemSchema).default([]),
 });
 
 export type JpMarketResearch = z.infer<typeof JpMarketResearchSchema>;
@@ -93,7 +140,7 @@ For the given product, use all 8 web searches with this strategy:
 • 検索 7: 規制リスク詳細 — PSE認証要否・技適・薬機法・食品衛生法の具体的適用判断
 • 検索 8: 輸入障壁 — 関税分類・一般的な輸入量・既存輸入業者の有無
 
-Return structured JSON covering six areas:
+Return structured JSON covering these areas:
 
 1. jpCompetitors — similar products already sold in Japan (Amazon JP, Rakuten, Yahoo Shopping, Mercari).
    Focus on price range and review sentiment (not raw counts).
@@ -101,22 +148,39 @@ Return structured JSON covering six areas:
 2. jpCFHistory — similar campaigns on Makuake, GREEN FUNDING, CAMPFIRE, or Kibidango.
    Include pledgedJpy (JPY total raised) and achievementPct (% of goal).
 
-3. regulatoryFlags — potential Japan regulatory issues.
+3. marketSignals — why Japanese consumers would care.
+   Include demandDrivers, concrete targetSegments, and purchaseOccasions.
+
+4. positioning — how to sell this on Japanese crowdfunding.
+   Include makuakeAngle, differentiation, giftability, and visualStoryPotential.
+   Prefer practical positioning over generic praise.
+
+5. pricing — recommended Japan CF price and margin risk.
+   Use competitor prices, likely wholesale/import costs, and CF reward psychology.
+
+6. importFeasibility — import blockers and operational checks.
+   Include certificationNeeds (PSE, 技適, 食品衛生法, 薬機法, etc.), logisticsNotes, and blockerLikelihood.
+
+7. regulatoryFlags — potential Japan regulatory issues.
    Laws to check: 薬機法, 景表法, PSE, 電波法/技適, 食品衛生法.
    Only include flags that genuinely apply (empty array is fine).
 
-4. demandTrend — overall Japan consumer demand: rising / flat / declining.
+8. demandTrend — overall Japan consumer demand: rising / flat / declining.
 
-5. summary — 2–3 Japanese sentences with the most actionable insight for a CF import decision.
+9. goNoGo / confidence — go, watch, or no_go with low/medium/high confidence.
+   Use no_go only for clear blockers or saturated commodity markets.
+
+10. summary — 2–3 Japanese sentences with the most actionable insight for a CF import decision.
    Include the single biggest opportunity AND the single biggest risk.
 
-6. evidence — EVERY claim must have a sourceUrl from your search.
+11. evidence — EVERY claim must have a sourceUrl from your search.
    If no real URL is available for a claim, omit that claim rather than fabricating a URL.
 
 Rules:
 • Return strict JSON only. No prose, no markdown fences.
 • priceRangeJpy in JPY (convert from USD/EUR at current rate if needed).
 • achievementPct is a percentage where 100 = met the goal, 250 = 2.5x the goal.
+• Do not overstate certainty. If search results are thin, set confidence="low" and explain the gap.
 • If genuinely no data is found, return empty arrays and say "情報なし" in summary.`;
 
 // ---------------------------------------------------------------------------
@@ -181,6 +245,27 @@ function mockResearch(title: string): JpMarketResearch {
       successCount: seed % 3 === 0 ? 1 : 0,
       totalFound: seed % 3 === 0 ? 1 : 0,
     },
+    marketSignals: {
+      demandDrivers: ["時短・省スペース・ギフト適性（モック）"],
+      targetSegments: ["ガジェット好き", "共働き世帯"],
+      purchaseOccasions: ["Makuake先行購入", "ギフト"],
+    },
+    positioning: {
+      makuakeAngle: "日常の小さな不便を解決する先行販売品として訴求（モック）",
+      differentiation: "デザイン性と使い勝手の組み合わせで差別化（モック）",
+      giftability: priceMedian <= 15_000 ? "high" : "medium",
+      visualStoryPotential: "medium",
+    },
+    pricing: {
+      recommendedPriceJpy: Math.round(priceMedian * 1.2),
+      expectedMarginRisk: priceMedian > 30_000 ? "high" : "medium",
+      rationale: "競合中央値にCF先行販売プレミアムを加味（モック）",
+    },
+    importFeasibility: {
+      certificationNeeds: isRegulated ? ["薬機法/景表法表現確認"] : [],
+      logisticsNotes: ["サイズ・重量・初回MOQをメーカー確認（モック）"],
+      blockerLikelihood: isRegulated ? "medium" : "low",
+    },
     regulatoryFlags: isRegulated
       ? [
           {
@@ -191,7 +276,9 @@ function mockResearch(title: string): JpMarketResearch {
         ]
       : [],
     demandTrend,
-    summary: `モックデータ: 類似品${competitorCount}件、需要は${demandTrend}傾向。本番はPerplexityで実データを取得します。`,
+    goNoGo: isRegulated ? "watch" : demandTrend === "declining" ? "watch" : "go",
+    confidence: "medium",
+    summary: `モックデータ: 類似品${competitorCount}件、需要は${demandTrend}傾向。本番は設定済みのリサーチ provider で実データを取得します。`,
     evidence: [],
   };
 }
@@ -204,6 +291,12 @@ function isCacheValid(runAt: string | undefined): boolean {
   if (!runAt) return false;
   const ageMs = Date.now() - new Date(runAt).getTime();
   return ageMs < RESEARCH_CACHE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function normalizeResearch(value: unknown): JpMarketResearch | null {
+  const parsed = JpMarketResearchSchema.safeParse(value);
+  if (!parsed.success) return null;
+  return parsed.data;
 }
 
 // ---------------------------------------------------------------------------
@@ -258,12 +351,19 @@ export async function runPerplexityResearch(
     isCacheValid(existingMeta.research.runAt) &&
     existingMeta.research.data
   ) {
-    return {
-      productId: product.id,
-      runId: "cached",
-      research: existingMeta.research.data,
-      cached: true,
-    };
+    const cachedResearch = normalizeResearch(existingMeta.research.data);
+    if (!cachedResearch) {
+      console.warn(
+        `[research] ignoring invalid cached market research for "${input.title}"`
+      );
+    } else {
+      return {
+        productId: product.id,
+        runId: "cached",
+        research: cachedResearch,
+        cached: true,
+      };
+    }
   }
 
   // Build a rich query for Perplexity. Combining competitor scan + CF history
@@ -320,6 +420,23 @@ export async function runPerplexityResearch(
             ? "medium"
             : "low",
         summary: outcome.data.summary,
+        jpCompetitorCount: outcome.data.jpCompetitors.count,
+        jpCfSuccessCount: outcome.data.jpCFHistory.successCount,
+        medianPriceJpy: outcome.data.jpCompetitors.priceRangeJpy.median,
+        demandDrivers: outcome.data.marketSignals.demandDrivers,
+        targetSegments: outcome.data.marketSignals.targetSegments,
+        purchaseOccasions: outcome.data.marketSignals.purchaseOccasions,
+        makuakeAngle: outcome.data.positioning.makuakeAngle,
+        differentiation: outcome.data.positioning.differentiation,
+        giftability: outcome.data.positioning.giftability,
+        visualStoryPotential: outcome.data.positioning.visualStoryPotential,
+        recommendedPriceJpy: outcome.data.pricing.recommendedPriceJpy,
+        expectedMarginRisk: outcome.data.pricing.expectedMarginRisk,
+        certificationNeeds: outcome.data.importFeasibility.certificationNeeds,
+        logisticsNotes: outcome.data.importFeasibility.logisticsNotes,
+        blockerLikelihood: outcome.data.importFeasibility.blockerLikelihood,
+        goNoGo: outcome.data.goNoGo,
+        confidence: outcome.data.confidence,
         // Include citation URLs so scout-scoring can cite them as evidence.
         evidence: outcome.data.evidence,
       },

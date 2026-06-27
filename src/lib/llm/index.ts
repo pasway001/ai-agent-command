@@ -30,6 +30,8 @@ export type StructuredCallOptions<T> = {
   schema: z.ZodType<T>;
   /** Override provider. Defaults to LLM_PROVIDER env or "mock". */
   provider?: LLMProvider;
+  /** Bypass LLM_PROVIDER=mock for explicit production smoke checks. */
+  forceProvider?: boolean;
   /** Override model within the chosen provider. */
   model?: string;
   /** Mock generator used when provider resolves to "mock". */
@@ -47,6 +49,25 @@ export type StructuredCallResult<T> = {
   model: string;
 };
 
+const DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com";
+const DEFAULT_ANTHROPIC_VERSION = "2023-06-01";
+const DEFAULT_WEB_SEARCH_TOOL_VERSION = "web_search_20250305";
+const RETRYABLE_ANTHROPIC_STATUSES = new Set([
+  408,
+  409,
+  429,
+  500,
+  502,
+  503,
+  504,
+]);
+
+export function hasAnthropicApiKey() {
+  return Boolean(
+    (process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY)?.trim()
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Provider resolution
 // ---------------------------------------------------------------------------
@@ -56,11 +77,14 @@ export type StructuredCallResult<T> = {
  * wins over any per-call override so dev runs stay cost-free. Perplexity is
  * auto-degraded to mock when PERPLEXITY_API_KEY is missing.
  */
-function resolveProvider(override?: LLMProvider): LLMProvider {
+function resolveProvider(
+  override?: LLMProvider,
+  forceProvider = false
+): LLMProvider {
   const env = (process.env.LLM_PROVIDER ?? "") as LLMProvider;
 
   // Global mock wins over everything — keeps dev safe.
-  if (env === "mock") return "mock";
+  if (env === "mock" && !forceProvider) return "mock";
 
   const effective = override ?? env;
 
@@ -77,6 +101,54 @@ function resolveProvider(override?: LLMProvider): LLMProvider {
   if (effective === "anthropic" || effective === "openai") return effective;
 
   return "mock"; // unknown or empty env → safe fallback
+}
+
+function positiveNumber(value: string | undefined, fallback: number) {
+  const parsed = value ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseCsvEnv(value: string | undefined) {
+  return (value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function buildAnthropicBetaHeader() {
+  const headers = [
+    "prompt-caching-2024-07-31",
+    ...parseCsvEnv(process.env.ANTHROPIC_BETA_HEADERS),
+  ];
+  return Array.from(new Set(headers)).join(",");
+}
+
+function modelRejectsNonDefaultSampling(model: string) {
+  return (
+    model.startsWith("claude-fable-5") ||
+    model.startsWith("claude-mythos-5") ||
+    model.startsWith("claude-mythos-preview") ||
+    model.startsWith("claude-opus-4-8") ||
+    model.startsWith("claude-opus-4-7")
+  );
+}
+
+function buildAnthropicOutputConfig() {
+  const effort = process.env.ANTHROPIC_EFFORT?.trim();
+  if (!effort) return undefined;
+  if (!["low", "medium", "high", "xhigh", "max"].includes(effort)) {
+    console.warn(`[llm] ignoring unsupported ANTHROPIC_EFFORT=${effort}`);
+    return undefined;
+  }
+  return { effort };
+}
+
+function getAnthropicApiKey() {
+  return process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,10 +214,18 @@ function buildAnthropicTools(opts: StructuredCallOptions<unknown>) {
   const maxUses =
     opts.webSearchMaxUses ??
     Number(process.env.ANTHROPIC_WEB_SEARCH_MAX_USES ?? "5");
+  const toolVersion =
+    process.env.ANTHROPIC_WEB_SEARCH_TOOL_VERSION ??
+    DEFAULT_WEB_SEARCH_TOOL_VERSION;
+  const responseInclusion =
+    process.env.ANTHROPIC_WEB_SEARCH_RESPONSE_INCLUSION === "excluded" ||
+    process.env.ANTHROPIC_WEB_SEARCH_RESPONSE_INCLUSION === "full"
+      ? process.env.ANTHROPIC_WEB_SEARCH_RESPONSE_INCLUSION
+      : undefined;
 
   return [
     {
-      type: "web_search_20250305",
+      type: toolVersion,
       name: "web_search",
       max_uses: maxUses,
       user_location: {
@@ -155,17 +235,180 @@ function buildAnthropicTools(opts: StructuredCallOptions<unknown>) {
         country: "JP",
         timezone: "Asia/Tokyo",
       },
+      ...(toolVersion >= "web_search_20260318" && responseInclusion
+        ? { response_inclusion: responseInclusion }
+        : {}),
     },
   ];
+}
+
+type AnthropicContentItem = {
+  type?: string;
+  text?: string;
+  citations?: Array<{
+    type?: string;
+    url?: string;
+    title?: string;
+    cited_text?: string;
+  }>;
+  content?: unknown;
+};
+
+type AnthropicResponseBody = {
+  content?: AnthropicContentItem[];
+  stop_reason?: string | null;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+    server_tool_use?: {
+      web_search_requests?: number;
+      web_fetch_requests?: number;
+    };
+  };
+};
+
+type CollectedCitation = {
+  url: string;
+  title?: string;
+  snippet?: string;
+};
+
+function collectAnthropicCitations(body: AnthropicResponseBody) {
+  const citations: CollectedCitation[] = [];
+  const toolErrors: string[] = [];
+
+  for (const item of body.content ?? []) {
+    for (const cit of item.citations ?? []) {
+      if (cit.url) {
+        citations.push({
+          url: cit.url,
+          title: cit.title,
+          snippet: cit.cited_text,
+        });
+      }
+    }
+
+    if (item.type !== "web_search_tool_result") continue;
+    const content = item.content;
+    const blocks = Array.isArray(content) ? content : content ? [content] : [];
+    for (const block of blocks) {
+      if (!block || typeof block !== "object") continue;
+      const typed = block as {
+        type?: string;
+        url?: string;
+        title?: string;
+        page_age?: string;
+        error_code?: string;
+      };
+      if (typed.type === "web_search_result" && typed.url) {
+        citations.push({
+          url: typed.url,
+          title: typed.title,
+          snippet: typed.page_age
+            ? `${typed.title ?? typed.url} (${typed.page_age})`
+            : typed.title,
+        });
+      }
+      if (typed.type === "web_search_tool_result_error") {
+        toolErrors.push(typed.error_code ?? "unknown_web_search_error");
+      }
+    }
+  }
+
+  return { citations, toolErrors };
+}
+
+function mergeEvidence(
+  parsedJson: unknown,
+  collectedCitations: CollectedCitation[]
+) {
+  if (
+    !parsedJson ||
+    typeof parsedJson !== "object" ||
+    Array.isArray(parsedJson) ||
+    collectedCitations.length === 0
+  ) {
+    return;
+  }
+
+  const obj = parsedJson as Record<string, unknown>;
+  const existing = Array.isArray(obj.evidence) ? obj.evidence : [];
+  const existingUrls = new Set(
+    existing
+      .map((e) =>
+        e && typeof e === "object"
+          ? (e as { sourceUrl?: string }).sourceUrl
+          : null
+      )
+      .filter((u): u is string => Boolean(u))
+  );
+  const extra = collectedCitations
+    .filter((c) => !existingUrls.has(c.url))
+    .map((c) => ({
+      claim: c.title ?? "Claude web_search citation",
+      sourceUrl: c.url,
+      snippet: (c.snippet ?? c.title ?? c.url).slice(0, 400),
+    }));
+  if (extra.length > 0) {
+    obj.evidence = [...existing, ...extra];
+  }
+}
+
+async function fetchAnthropicWithRetry(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  maxRetries: number
+) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (
+        response.ok ||
+        attempt >= maxRetries ||
+        !RETRYABLE_ANTHROPIC_STATUSES.has(response.status)
+      ) {
+        return response;
+      }
+
+      const retryAfterHeader = response.headers.get("retry-after");
+      const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 500 * 2 ** attempt;
+      await response.text().catch(() => "");
+      await sleep(waitMs);
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+      if (attempt >= maxRetries) break;
+      await sleep(500 * 2 ** attempt);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Anthropic request failed before receiving a response");
 }
 
 async function runAnthropic<T>(
   opts: StructuredCallOptions<T>
 ): Promise<StructuredCallResult<T>> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = getAnthropicApiKey();
   if (!apiKey) {
     throw new Error(
-      "ANTHROPIC_API_KEY is missing. Set LLM_PROVIDER=mock or provide the key."
+      "ANTHROPIC_API_KEY is missing. Set LLM_PROVIDER=mock or provide ANTHROPIC_API_KEY (or CLAUDE_API_KEY)."
     );
   }
 
@@ -173,10 +416,18 @@ async function runAnthropic<T>(
     opts.model ?? process.env.ANTHROPIC_DEFAULT_MODEL ?? SONNET_MODEL;
   const baseUrl =
     process.env.ANTHROPIC_API_BASE?.replace(/\/$/, "") ??
-    "https://api.anthropic.com";
-  const maxTokens = Number(process.env.ANTHROPIC_MAX_TOKENS ?? "4096");
+    DEFAULT_ANTHROPIC_BASE_URL;
+  const maxTokens = positiveNumber(process.env.ANTHROPIC_MAX_TOKENS, 4096);
   const temperature = Number(process.env.ANTHROPIC_TEMPERATURE ?? "0.2");
+  const timeoutMs = positiveNumber(
+    process.env.ANTHROPIC_REQUEST_TIMEOUT_MS,
+    120_000
+  );
+  const maxRetries = Math.floor(
+    positiveNumber(process.env.ANTHROPIC_MAX_RETRIES, 2)
+  );
   const tools = buildAnthropicTools(opts as StructuredCallOptions<unknown>);
+  const outputConfig = buildAnthropicOutputConfig();
 
   // Prompt Caching: wrapping the system prompt in an array with cache_control
   // tells Anthropic to cache this prefix. Subsequent calls with the same
@@ -192,54 +443,55 @@ async function runAnthropic<T>(
 
   const jsonInstruction =
     "Return valid JSON only. Do not wrap it in Markdown fences. " +
-    "Every factual claim MUST have a corresponding entry in the `evidence` array with a real sourceUrl.";
+    (opts.webSearch
+      ? "When the schema has an `evidence` array, every factual claim MUST have a corresponding entry with a real sourceUrl."
+      : "Do not include prose outside the JSON object.");
 
-  const response = await fetch(`${baseUrl}/v1/messages`, {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-beta": "prompt-caching-2024-07-31",
-      "content-type": "application/json",
+  const requestBody = {
+    model,
+    max_tokens: maxTokens,
+    ...(Number.isFinite(temperature) && !modelRejectsNonDefaultSampling(model)
+      ? { temperature }
+      : {}),
+    ...(outputConfig ? { output_config: outputConfig } : {}),
+    system: systemBlock,
+    ...(tools ? { tools } : {}),
+    messages: [
+      {
+        role: "user",
+        content: `${opts.user}\n\n${jsonInstruction}`,
+      },
+    ],
+  };
+
+  const response = await fetchAnthropicWithRetry(
+    `${baseUrl}/v1/messages`,
+    {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version":
+          process.env.ANTHROPIC_VERSION ?? DEFAULT_ANTHROPIC_VERSION,
+        "anthropic-beta": buildAnthropicBetaHeader(),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      system: systemBlock,
-      ...(tools ? { tools } : {}),
-      messages: [
-        {
-          role: "user",
-          content: `${opts.user}\n\n${jsonInstruction}`,
-        },
-      ],
-    }),
-  });
+    timeoutMs,
+    maxRetries
+  );
 
   if (!response.ok) {
     const body = await response.text();
+    const requestId = response.headers.get("request-id");
     throw new Error(
-      `Anthropic request failed: ${response.status} ${body.slice(0, 300)}`
+      `Anthropic request failed: ${response.status}${
+        requestId ? ` request-id=${requestId}` : ""
+      } ${body.slice(0, 500)}`
     );
   }
 
-  type AnthropicContentItem = {
-    type?: string;
-    text?: string;
-    citations?: Array<{ url?: string; title?: string; cited_text?: string }>;
-  };
-
-  const body = (await response.json()) as {
-    content?: AnthropicContentItem[];
-    usage?: {
-      input_tokens?: number;
-      output_tokens?: number;
-      cache_creation_input_tokens?: number;
-      cache_read_input_tokens?: number;
-      server_tool_use?: { web_search_requests?: number };
-    };
-  };
+  const body = (await response.json()) as AnthropicResponseBody;
 
   const text =
     body.content
@@ -248,53 +500,25 @@ async function runAnthropic<T>(
       .join("")
       .trim() ?? "";
 
-  // Collect inline citations from web_search and hoist them into evidence
-  const collectedCitations: Array<{
-    url: string;
-    title?: string;
-    snippet?: string;
-  }> = [];
-  for (const item of body.content ?? []) {
-    for (const cit of item.citations ?? []) {
-      if (cit.url) {
-        collectedCitations.push({
-          url: cit.url,
-          title: cit.title,
-          snippet: cit.cited_text,
-        });
-      }
-    }
+  const { citations: collectedCitations, toolErrors } =
+    collectAnthropicCitations(body);
+
+  if (body.stop_reason === "refusal") {
+    throw new Error("Anthropic refused the request. Review the prompt and input.");
+  }
+  if (body.stop_reason === "model_context_window_exceeded") {
+    throw new Error(
+      "Anthropic context window exceeded. Reduce input size or use a larger-context model."
+    );
+  }
+  if (!text && toolErrors.length > 0) {
+    throw new Error(
+      `Anthropic web_search failed before producing text: ${toolErrors.join(", ")}`
+    );
   }
 
   const parsedJson = extractJson(text);
-  if (
-    parsedJson &&
-    typeof parsedJson === "object" &&
-    !Array.isArray(parsedJson) &&
-    collectedCitations.length > 0
-  ) {
-    const obj = parsedJson as Record<string, unknown>;
-    const existing = Array.isArray(obj.evidence) ? obj.evidence : [];
-    const existingUrls = new Set(
-      existing
-        .map((e) =>
-          e && typeof e === "object"
-            ? (e as { sourceUrl?: string }).sourceUrl
-            : null
-        )
-        .filter((u): u is string => Boolean(u))
-    );
-    const extra = collectedCitations
-      .filter((c) => !existingUrls.has(c.url))
-      .map((c) => ({
-        claim: c.title ?? "web_search citation",
-        sourceUrl: c.url,
-        snippet: (c.snippet ?? c.title ?? c.url).slice(0, 400),
-      }));
-    if (extra.length > 0) {
-      obj.evidence = [...existing, ...extra];
-    }
-  }
+  mergeEvidence(parsedJson, collectedCitations);
 
   const data = opts.schema.parse(parsedJson);
 
@@ -474,7 +698,7 @@ async function runPerplexity<T>(
 export async function runStructured<T>(
   opts: StructuredCallOptions<T>
 ): Promise<StructuredCallResult<T>> {
-  const provider = resolveProvider(opts.provider);
+  const provider = resolveProvider(opts.provider, opts.forceProvider);
 
   if (provider === "mock") {
     if (!opts.mock) {

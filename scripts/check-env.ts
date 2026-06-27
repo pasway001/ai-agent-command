@@ -117,6 +117,12 @@ const keys: EnvKey[] = [
     optional: true,
     note: "required only when LLM_PROVIDER=anthropic",
   },
+  {
+    key: "CLAUDE_API_KEY",
+    requiredFor: "ai",
+    optional: true,
+    note: "optional alias for ANTHROPIC_API_KEY",
+  },
 ];
 
 const mode = process.argv.includes("--production")
@@ -188,7 +194,10 @@ if (authProvider === "local") {
 }
 
 if (mode === "ai" && llmProvider === "anthropic") {
-  requireConditional("ANTHROPIC_API_KEY", "LLM_PROVIDER=anthropic");
+  requireAny(
+    ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY"],
+    "LLM_PROVIDER=anthropic"
+  );
 }
 
 if (missing > 0) {

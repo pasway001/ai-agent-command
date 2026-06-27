@@ -36,6 +36,7 @@
     "scout:minimal": "tsx scripts/run-minimal-scout.ts",
     "scout:score": "tsx scripts/run-scoring.ts",
     "research:products": "tsx scripts/research-products.ts",
+    "research:smoke:claude": "tsx scripts/smoke-claude-research.ts",
     "research:sales-pack": "tsx scripts/prepare-sales-pack.ts",
     "research:import": "tsx scripts/import-research-products.ts",
     "sales:board": "tsx scripts/export-sales-board.ts",

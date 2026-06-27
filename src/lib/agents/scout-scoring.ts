@@ -58,6 +58,23 @@ export const CandidateSignalsSchema = z.object({
       domesticDemandTrend: z.enum(["rising", "flat", "declining"]).optional(),
       regulatoryRisk: z.enum(["low", "medium", "high"]).optional(),
       summary: z.string().optional(),
+      jpCompetitorCount: z.number().int().min(0).optional(),
+      jpCfSuccessCount: z.number().int().min(0).optional(),
+      medianPriceJpy: z.number().optional(),
+      demandDrivers: z.array(z.string()).optional(),
+      targetSegments: z.array(z.string()).optional(),
+      purchaseOccasions: z.array(z.string()).optional(),
+      makuakeAngle: z.string().optional(),
+      differentiation: z.string().optional(),
+      giftability: z.enum(["low", "medium", "high"]).optional(),
+      visualStoryPotential: z.enum(["low", "medium", "high"]).optional(),
+      recommendedPriceJpy: z.number().optional(),
+      expectedMarginRisk: z.enum(["low", "medium", "high"]).optional(),
+      certificationNeeds: z.array(z.string()).optional(),
+      logisticsNotes: z.array(z.string()).optional(),
+      blockerLikelihood: z.enum(["low", "medium", "high"]).optional(),
+      goNoGo: z.enum(["go", "watch", "no_go"]).optional(),
+      confidence: z.enum(["low", "medium", "high"]).optional(),
       /** Evidence URLs from Perplexity research — cited in scoring evidence. */
       evidence: z
         .array(
@@ -531,14 +548,17 @@ ${PHYSICAL_PRODUCT_POLICY_PROMPT}
 7. priceFit — Crowdfunding sweet spot ¥8,000-¥30,000 → 0.9. <¥2,000 or >¥80,000 → 0.2.
 8. physicalLikely — Confidence this is a shippable physical good (must be 1.0 to approve).
 9. novelty — Unique mechanism / design / use case vs. existing JP retail.
+   Use the market research fields: makuakeAngle, differentiation, giftability, visualStoryPotential, demandDrivers, targetSegments, and purchaseOccasions.
 
 ## Hard rules
 - Output MUST validate against the JSON schema below. No prose outside JSON. No markdown fences.
-- You are given pre-fetched market research in the "Perplexity research" section (competitor prices, CF history, regulatory flags, demand trend). Use those facts and their source URLs to populate the evidence array. Do NOT invent URLs or claim facts not present in the provided research.
+- You are given pre-fetched market research in the "Japan market research" section (competitor prices, CF history, regulatory flags, demand trend, target segments, positioning, pricing, and import feasibility). Use those facts and their source URLs to populate the evidence array. Do NOT invent URLs or claim facts not present in the provided research.
 - evidence array must contain at least 1 item. If the provided research has no citable URLs, use the overseas product URL from "Overseas signal" as the single evidence item.
 - If the provided research data is missing or empty for a dimension, score that axis conservatively (0.5) and note "研究データなし" in the rationale. Do NOT reject solely because research is absent.
 - totalScore = weighted average across the 9 axes. Bias slightly toward overseasTraction × crossSourceMentions × physicalLikely (these are the 3 must-haves for approval).
 - verdict mapping: totalScore >= 0.7 → approve; 0.5-0.7 → escalate; <0.5 → reject. Override to reject if physicalLikely < 0.5 or regulatoryRisk < 0.2.
+- If market research says goNoGo="no_go" or blockerLikelihood="high", cap totalScore at 0.49 unless the evidence clearly contradicts it.
+- If confidence="low", avoid approve unless overseasTraction, physicalLikely, and novelty are all strong.
 - All rationale text must be Japanese, terse, and reference the evidence.
 
 ## Required JSON shape
@@ -640,14 +660,14 @@ function userPromptFromSignals(
   if (s.overseas) lines.push(`Overseas signal: ${JSON.stringify(s.overseas)}`);
   if (s.japan) lines.push(`Japan availability signal: ${JSON.stringify(s.japan)}`);
 
-  // Emit Perplexity market research as a clearly labeled block so the LLM
+  // Emit Japan market research as a clearly labeled block so the LLM
   // knows these are pre-fetched facts it should cite (not invent).
   if (s.perplexity) {
     const { evidence, ...rest } = s.perplexity;
-    lines.push(`\n## Perplexity research (pre-fetched, use as evidence source)`);
+    lines.push(`\n## Japan market research (pre-fetched, use as evidence source)`);
     lines.push(JSON.stringify(rest, null, 2));
     if (evidence && evidence.length > 0) {
-      lines.push(`\nPerplexity source URLs (cite these in the evidence array):`);
+      lines.push(`\nResearch source URLs (cite these in the evidence array):`);
       evidence.forEach((e, i) => {
         lines.push(`  ${i + 1}. ${e.sourceUrl} — ${e.claim}: ${e.snippet.slice(0, 120)}`);
       });
@@ -680,9 +700,16 @@ function salesNextActionForScore(data: ScoringOutput, signals: CandidateSignals)
   if (data.verdict === "reject") {
     return "現時点では販売候補から外し、類似カテゴリの別商品を確認";
   }
+  if (signals.perplexity?.blockerLikelihood === "high") {
+    return "輸入・認証の阻害要因を先に精査し、メーカーに証明書類を確認";
+  }
   const risk = signals.perplexity?.regulatoryRisk;
   if (risk === "high") {
     return "規制リスク、認証書類、日本販売可否を先に確認";
+  }
+  const certificationNeeds = signals.perplexity?.certificationNeeds ?? [];
+  if (certificationNeeds.length > 0) {
+    return `${certificationNeeds.slice(0, 2).join("・")}の要否と取得済み書類をメーカーに確認`;
   }
   if (signals.overseas?.url) {
     return "メーカー連絡先、日本販売権、卸条件、サンプル可否を確認";
@@ -709,6 +736,7 @@ function shortlistMetadataFromScore(
       risks: data.cons,
       nextAction: salesNextActionForScore(data, signals),
       japanAngle:
+        signals.perplexity?.makuakeAngle ??
         signals.japan?.searchSummary ??
         signals.perplexity?.summary ??
         "日本クラウドファンディングで需要・差別化を検証",

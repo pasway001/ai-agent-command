@@ -1,0 +1,10 @@
+.env*
+.next/
+node_modules/
+coverage/
+logs/
+output/
+reports/agent-command-center-member-guide-2026-06-21.docx
+reports/agent-command-center-member-guide-render/
+reports/ui-screenshots-2026-06-21/
+tmp/

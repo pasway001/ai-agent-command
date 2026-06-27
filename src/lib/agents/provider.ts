@@ -1,4 +1,4 @@
-import type { LLMProvider } from "../llm";
+import { hasAnthropicApiKey, type LLMProvider } from "../llm";
 
 const PROVIDERS = new Set<LLMProvider>([
   "mock",
@@ -28,7 +28,7 @@ export function resolveScoutClaudeProvider(envKey: string): LLMProvider {
   const explicit = providerFromEnv(envKey);
   if (explicit) return explicit;
   if (globalMockEnabled()) return "mock";
-  return process.env.ANTHROPIC_API_KEY ? "anthropic" : "mock";
+  return hasAnthropicApiKey() ? "anthropic" : "mock";
 }
 
 /**
@@ -40,7 +40,7 @@ export function resolveScoutResearchProvider(envKey: string): LLMProvider {
   if (explicit) return explicit;
   if (globalMockEnabled()) return "mock";
   if (process.env.PERPLEXITY_API_KEY) return "perplexity";
-  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (hasAnthropicApiKey()) return "anthropic";
   return "mock";
 }
 
