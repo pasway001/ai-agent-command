@@ -210,7 +210,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "mikeshouts",
     type: "rss",
     endpoint: "https://mikeshouts.com/feed/",
-    enabled: true,
+    // Returns 403 from Vercel/server-side fetches.
+    enabled: false,
     category: "primary",
     candidatePriority: 9,
     rateLimitPerHour: 30,

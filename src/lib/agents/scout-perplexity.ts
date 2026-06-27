@@ -352,14 +352,13 @@ export type JpMarketResearch = z.infer<typeof JpMarketResearchSchema>;
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_SYSTEM_PROMPT = `You are a Japan import-business market researcher specializing in crowdfunding product sourcing.
-For the given product, use all 8 web searches with this strategy:
+For the given product, use up to 4 targeted web searches with this strategy:
 
-**検索戦略（8回を無駄なく使う）:**
-• 検索 1-2: Amazon JP・楽天・Yahoo!ショッピング — 競合品の価格帯・レビュー数・出品者数
-• 検索 3-4: Makuake・CAMPFIRE・GREEN FUNDING・Kibidango — 類似キャンペーンの達成率・調達総額・支援者数
-• 検索 5-6: 国内メディア・SNS需要 — GetNavi / Gizmodo Japan / ROOMIE / Lifehacker Japan / 家電 Watch / SNS言及・季節需要
-• 検索 7: 規制リスク詳細 — PSE認証要否・技適・薬機法・食品衛生法の具体的適用判断
-• 検索 8: 輸入障壁 — 関税分類・一般的な輸入量・既存輸入業者の有無
+**検索戦略（4回を無駄なく使う）:**
+• 検索 1: Amazon JP・楽天・Yahoo!ショッピング — 競合品の価格帯・レビュー数・出品者数
+• 検索 2: Makuake・CAMPFIRE・GREEN FUNDING・Kibidango — 類似キャンペーンの達成率・調達総額・支援者数
+• 検索 3: 国内メディア・SNS需要 — GetNavi / Gizmodo Japan / ROOMIE / Lifehacker Japan / 家電 Watch / SNS言及・季節需要
+• 検索 4: 規制・輸入障壁 — PSE認証要否・技適・薬機法・食品衛生法・関税分類・既存輸入業者
 
 Return structured JSON covering these areas:
 
@@ -617,7 +616,7 @@ export async function runPerplexityResearch(
       "SCOUT_RESEARCH_PERPLEXITY_MODEL"
     ),
     webSearch: true,
-    webSearchMaxUses: Number(process.env.SCOUT_RESEARCH_WEB_SEARCH_MAX_USES ?? "8"),
+    webSearchMaxUses: Number(process.env.SCOUT_RESEARCH_WEB_SEARCH_MAX_USES ?? "4"),
     mock: () => mockResearch(input.title),
     forceProvider: provider !== "mock",
     inputPayload: { title: input.title, category: input.category },

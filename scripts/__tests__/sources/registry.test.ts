@@ -37,7 +37,6 @@ registry.test("expanded overseas sources are enabled", () => {
       "the-gadgeteer",
       "the-awesomer",
       "gearjunkie",
-      "mikeshouts",
       "cool-hunting",
       "design-milk",
       "core77",
@@ -47,6 +46,7 @@ registry.test("expanded overseas sources are enabled", () => {
     ].forEach((id) => assert(enabled.has(id), `${id} should be enabled`));
     assert(!enabled.has("trendhunter"), "trendhunter should stay disabled while it returns 403");
     assert(!enabled.has("coolthings"), "coolthings should stay disabled while Node fetch fails");
+    assert(!enabled.has("mikeshouts"), "mikeshouts should stay disabled while Vercel fetch returns 403");
   });
 });
 
