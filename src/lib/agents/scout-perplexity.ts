@@ -28,48 +28,257 @@ const RESEARCH_CACHE_DAYS = 7;
 // Output schema
 // ---------------------------------------------------------------------------
 
+function textFromUnknown(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (!value || typeof value !== "object") return "";
+
+  const record = value as Record<string, unknown>;
+  for (const key of [
+    "segment",
+    "target",
+    "name",
+    "title",
+    "label",
+    "value",
+    "description",
+    "reason",
+    "claim",
+    "text",
+    "summary",
+  ]) {
+    const candidate = record[key];
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "";
+  }
+}
+
+function optionalNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string") {
+    const normalized = value.replace(/[¥￥,\s円%]/g, "");
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function boundedText(max: number) {
+  return z.preprocess((value) => textFromUnknown(value), z.string().max(max));
+}
+
+function boundedTextArray(maxItems: number, maxChars: number) {
+  return z
+    .preprocess(
+      (value) => {
+        const values = Array.isArray(value) ? value : value ? [value] : [];
+        return values
+          .map((item) => textFromUnknown(item).trim())
+          .filter(Boolean)
+          .slice(0, maxItems);
+      },
+      z.array(z.string().max(maxChars))
+    )
+    .default([]);
+}
+
+function levelEnum(value: unknown) {
+  const text = textFromUnknown(value).toLowerCase();
+  if (text.includes("high") || text.includes("高")) return "high";
+  if (text.includes("low") || text.includes("低")) return "low";
+  if (text.includes("medium") || text.includes("mid") || text.includes("中")) {
+    return "medium";
+  }
+  return "medium";
+}
+
+function severityEnum(value: unknown) {
+  const text = textFromUnknown(value).toLowerCase();
+  if (text.includes("blocker") || text.includes("重大") || text.includes("不可")) {
+    return "blocker";
+  }
+  if (text.includes("high") || text.includes("高")) return "high";
+  if (text.includes("medium") || text.includes("mid") || text.includes("中")) {
+    return "medium";
+  }
+  if (text.includes("low") || text.includes("低")) return "low";
+  if (text.includes("none") || text.includes("なし")) return "none";
+  return "low";
+}
+
+function trendEnum(value: unknown) {
+  const text = textFromUnknown(value).toLowerCase();
+  if (text.includes("rising") || text.includes("増") || text.includes("上昇")) {
+    return "rising";
+  }
+  if (text.includes("declining") || text.includes("減") || text.includes("下降")) {
+    return "declining";
+  }
+  return "flat";
+}
+
+function goNoGoEnum(value: unknown) {
+  const text = textFromUnknown(value).toLowerCase();
+  if (text.includes("no_go") || text.includes("no-go") || text.includes("見送り")) {
+    return "no_go";
+  }
+  if (text.includes("go") || text.includes("推奨")) return "go";
+  return "watch";
+}
+
+function platformEnum(value: unknown) {
+  const text = textFromUnknown(value).toLowerCase();
+  if (text.includes("makuake")) return "makuake";
+  if (text.includes("green")) return "green_funding";
+  if (text.includes("campfire")) return "campfire";
+  return "other";
+}
+
 const CompetitorItemSchema = z.object({
-  name: z.string(),
-  platform: z.string(),
-  priceJpy: z.number().optional(),
+  name: boundedText(120),
+  platform: boundedText(80),
+  priceJpy: z.preprocess(optionalNumber, z.number().optional()),
   url: z.string().optional(),
-  reviewNote: z.string().max(100).optional(),
+  reviewNote: boundedText(100).optional(),
 });
 
 const CampaignItemSchema = z.object({
-  platform: z.enum(["makuake", "green_funding", "campfire", "other"]),
-  title: z.string(),
-  pledgedJpy: z.number().optional(),
-  achievementPct: z.number().min(0).optional(),
+  platform: z.preprocess(
+    platformEnum,
+    z.enum(["makuake", "green_funding", "campfire", "other"])
+  ),
+  title: boundedText(160),
+  pledgedJpy: z.preprocess(optionalNumber, z.number().optional()),
+  achievementPct: z.preprocess(optionalNumber, z.number().min(0).optional()),
   url: z.string().optional(),
 });
 
 const EvidenceItemSchema = z.object({
-  claim: z.string(),
+  claim: boundedText(180),
   sourceUrl: z.string().url(),
-  snippet: z.string().max(300),
+  snippet: boundedText(300),
 });
 
+const EvidenceArraySchema = z
+  .preprocess(
+    (value) => {
+      const values = Array.isArray(value) ? value : value ? [value] : [];
+      return values
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const record = item as Record<string, unknown>;
+          const sourceUrl =
+            typeof record.sourceUrl === "string"
+              ? record.sourceUrl
+              : typeof record.url === "string"
+                ? record.url
+                : null;
+          if (!sourceUrl) return null;
+          try {
+            new URL(sourceUrl);
+          } catch {
+            return null;
+          }
+          return {
+            claim: record.claim ?? record.title ?? "Source evidence",
+            sourceUrl,
+            snippet: record.snippet ?? record.description ?? record.claim ?? sourceUrl,
+          };
+        })
+        .filter((item): item is z.infer<typeof EvidenceItemSchema> => item !== null);
+    },
+    z.array(EvidenceItemSchema)
+  )
+  .default([]);
+
+const JpCompetitorsSchema = z
+  .preprocess(
+    (value) => {
+      if (Array.isArray(value)) {
+        return {
+          count: value.length,
+          priceRangeJpy: {},
+          examples: value.slice(0, 5),
+        };
+      }
+      return value;
+    },
+    z.object({
+      count: z.coerce.number().int().min(0).default(0),
+      priceRangeJpy: z
+        .object({
+          min: z.preprocess(optionalNumber, z.number().optional()),
+          median: z.preprocess(optionalNumber, z.number().optional()),
+          max: z.preprocess(optionalNumber, z.number().optional()),
+        })
+        .default({}),
+      examples: z.array(CompetitorItemSchema).max(5).default([]),
+    })
+  )
+  .default({
+    count: 0,
+    priceRangeJpy: {},
+    examples: [],
+  });
+
+const JpCFHistorySchema = z
+  .preprocess(
+    (value) => {
+      if (Array.isArray(value)) {
+        return {
+          campaigns: value.slice(0, 5),
+          successCount: value.filter((item) => {
+            if (!item || typeof item !== "object") return false;
+            const pct = optionalNumber((item as Record<string, unknown>).achievementPct);
+            return typeof pct === "number" && pct >= 100;
+          }).length,
+          totalFound: value.length,
+        };
+      }
+      return value;
+    },
+    z.object({
+      campaigns: z.array(CampaignItemSchema).max(5).default([]),
+      successCount: z.coerce.number().int().min(0).default(0),
+      totalFound: z.coerce.number().int().min(0).default(0),
+    })
+  )
+  .default({
+    campaigns: [],
+    successCount: 0,
+    totalFound: 0,
+  });
+
+const RegulatoryFlagsSchema = z
+  .preprocess(
+    (value) => (Array.isArray(value) ? value : value ? [value] : []),
+    z.array(
+      z.object({
+        law: boundedText(80),
+        severity: z.preprocess(
+          severityEnum,
+          z.enum(["none", "low", "medium", "high", "blocker"])
+        ),
+        reason: boundedText(200),
+      })
+    )
+  )
+  .default([]);
+
 export const JpMarketResearchSchema = z.object({
-  jpCompetitors: z.object({
-    count: z.number().int().min(0),
-    priceRangeJpy: z.object({
-      min: z.number().optional(),
-      median: z.number().optional(),
-      max: z.number().optional(),
-    }),
-    examples: z.array(CompetitorItemSchema).max(5).default([]),
-  }),
-  jpCFHistory: z.object({
-    campaigns: z.array(CampaignItemSchema).max(5).default([]),
-    successCount: z.number().int().min(0).default(0),
-    totalFound: z.number().int().min(0).default(0),
-  }),
+  jpCompetitors: JpCompetitorsSchema,
+  jpCFHistory: JpCFHistorySchema,
   marketSignals: z
     .object({
-      demandDrivers: z.array(z.string().max(120)).max(5).default([]),
-      targetSegments: z.array(z.string().max(100)).max(4).default([]),
-      purchaseOccasions: z.array(z.string().max(100)).max(4).default([]),
+      demandDrivers: boundedTextArray(5, 120),
+      targetSegments: boundedTextArray(4, 100),
+      purchaseOccasions: boundedTextArray(4, 100),
     })
     .default({
       demandDrivers: [],
@@ -78,10 +287,14 @@ export const JpMarketResearchSchema = z.object({
     }),
   positioning: z
     .object({
-      makuakeAngle: z.string().max(200),
-      differentiation: z.string().max(200),
-      giftability: z.enum(["low", "medium", "high"]).default("medium"),
-      visualStoryPotential: z.enum(["low", "medium", "high"]).default("medium"),
+      makuakeAngle: boundedText(200),
+      differentiation: boundedText(200),
+      giftability: z
+        .preprocess(levelEnum, z.enum(["low", "medium", "high"]))
+        .default("medium"),
+      visualStoryPotential: z
+        .preprocess(levelEnum, z.enum(["low", "medium", "high"]))
+        .default("medium"),
     })
     .default({
       makuakeAngle: "日本CFでの訴求角度は追加調査",
@@ -91,9 +304,11 @@ export const JpMarketResearchSchema = z.object({
     }),
   pricing: z
     .object({
-      recommendedPriceJpy: z.number().optional(),
-      expectedMarginRisk: z.enum(["low", "medium", "high"]).default("medium"),
-      rationale: z.string().max(240),
+      recommendedPriceJpy: z.preprocess(optionalNumber, z.number().optional()),
+      expectedMarginRisk: z
+        .preprocess(levelEnum, z.enum(["low", "medium", "high"]))
+        .default("medium"),
+      rationale: boundedText(240),
     })
     .default({
       expectedMarginRisk: "medium",
@@ -101,27 +316,27 @@ export const JpMarketResearchSchema = z.object({
     }),
   importFeasibility: z
     .object({
-      certificationNeeds: z.array(z.string().max(80)).max(6).default([]),
-      logisticsNotes: z.array(z.string().max(120)).max(5).default([]),
-      blockerLikelihood: z.enum(["low", "medium", "high"]).default("medium"),
+      certificationNeeds: boundedTextArray(6, 80),
+      logisticsNotes: boundedTextArray(5, 120),
+      blockerLikelihood: z
+        .preprocess(levelEnum, z.enum(["low", "medium", "high"]))
+        .default("medium"),
     })
     .default({
       certificationNeeds: [],
       logisticsNotes: [],
       blockerLikelihood: "medium",
     }),
-  regulatoryFlags: z.array(
-    z.object({
-      law: z.string(),
-      severity: z.enum(["none", "low", "medium", "high", "blocker"]),
-      reason: z.string().max(200),
-    })
-  ).default([]),
-  demandTrend: z.enum(["rising", "flat", "declining"]).default("flat"),
-  goNoGo: z.enum(["go", "watch", "no_go"]).default("watch"),
-  confidence: z.enum(["low", "medium", "high"]).default("medium"),
-  summary: z.string().max(400),
-  evidence: z.array(EvidenceItemSchema).default([]),
+  regulatoryFlags: RegulatoryFlagsSchema,
+  demandTrend: z
+    .preprocess(trendEnum, z.enum(["rising", "flat", "declining"]))
+    .default("flat"),
+  goNoGo: z.preprocess(goNoGoEnum, z.enum(["go", "watch", "no_go"])).default("watch"),
+  confidence: z
+    .preprocess(levelEnum, z.enum(["low", "medium", "high"]))
+    .default("medium"),
+  summary: boundedText(400),
+  evidence: EvidenceArraySchema,
 });
 
 export type JpMarketResearch = z.infer<typeof JpMarketResearchSchema>;
