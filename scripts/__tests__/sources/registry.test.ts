@@ -36,7 +36,6 @@ registry.test("expanded overseas sources are enabled", () => {
       "thisiswhyimbroke",
       "the-gadgeteer",
       "the-awesomer",
-      "coolthings",
       "gearjunkie",
       "mikeshouts",
       "cool-hunting",
@@ -47,6 +46,7 @@ registry.test("expanded overseas sources are enabled", () => {
       "hackaday",
     ].forEach((id) => assert(enabled.has(id), `${id} should be enabled`));
     assert(!enabled.has("trendhunter"), "trendhunter should stay disabled while it returns 403");
+    assert(!enabled.has("coolthings"), "coolthings should stay disabled while Node fetch fails");
   });
 });
 

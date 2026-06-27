@@ -55,14 +55,14 @@ minimal.test("mergeCrossSource merges items with high title similarity", () => {
   assert(merged[0].mentionSources.has("Reddit r/gadgets"));
 });
 
-minimal.test("mergeCrossSource merges items with same URL hostname", () => {
+minimal.test("mergeCrossSource merges items with same canonical URL", () => {
   const merged = __test.mergeCrossSource([
     {
       item: {
         source: "Reddit r/gadgets",
         region: "overseas",
-        title: "Totally unrelated title A",
-        url: "https://acme-store.com/product-1",
+        title: "Smart Lamp X1 launch",
+        url: "https://acme-store.com/product-1?utm_source=reddit",
       },
       classification: physical,
     },
@@ -70,14 +70,38 @@ minimal.test("mergeCrossSource merges items with same URL hostname", () => {
       item: {
         source: "Yanko Design",
         region: "overseas",
-        title: "Totally different label B",
-        url: "https://acme-store.com/landing",
+        title: "Smart Lamp X1 review",
+        url: "https://www.acme-store.com/product-1",
       },
       classification: physical,
     },
   ]);
-  assertEqual(merged.length, 1, "host match wins");
+  assertEqual(merged.length, 1, "canonical URL match wins");
   assertEqual(merged[0].mentionSources.size, 2);
+});
+
+minimal.test("mergeCrossSource keeps same-host different paths separate", () => {
+  const merged = __test.mergeCrossSource([
+    {
+      item: {
+        source: "Kicktraq Gadgets",
+        region: "overseas",
+        title: "Smart Cooler Bag",
+        url: "https://kicktraq.com/projects/a/smart-cooler-bag/",
+      },
+      classification: physical,
+    },
+    {
+      item: {
+        source: "Kicktraq Gadgets",
+        region: "overseas",
+        title: "Desktop Charger Hub",
+        url: "https://kicktraq.com/projects/b/desktop-charger-hub/",
+      },
+      classification: physical,
+    },
+  ]);
+  assertEqual(merged.length, 2, "same host alone must not merge products");
 });
 
 minimal.test("mergeCrossSource keeps distinct products separate", () => {

@@ -189,7 +189,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "Cool Things",
     type: "rss",
     endpoint: "https://www.coolthings.com/feed/",
-    enabled: true,
+    // Node/Vercel fetch currently fails even though curl can read it.
+    enabled: false,
     category: "primary",
     candidatePriority: 10,
     rateLimitPerHour: 30,

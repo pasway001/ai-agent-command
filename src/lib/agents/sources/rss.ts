@@ -125,7 +125,9 @@ export const fetchRssSource: SourceFetcher = async (cfg, opts) => {
     cache: "no-store",
     signal: opts.signal,
     headers: {
-      "user-agent": "agent-command-center/0.1 (+scout/rss)",
+      "user-agent":
+        process.env.SCOUT_FETCH_USER_AGENT ??
+        "Mozilla/5.0 (compatible; AgentCommandCenter/0.1; +https://ai-agent-command.vercel.app)",
       accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*;q=0.5",
     },
   });

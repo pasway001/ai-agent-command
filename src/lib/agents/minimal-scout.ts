@@ -151,10 +151,13 @@ export function similarity(a: string, b: string) {
   return overlap / Math.min(aGrams.size, bGrams.size);
 }
 
-function hostnameOf(url: string | undefined): string | null {
+function canonicalUrlForMatch(url: string | undefined): string | null {
   if (!url) return null;
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+    const pathname = parsed.pathname.replace(/\/+$/, "").toLowerCase();
+    return `${host}${pathname || "/"}`;
   } catch {
     return null;
   }
@@ -238,7 +241,7 @@ type MergedCandidate = {
  * Merge candidates that look like the same product across sources.
  *
  * Two items match when:
- *  - their URL hostname is identical (and non-empty), OR
+ *  - their canonical URL (host + path, query stripped) is identical, OR
  *  - their title bigram similarity >= 0.6.
  *
  * This is intentionally generous on the title side so that "Acme X Lamp"
@@ -250,10 +253,10 @@ function mergeCrossSource(
 ): MergedCandidate[] {
   const merged: MergedCandidate[] = [];
   for (const entry of items) {
-    const host = hostnameOf(entry.item.url);
+    const urlKey = canonicalUrlForMatch(entry.item.url);
     const match = merged.find((m) => {
-      const mHost = hostnameOf(m.primary.item.url);
-      if (host && mHost && host === mHost) return true;
+      const mUrlKey = canonicalUrlForMatch(m.primary.item.url);
+      if (urlKey && mUrlKey && urlKey === mUrlKey) return true;
       return similarity(m.primary.item.title, entry.item.title) >= 0.6;
     });
     if (match) {
@@ -777,6 +780,7 @@ async function updateScoutRunFinish(
     rejectedCount: number;
     perFeed: PerFeedEntry[];
     errors: string[];
+    notes?: string | null;
   }
 ): Promise<void> {
   try {
@@ -1029,6 +1033,7 @@ export async function runMinimalScout(
     }
     return true;
   });
+  const rulesDroppedCount = llmBatch.length - postRulesItems.length;
 
   const rawCandidates: CandidateSignals[] = postRulesItems.map((m) =>
     toSignals(m, japanRefItems)
@@ -1130,6 +1135,14 @@ export async function runMinimalScout(
       rejectedCount,
       perFeed,
       errors,
+      notes: JSON.stringify({
+        mergedCount: merged.length,
+        llmBatchCount: llmBatch.length,
+        rulesDroppedCount,
+        candidateCount: rawCandidates.length,
+        viableCount: viableCandidates.length,
+        researchCount: researchMap.size,
+      }),
     });
   }
 
