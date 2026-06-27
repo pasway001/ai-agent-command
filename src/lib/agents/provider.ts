@@ -19,6 +19,12 @@ function globalMockEnabled() {
   return process.env.LLM_PROVIDER === "mock";
 }
 
+function scoutRealAiPreferred() {
+  const explicit = process.env.SCOUT_REAL_AI?.trim().toLowerCase();
+  if (explicit) return !["0", "false", "off", "no"].includes(explicit);
+  return process.env.VERCEL_ENV === "production";
+}
+
 /**
  * Scout prefilter/scoring are Claude-shaped JSON tasks. Keep them on Anthropic
  * even when the research provider is Perplexity, otherwise Claude model names
@@ -27,6 +33,7 @@ function globalMockEnabled() {
 export function resolveScoutClaudeProvider(envKey: string): LLMProvider {
   const explicit = providerFromEnv(envKey);
   if (explicit) return explicit;
+  if (scoutRealAiPreferred() && hasAnthropicApiKey()) return "anthropic";
   if (globalMockEnabled()) return "mock";
   return hasAnthropicApiKey() ? "anthropic" : "mock";
 }
@@ -38,6 +45,10 @@ export function resolveScoutClaudeProvider(envKey: string): LLMProvider {
 export function resolveScoutResearchProvider(envKey: string): LLMProvider {
   const explicit = providerFromEnv(envKey);
   if (explicit) return explicit;
+  if (scoutRealAiPreferred()) {
+    if (process.env.PERPLEXITY_API_KEY) return "perplexity";
+    if (hasAnthropicApiKey()) return "anthropic";
+  }
   if (globalMockEnabled()) return "mock";
   if (process.env.PERPLEXITY_API_KEY) return "perplexity";
   if (hasAnthropicApiKey()) return "anthropic";

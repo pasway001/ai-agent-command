@@ -141,6 +141,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://www.yankodesign.com/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 9,
     rateLimitPerHour: 60,
   },
   {
@@ -148,7 +149,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "TrendHunter",
     type: "rss",
     endpoint: "https://www.trendhunter.com/rss",
-    enabled: true,
+    // Currently returns 403 from Vercel/server-side fetches.
+    enabled: false,
     category: "primary",
     rateLimitPerHour: 30,
   },
@@ -159,6 +161,57 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://www.thisiswhyimbroke.com/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 9,
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "the-gadgeteer",
+    name: "The Gadgeteer",
+    type: "rss",
+    endpoint: "https://the-gadgeteer.com/feed/",
+    enabled: true,
+    category: "primary",
+    candidatePriority: 10,
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "the-awesomer",
+    name: "The Awesomer",
+    type: "rss",
+    endpoint: "https://theawesomer.com/feed/",
+    enabled: true,
+    category: "primary",
+    candidatePriority: 10,
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "coolthings",
+    name: "Cool Things",
+    type: "rss",
+    endpoint: "https://www.coolthings.com/feed/",
+    enabled: true,
+    category: "primary",
+    candidatePriority: 10,
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "gearjunkie",
+    name: "GearJunkie",
+    type: "rss",
+    endpoint: "https://www.gearjunkie.com/feed/",
+    enabled: true,
+    category: "primary",
+    candidatePriority: 8,
+    rateLimitPerHour: 30,
+  },
+  {
+    id: "mikeshouts",
+    name: "mikeshouts",
+    type: "rss",
+    endpoint: "https://mikeshouts.com/feed/",
+    enabled: true,
+    category: "primary",
+    candidatePriority: 9,
     rateLimitPerHour: 30,
   },
   {
@@ -168,6 +221,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://coolhunting.com/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 8,
     rateLimitPerHour: 30,
   },
   {
@@ -177,6 +231,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://design-milk.com/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 8,
     rateLimitPerHour: 30,
   },
   {
@@ -186,6 +241,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://feeds.feedburner.com/core77/blog",
     enabled: true,
     category: "primary",
+    candidatePriority: 7,
     rateLimitPerHour: 30,
   },
   {
@@ -195,6 +251,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://newatlas.com/index.rss",
     enabled: true,
     category: "primary",
+    candidatePriority: 8,
     rateLimitPerHour: 30,
   },
   {
@@ -204,6 +261,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://makezine.com/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 6,
     rateLimitPerHour: 30,
   },
   {
@@ -213,6 +271,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://hackaday.com/blog/feed/",
     enabled: true,
     category: "primary",
+    candidatePriority: 6,
     rateLimitPerHour: 30,
   },
   {
@@ -243,6 +302,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     endpoint: "https://hacker-news.firebaseio.com/v0/showstories.json",
     enabled: true,
     category: "primary",
+    candidatePriority: 3,
     rateLimitPerHour: 120,
   },
   {
@@ -254,6 +314,7 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     // true so the registry can advertise it as a planned source.
     enabled: true,
     category: "primary",
+    candidatePriority: 4,
     rateLimitPerHour: 900,
   },
   {

@@ -33,8 +33,12 @@ registry.test("expanded overseas sources are enabled", () => {
   withDisabledSources(undefined, () => {
     const enabled = new Set(getEnabledSources("primary").map((source) => source.id));
     [
-      "trendhunter",
       "thisiswhyimbroke",
+      "the-gadgeteer",
+      "the-awesomer",
+      "coolthings",
+      "gearjunkie",
+      "mikeshouts",
       "cool-hunting",
       "design-milk",
       "core77",
@@ -42,6 +46,7 @@ registry.test("expanded overseas sources are enabled", () => {
       "make-magazine",
       "hackaday",
     ].forEach((id) => assert(enabled.has(id), `${id} should be enabled`));
+    assert(!enabled.has("trendhunter"), "trendhunter should stay disabled while it returns 403");
   });
 });
 

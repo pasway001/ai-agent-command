@@ -170,7 +170,7 @@ export function getRuntimeReadinessChecks(): ReadinessCheck[] {
       name: "ai_provider",
       ok: process.env.LLM_PROVIDER === "mock" || hasAnyEnv(AI_ENV_KEYS),
       detail:
-        "LLM_PROVIDER=mock is allowed for dry runs; production research needs ANTHROPIC_API_KEY, CLAUDE_API_KEY, or PERPLEXITY_API_KEY",
+        "LLM_PROVIDER=mock is allowed for dry runs; production scout runs prefer real AI when ANTHROPIC_API_KEY, CLAUDE_API_KEY, or PERPLEXITY_API_KEY is set",
     },
   ];
 }

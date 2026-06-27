@@ -37,7 +37,10 @@ type FeedConfig = {
 };
 
 type FeedItem = {
+  sourceId?: string;
   source: string;
+  sourceFamily?: string;
+  sourcePriority?: number;
   region: FeedRegion;
   title: string;
   url?: string;
@@ -157,9 +160,31 @@ function hostnameOf(url: string | undefined): string | null {
   }
 }
 
-function toFeedItem(c: NormalizedCandidate, region: FeedRegion): FeedItem {
+function sourceFamilyFromName(name: string) {
+  const words = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word && word !== "the" && word !== "www");
+  return words[0] ?? normalizeForMatch(name) ?? "unknown";
+}
+
+function boundedSourcePriority(value: number | undefined) {
+  if (!Number.isFinite(value)) return 5;
+  return Math.max(1, Math.min(10, Math.round(value as number)));
+}
+
+function toFeedItem(
+  c: NormalizedCandidate,
+  region: FeedRegion,
+  source?: SourceConfig
+): FeedItem {
   return {
+    sourceId: source?.id,
     source: c.sourceName,
+    sourceFamily: source?.sourceFamily ?? sourceFamilyFromName(c.sourceName),
+    sourcePriority: boundedSourcePriority(source?.candidatePriority),
     region,
     title: c.title,
     url: c.url || undefined,
@@ -245,6 +270,149 @@ function mergeCrossSource(
   return merged;
 }
 
+function memberPriority(member: MergedCandidate["members"][number]) {
+  const item = member.item;
+  const urlScore = item.url ? 2 : 0;
+  const descriptionScore = item.description ? Math.min(item.description.length / 500, 2) : 0;
+  return boundedSourcePriority(item.sourcePriority) + urlScore + descriptionScore;
+}
+
+function representativeMember(merged: MergedCandidate) {
+  return merged.members
+    .slice()
+    .sort((a, b) => memberPriority(b) - memberPriority(a))[0]!;
+}
+
+const PRODUCT_SIGNAL_KEYWORDS = [
+  "gadget",
+  "gear",
+  "portable",
+  "compact",
+  "desk",
+  "kitchen",
+  "cook",
+  "travel",
+  "camp",
+  "outdoor",
+  "tool",
+  "organizer",
+  "bag",
+  "wallet",
+  "lamp",
+  "light",
+  "charger",
+  "battery",
+  "speaker",
+  "headphone",
+  "watch",
+  "wearable",
+  "bike",
+  "home",
+  "storage",
+  "folding",
+  "modular",
+  "smart",
+  "minimal",
+  "waterproof",
+  "coffee",
+  "espresso",
+  "stationery",
+  "knife",
+  "keyboard",
+];
+
+function recencyScore(publishedAt: string | undefined) {
+  if (!publishedAt) return 0;
+  const published = new Date(publishedAt).getTime();
+  if (!Number.isFinite(published)) return 0;
+  const ageDays = (Date.now() - published) / (24 * 60 * 60 * 1000);
+  if (ageDays <= 7) return 8;
+  if (ageDays <= 30) return 5;
+  if (ageDays <= 90) return 2;
+  return 0;
+}
+
+function productKeywordScore(merged: MergedCandidate) {
+  const text = merged.members
+    .map((m) => `${m.item.title} ${m.item.description ?? ""}`)
+    .join(" ")
+    .toLowerCase();
+  let score = 0;
+  for (const keyword of PRODUCT_SIGNAL_KEYWORDS) {
+    if (text.includes(keyword)) score += 1.5;
+  }
+  return Math.min(score, 12);
+}
+
+function candidateRankScore(merged: MergedCandidate) {
+  const representative = representativeMember(merged);
+  const item = representative.item;
+  const sourcePriority = Math.max(
+    ...merged.members.map((m) => boundedSourcePriority(m.item.sourcePriority))
+  );
+  return (
+    merged.mentionSources.size * 18 +
+    sourcePriority * 7 +
+    (item.url ? 6 : 0) +
+    recencyScore(item.publishedAt) +
+    productKeywordScore(merged)
+  );
+}
+
+function sourceSelectionKey(merged: MergedCandidate) {
+  const item = representativeMember(merged).item;
+  return item.sourceId ?? item.source;
+}
+
+function familySelectionKey(merged: MergedCandidate) {
+  const item = representativeMember(merged).item;
+  return item.sourceFamily ?? sourceFamilyFromName(item.source);
+}
+
+function selectDiverseCandidates(
+  ranked: MergedCandidate[],
+  llmMax: number
+): MergedCandidate[] {
+  const perSourceCap = positiveInt(
+    Number(process.env.SCOUT_LLM_PER_SOURCE_CAP ?? ""),
+    2
+  );
+  const perFamilyCap = positiveInt(
+    Number(process.env.SCOUT_LLM_PER_SOURCE_FAMILY_CAP ?? ""),
+    4
+  );
+  const selected: MergedCandidate[] = [];
+  const selectedSet = new Set<MergedCandidate>();
+  const sourceCounts = new Map<string, number>();
+  const familyCounts = new Map<string, number>();
+
+  const add = (candidate: MergedCandidate) => {
+    selected.push(candidate);
+    selectedSet.add(candidate);
+    const sourceKey = sourceSelectionKey(candidate);
+    const familyKey = familySelectionKey(candidate);
+    sourceCounts.set(sourceKey, (sourceCounts.get(sourceKey) ?? 0) + 1);
+    familyCounts.set(familyKey, (familyCounts.get(familyKey) ?? 0) + 1);
+  };
+
+  for (const candidate of ranked) {
+    if (selected.length >= llmMax) break;
+    const sourceKey = sourceSelectionKey(candidate);
+    const familyKey = familySelectionKey(candidate);
+    if ((sourceCounts.get(sourceKey) ?? 0) >= perSourceCap) continue;
+    if ((familyCounts.get(familyKey) ?? 0) >= perFamilyCap) continue;
+    add(candidate);
+  }
+
+  // If the cap is too strict for a sparse run, fill remaining slots by rank.
+  for (const candidate of ranked) {
+    if (selected.length >= llmMax) break;
+    if (!selectedSet.has(candidate)) add(candidate);
+  }
+
+  return selected.slice(0, llmMax);
+}
+
 // ---- japanValidationLevel (Phase B Japan reference positive signal) ----
 
 function computeJapanValidationLevel(
@@ -290,8 +458,8 @@ function toSignals(
   merged: MergedCandidate,
   japanRefItems: FeedItem[]
 ): CandidateSignals {
-  const { primary, mentionSources, members } = merged;
-  const { item, classification } = primary;
+  const { mentionSources, members } = merged;
+  const { item, classification } = representativeMember(merged);
   const jp = computeJapanValidationLevel(item, japanRefItems);
   const sourceList = Array.from(mentionSources);
   const crossSourceScore = Math.min(sourceList.length / 3, 1);
@@ -443,8 +611,12 @@ async function runPrefilterBatch(
  */
 async function runResearchBatch(
   candidates: CandidateSignals[]
-): Promise<Map<string, { research: JpMarketResearch; cached: boolean; productId: string }>> {
+): Promise<{
+  map: Map<string, { research: JpMarketResearch; cached: boolean; productId: string }>;
+  errors: string[];
+}> {
   const map = new Map<string, { research: JpMarketResearch; cached: boolean; productId: string }>();
+  const errors: string[] = [];
 
   for (const candidate of candidates) {
     try {
@@ -460,15 +632,18 @@ async function runResearchBatch(
         productId: result.productId,
       });
     } catch (err) {
+      const message = `[research] failed for "${candidate.title}": ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+      errors.push(message);
       console.warn(
-        `[perplexity] research failed for "${candidate.title}":`,
-        err instanceof Error ? err.message : err
+        message
       );
       // Continue without research data — scorer handles missing perplexity gracefully
     }
   }
 
-  return map;
+  return { map, errors };
 }
 
 // ---- Stage 4→5 bridge: merge research into signals ----
@@ -516,20 +691,21 @@ function enrichSignalsWithResearch(
 
 // ---- Stage 5: parallel scoring with concurrency cap ----
 
+type ScoredScoutResult = {
+  title: string;
+  score: number;
+  verdict: ScoringOutput["verdict"];
+  runId: string;
+  productId: string;
+  enqueuedApprovalId: string | null;
+};
+
 async function scoreBatch(
   candidates: CandidateSignals[],
   concurrency = 3
-): Promise<
-  Array<{
-    title: string;
-    score: number;
-    verdict: ScoringOutput["verdict"];
-    runId: string;
-    productId: string;
-    enqueuedApprovalId: string | null;
-  }>
-> {
-  const results: Awaited<ReturnType<typeof scoreBatch>> = [];
+): Promise<{ results: ScoredScoutResult[]; errors: string[] }> {
+  const results: ScoredScoutResult[] = [];
+  const errors: string[] = [];
 
   for (let i = 0; i < candidates.length; i += concurrency) {
     const chunk = candidates.slice(i, i + concurrency);
@@ -541,9 +717,12 @@ async function scoreBatch(
       const s = settled[j];
       const candidate = chunk[j];
       if (s.status === "rejected") {
+        const message = `[scoring] failed for "${candidate.title}": ${
+          s.reason instanceof Error ? s.reason.message : String(s.reason)
+        }`;
+        errors.push(message);
         console.error(
-          `[scoring] failed for "${candidate.title}":`,
-          s.reason instanceof Error ? s.reason.message : s.reason
+          message
         );
         continue;
       }
@@ -559,7 +738,7 @@ async function scoreBatch(
     }
   }
 
-  return results;
+  return { results, errors };
 }
 
 // ---- db helpers ----
@@ -766,7 +945,7 @@ export async function runMinimalScout(
     if (settled.status !== "fulfilled") return;
     const src = resolvedSources[index];
     for (const c of settled.value) {
-      allItems.push(toFeedItem(c, src.region));
+      allItems.push(toFeedItem(c, src.region, src));
     }
   });
 
@@ -813,7 +992,7 @@ export async function runMinimalScout(
   // feed that made it past dedup as the canonical entry".
   const survivorBySource = new Map<string, number>();
   for (const m of merged) {
-    const name = m.primary.item.source;
+    const name = representativeMember(m).item.source;
     survivorBySource.set(name, (survivorBySource.get(name) ?? 0) + 1);
   }
   for (const entry of perFeed) {
@@ -824,27 +1003,28 @@ export async function runMinimalScout(
     }
   }
 
-  // ---- LLM cap (Phase B fix: applied AFTER merge, on the merged set) ----
+  // ---- LLM cap (applied AFTER merge, with source diversity) ----
   //
-  // Sort by (mentionSources desc, has-url desc) so cross-source winners and
-  // items with verifiable URLs land in the LLM budget first.
+  // Rank by cross-source signal, source quality, recency, and product-like
+  // keywords, then allocate the LLM budget across source families so one
+  // publisher/category cluster cannot consume the whole run.
   const ranked = merged
     .slice()
     .sort((a, b) => {
-      const aSize = a.mentionSources.size;
-      const bSize = b.mentionSources.size;
-      if (aSize !== bSize) return bSize - aSize;
-      const aUrl = a.primary.item.url ? 1 : 0;
-      const bUrl = b.primary.item.url ? 1 : 0;
-      return bUrl - aUrl;
+      const scoreDiff = candidateRankScore(b) - candidateRankScore(a);
+      if (scoreDiff !== 0) return scoreDiff;
+      return representativeMember(a).item.title.localeCompare(
+        representativeMember(b).item.title
+      );
     });
-  const llmBatch = ranked.slice(0, llmMax);
+  const llmBatch = selectDiverseCandidates(ranked, llmMax);
 
   // ---- Stage 0: rules filter on raw merged items ----
   const postRulesItems = llmBatch.filter((m) => {
-    const reason = rulesRejectReason(m.primary.item);
+    const item = representativeMember(m).item;
+    const reason = rulesRejectReason(item);
     if (reason) {
-      console.log(`[rules-filter] dropped: "${m.primary.item.title}" — ${reason}`);
+      console.log(`[rules-filter] dropped: "${item.title}" — ${reason}`);
       return false;
     }
     return true;
@@ -863,7 +1043,9 @@ export async function runMinimalScout(
   );
 
   // ---- Stage 2: Perplexity research with 7-day cache ----
-  const researchMap = await runResearchBatch(viableCandidates);
+  const { map: researchMap, errors: researchErrors } =
+    await runResearchBatch(viableCandidates);
+  errors.push(...researchErrors);
 
   const perplexityCacheHits = Array.from(researchMap.values()).filter(
     (r) => r.cached
@@ -882,7 +1064,11 @@ export async function runMinimalScout(
 
   // ---- Stage 3: Sonnet scoring (parallel, deterministic) ----
   const scoringConcurrency = Number(process.env.SCOUT_SCORING_CONCURRENCY ?? "3");
-  const scoredResults = await scoreBatch(enrichedCandidates, scoringConcurrency);
+  const { results: scoredResults, errors: scoringErrors } = await scoreBatch(
+    enrichedCandidates,
+    scoringConcurrency
+  );
+  errors.push(...scoringErrors);
 
   const enqueuedCount = scoredResults.filter((r) => r.enqueuedApprovalId).length;
   const rejectedCount = scoredResults.filter((r) => r.verdict === "reject").length;
@@ -916,9 +1102,12 @@ export async function runMinimalScout(
           `[deep-research] done: "${r.title}" (score ${r.score.toFixed(2)})`
         );
       } catch (err) {
+        const message = `[deep-research] failed for "${r.title}": ${
+          err instanceof Error ? err.message : String(err)
+        }`;
+        errors.push(message);
         console.warn(
-          `[deep-research] failed for "${r.title}":`,
-          err instanceof Error ? err.message : err
+          message
         );
       }
     }

@@ -8,6 +8,7 @@
 // Force mock LLM provider and skip real env loading so DB modules don't crash
 // when imported transitively. NB: tests that touch the DB must skipPersistence.
 process.env.LLM_PROVIDER ??= "mock";
+process.env.SCOUT_REAL_AI ??= "0";
 process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
 
 import { runSuites, type TestSuite } from "./_assert";

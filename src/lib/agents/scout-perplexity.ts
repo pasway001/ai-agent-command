@@ -619,6 +619,7 @@ export async function runPerplexityResearch(
     webSearch: true,
     webSearchMaxUses: Number(process.env.SCOUT_RESEARCH_WEB_SEARCH_MAX_USES ?? "8"),
     mock: () => mockResearch(input.title),
+    forceProvider: provider !== "mock",
     inputPayload: { title: input.title, category: input.category },
   });
 

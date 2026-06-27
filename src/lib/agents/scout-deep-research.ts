@@ -234,6 +234,7 @@ export async function runDeepResearch(
       process.env.SCOUT_DEEP_RESEARCH_WEB_SEARCH_MAX_USES ?? "10"
     ),
     mock: () => mockDeepResearch(input.title, input.score),
+    forceProvider: provider !== "mock",
     inputPayload: { title: input.title, score: input.score },
   });
 

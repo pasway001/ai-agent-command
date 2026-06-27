@@ -44,6 +44,16 @@ export type SourceConfig = {
   endpoint: string;
   enabled: boolean;
   category: SourceCategory;
+  /**
+   * Optional grouping for candidate selection. Use this when one publisher has
+   * several feeds/categories and should not consume the whole LLM budget.
+   */
+  sourceFamily?: string;
+  /**
+   * Relative ranking boost for candidate selection (1..10). Higher values are
+   * used for product-discovery media with real purchasable/launchable goods.
+   */
+  candidatePriority?: number;
   /** Optional polite-rate-limit. Enforced in-memory per Node process. */
   rateLimitPerHour?: number;
 };

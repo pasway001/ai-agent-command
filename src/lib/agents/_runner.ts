@@ -36,6 +36,8 @@ export type AgentRunOpts<T> = {
   model?: string;
   /** Override provider for this agent call (e.g. "perplexity" for research agents). */
   provider?: import("../llm").LLMProvider;
+  /** Bypass LLM_PROVIDER=mock when a scout stage intentionally selected a real provider. */
+  forceProvider?: boolean;
 };
 
 /**
@@ -81,6 +83,7 @@ export async function runAgent<T>(opts: AgentRunOpts<T>): Promise<AgentRunOutcom
       webSearchMaxUses: opts.webSearchMaxUses,
       model: opts.model,
       provider: opts.provider,
+      forceProvider: opts.forceProvider,
     });
 
     await finishRun({

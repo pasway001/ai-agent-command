@@ -123,13 +123,15 @@ export async function runPrefilter(
   if (category) lines.push(`Category: ${category}`);
   if (description) lines.push(`Description: ${description.slice(0, 400)}`);
   const user = lines.join("\n");
+  const provider = resolveScoutClaudeProvider("SCOUT_PREFILTER_PROVIDER");
 
   const { data } = await runStructured({
     system: SYSTEM_PROMPT,
     user,
     schema: PrefilterSchema,
     model: HAIKU_MODEL,
-    provider: resolveScoutClaudeProvider("SCOUT_PREFILTER_PROVIDER"),
+    provider,
+    forceProvider: provider !== "mock",
     mock: () => mockPrefilter(title, description),
   });
 

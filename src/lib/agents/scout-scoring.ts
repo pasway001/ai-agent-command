@@ -856,11 +856,12 @@ export async function scoreCandidate(
       : await runStructured({
           system: systemPrompt,
           user: userPromptFromSignals(signals, fewShots),
-          schema: ScoringOutputSchema,
+          schema: z.unknown(),
           // Mock returns the full Phase-B ScoringOutput; cast through unknown
           // so the schema-inferred (looser) type accepts it.
-          mock: () => mockScore(signals) as unknown as z.infer<typeof ScoringOutputSchema>,
+          mock: () => mockScore(signals) as unknown,
           provider: scoringProvider,
+          forceProvider: scoringProvider !== "mock",
           model: modelForProvider(
             scoringProvider,
             process.env.SCOUT_SCORING_MODEL ?? SONNET_MODEL,
