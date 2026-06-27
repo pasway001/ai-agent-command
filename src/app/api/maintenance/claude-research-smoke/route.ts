@@ -1,4 +1,7 @@
-import { runClaudeResearchSmoke } from "@/lib/agents/claude-research-smoke";
+import {
+  getLatestClaudeResearchSmokeStatus,
+  runAndRecordClaudeResearchSmoke,
+} from "@/lib/agents/claude-research-smoke";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,11 +19,35 @@ function intParam(value: string | null, fallback: number) {
 }
 
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+
+  if (url.searchParams.get("status") === "1") {
+    try {
+      return Response.json({
+        ...(await getLatestClaudeResearchSmokeStatus()),
+        hasAnthropicEnv: Boolean(
+          (process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY)?.trim()
+        ),
+      });
+    } catch (err) {
+      return Response.json(
+        {
+          ok: false,
+          hasRun: false,
+          error: err instanceof Error ? err.message : String(err),
+          hasAnthropicEnv: Boolean(
+            (process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY)?.trim()
+          ),
+        },
+        { status: 503 }
+      );
+    }
+  }
+
   if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const url = new URL(request.url);
   const title = url.searchParams.get("title")?.trim() || undefined;
   const description =
     url.searchParams.get("description")?.trim() || undefined;
@@ -28,7 +55,7 @@ export async function GET(request: Request) {
   const webSearchMaxUses = intParam(url.searchParams.get("maxUses"), 2);
 
   try {
-    const result = await runClaudeResearchSmoke({
+    const { runId, result } = await runAndRecordClaudeResearchSmoke({
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
       ...(sourceUrl ? { sourceUrl } : {}),
@@ -37,6 +64,7 @@ export async function GET(request: Request) {
 
     return Response.json({
       ...result,
+      runId,
       llmProviderEnv: process.env.LLM_PROVIDER ?? null,
       hasAnthropicEnv: Boolean(
         (process.env.ANTHROPIC_API_KEY ?? process.env.CLAUDE_API_KEY)?.trim()

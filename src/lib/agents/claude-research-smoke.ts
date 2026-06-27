@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { desc, eq } from "drizzle-orm";
+import { db } from "../db";
+import { agentRuns, agents } from "../db/schema";
 import {
   hasAnthropicApiKey,
   runStructured,
@@ -8,6 +11,8 @@ import {
   DEFAULT_SYSTEM_PROMPT,
   JpMarketResearchSchema,
 } from "./scout-perplexity";
+
+export const CLAUDE_RESEARCH_SMOKE_AGENT_ID = "maintenance.claude_research_smoke";
 
 export const ClaudeResearchSmokeInputSchema = z.object({
   title: z.string().min(1).max(160).default("Foldable portable espresso maker"),
@@ -47,6 +52,18 @@ export type ClaudeResearchSmokeResult = {
     makuakeAngle: string;
     certificationNeeds: string[];
   };
+};
+
+export type ClaudeResearchSmokeStoredStatus = {
+  ok: boolean;
+  hasRun: boolean;
+  agentId: string;
+  runId: string | null;
+  status: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+  result: ClaudeResearchSmokeResult | null;
 };
 
 function userPrompt(input: z.infer<typeof ClaudeResearchSmokeInputSchema>) {
@@ -115,5 +132,155 @@ export async function runClaudeResearchSmoke(
       certificationNeeds:
         outcome.data.importFeasibility.certificationNeeds,
     },
+  };
+}
+
+function safeInput(input: z.infer<typeof ClaudeResearchSmokeInputSchema>) {
+  return {
+    title: input.title,
+    description: input.description,
+    sourceUrl: input.sourceUrl ?? null,
+    webSearchMaxUses: input.webSearchMaxUses,
+  };
+}
+
+function safeError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.length > 1200 ? `${message.slice(0, 1200)}...` : message;
+}
+
+function isSmokeResult(value: unknown): value is ClaudeResearchSmokeResult {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return record.ok === true && record.provider === "anthropic";
+}
+
+async function ensureSmokeAgent() {
+  await db
+    .insert(agents)
+    .values({
+      id: CLAUDE_RESEARCH_SMOKE_AGENT_ID,
+      name: "Claude Research Smoke",
+      systemNo: 1,
+      agentType: "scout",
+      description: "Verifies that Japan-market product research can call Claude API.",
+      enabled: true,
+      concurrencyLimit: 1,
+      isDynamic: false,
+      signalKey: null,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: agents.id,
+      set: {
+        name: "Claude Research Smoke",
+        description: "Verifies that Japan-market product research can call Claude API.",
+        enabled: true,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function runAndRecordClaudeResearchSmoke(
+  rawInput: ClaudeResearchSmokeInput = {}
+) {
+  const input = ClaudeResearchSmokeInputSchema.parse(rawInput);
+  await ensureSmokeAgent();
+
+  const [run] = await db
+    .insert(agentRuns)
+    .values({
+      agentId: CLAUDE_RESEARCH_SMOKE_AGENT_ID,
+      status: "running",
+      inputPayload: safeInput(input),
+      startedAt: new Date(),
+    })
+    .returning({ id: agentRuns.id });
+
+  try {
+    const result = await runClaudeResearchSmoke(input);
+    await db
+      .update(agentRuns)
+      .set({
+        status: "succeeded",
+        outputPayload: result,
+        tokensIn: result.usage.tokensIn,
+        tokensOut: result.usage.tokensOut,
+        costUsd: String(result.usage.costUsd),
+        finishedAt: new Date(),
+      })
+      .where(eq(agentRuns.id, run.id));
+    await db
+      .update(agents)
+      .set({
+        lastRunAt: new Date(),
+        lastStatus: "succeeded",
+        updatedAt: new Date(),
+      })
+      .where(eq(agents.id, CLAUDE_RESEARCH_SMOKE_AGENT_ID));
+
+    return { runId: run.id, result };
+  } catch (err) {
+    const error = safeError(err);
+    await db
+      .update(agentRuns)
+      .set({
+        status: "failed",
+        errorMessage: error,
+        finishedAt: new Date(),
+      })
+      .where(eq(agentRuns.id, run.id));
+    await db
+      .update(agents)
+      .set({
+        lastRunAt: new Date(),
+        lastStatus: "failed",
+        updatedAt: new Date(),
+      })
+      .where(eq(agents.id, CLAUDE_RESEARCH_SMOKE_AGENT_ID));
+    throw err;
+  }
+}
+
+export async function getLatestClaudeResearchSmokeStatus(): Promise<ClaudeResearchSmokeStoredStatus> {
+  const [row] = await db
+    .select({
+      id: agentRuns.id,
+      status: agentRuns.status,
+      outputPayload: agentRuns.outputPayload,
+      errorMessage: agentRuns.errorMessage,
+      startedAt: agentRuns.startedAt,
+      finishedAt: agentRuns.finishedAt,
+    })
+    .from(agentRuns)
+    .where(eq(agentRuns.agentId, CLAUDE_RESEARCH_SMOKE_AGENT_ID))
+    .orderBy(desc(agentRuns.createdAt))
+    .limit(1);
+
+  if (!row) {
+    return {
+      ok: false,
+      hasRun: false,
+      agentId: CLAUDE_RESEARCH_SMOKE_AGENT_ID,
+      runId: null,
+      status: null,
+      startedAt: null,
+      finishedAt: null,
+      error: null,
+      result: null,
+    };
+  }
+
+  const result = isSmokeResult(row.outputPayload) ? row.outputPayload : null;
+  return {
+    ok: row.status === "succeeded" && result !== null,
+    hasRun: true,
+    agentId: CLAUDE_RESEARCH_SMOKE_AGENT_ID,
+    runId: row.id,
+    status: row.status,
+    startedAt: row.startedAt?.toISOString() ?? null,
+    finishedAt: row.finishedAt?.toISOString() ?? null,
+    error: row.errorMessage,
+    result,
   };
 }
