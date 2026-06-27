@@ -367,7 +367,8 @@ export const SOURCE_REGISTRY: ReadonlyArray<SourceConfig> = [
     name: "GetNavi",
     type: "rss",
     endpoint: "https://getnavi.jp/feed/",
-    enabled: true,
+    // Node/Vercel fetch currently fails for this feed.
+    enabled: false,
     category: "japan_reference",
     rateLimitPerHour: 30,
   },

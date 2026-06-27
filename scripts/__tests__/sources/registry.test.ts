@@ -57,13 +57,13 @@ registry.test("expanded domestic reference sources are enabled", () => {
     );
     [
       "makuake",
-      "getnavi",
       "gizmodo-jp",
       "roomie",
       "lifehacker-jp",
       "kaden-watch",
       "impress-watch",
     ].forEach((id) => assert(enabled.has(id), `${id} should be enabled`));
+    assert(!enabled.has("getnavi"), "getnavi should stay disabled while Node fetch fails");
   });
 });
 
