@@ -37,6 +37,8 @@ function textFromUnknown(value: unknown): string {
   for (const key of [
     "segment",
     "target",
+    "law",
+    "applies",
     "name",
     "title",
     "label",
