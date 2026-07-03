@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
-import { Check, X, Hand, Loader2, Undo2, Info } from "lucide-react";
+import {
+  ArrowDownWideNarrow,
+  Check,
+  X,
+  Hand,
+  Loader2,
+  Undo2,
+  Info,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,6 +44,108 @@ import {
   VerdictBadge,
   reviewCategoryLabel,
 } from "./review-details-dialog";
+
+type InboxSortMode =
+  | "priority"
+  | "ai-score-desc"
+  | "ai-score-asc"
+  | "verdict"
+  | "newest"
+  | "oldest";
+
+const SORT_OPTIONS: Array<{ value: InboxSortMode; label: string }> = [
+  { value: "priority", label: "優先度 高い順" },
+  { value: "ai-score-desc", label: "AI評価 高い順" },
+  { value: "verdict", label: "承認推奨順" },
+  { value: "newest", label: "新着順" },
+  { value: "oldest", label: "古い順" },
+  { value: "ai-score-asc", label: "AI評価 低い順" },
+];
+
+function isInboxSortMode(value: unknown): value is InboxSortMode {
+  return (
+    typeof value === "string" &&
+    SORT_OPTIONS.some((option) => option.value === value)
+  );
+}
+
+const VERDICT_RANK: Record<
+  NonNullable<OpenApproval["review"]["verdict"]>,
+  number
+> = {
+  approve: 3,
+  escalate: 2,
+  reject: 1,
+};
+
+function createdTime(item: OpenApproval) {
+  const time = new Date(item.createdAt).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function compareCreatedAt(
+  a: OpenApproval,
+  b: OpenApproval,
+  direction: "asc" | "desc"
+) {
+  const diff = createdTime(a) - createdTime(b);
+  return direction === "asc" ? diff : -diff;
+}
+
+function comparePriority(a: OpenApproval, b: OpenApproval) {
+  return b.priority - a.priority || compareCreatedAt(a, b, "asc");
+}
+
+function compareNullableNumber(
+  a: number | null,
+  b: number | null,
+  direction: "asc" | "desc"
+) {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return direction === "asc" ? a - b : b - a;
+}
+
+function compareVerdict(a: OpenApproval, b: OpenApproval) {
+  const aRank = a.review.verdict ? VERDICT_RANK[a.review.verdict] : 0;
+  const bRank = b.review.verdict ? VERDICT_RANK[b.review.verdict] : 0;
+  return bRank - aRank;
+}
+
+function compareBySortMode(
+  a: OpenApproval,
+  b: OpenApproval,
+  sortMode: InboxSortMode
+) {
+  switch (sortMode) {
+    case "ai-score-desc":
+      return (
+        compareNullableNumber(a.review.score, b.review.score, "desc") ||
+        compareVerdict(a, b) ||
+        comparePriority(a, b)
+      );
+    case "ai-score-asc":
+      return (
+        compareNullableNumber(a.review.score, b.review.score, "asc") ||
+        compareVerdict(a, b) ||
+        comparePriority(a, b)
+      );
+    case "verdict":
+      return (
+        compareVerdict(a, b) ||
+        compareNullableNumber(a.review.score, b.review.score, "desc") ||
+        comparePriority(a, b)
+      );
+    case "newest":
+      return compareCreatedAt(a, b, "desc") || comparePriority(a, b);
+    case "oldest":
+      return compareCreatedAt(a, b, "asc") || comparePriority(a, b);
+    case "priority":
+    default:
+      return comparePriority(a, b);
+  }
+}
 
 function ProductReviewCell({ item }: { item: OpenApproval }) {
   const review = item.review;
@@ -97,7 +214,8 @@ export function InboxList({
   realtimeEnabled: boolean;
 }) {
   const router = useRouter();
-  const [items] = useState(initial);
+  const items = initial;
+  const [sortMode, setSortMode] = useState<InboxSortMode>("priority");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<
     "claim" | "release" | "approve" | "reject" | null
@@ -110,6 +228,19 @@ export function InboxList({
   } | null>(null);
   const [detailsItem, setDetailsItem] = useState<OpenApproval | null>(null);
   const knownIds = useRef(new Set(initial.map((i) => i.id)));
+  const sortedItems = useMemo(
+    () => [...items].sort((a, b) => compareBySortMode(a, b, sortMode)),
+    [items, sortMode]
+  );
+  const selectedSortLabel =
+    SORT_OPTIONS.find((option) => option.value === sortMode)?.label ??
+    SORT_OPTIONS[0].label;
+
+  useEffect(() => {
+    for (const item of initial) {
+      knownIds.current.add(item.id);
+    }
+  }, [initial]);
 
   useEffect(() => {
     if (!realtimeEnabled) return;
@@ -177,10 +308,36 @@ export function InboxList({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground tabular-nums">
           {items.length} 件の未処理
+          <span className="hidden sm:inline"> / {selectedSortLabel}</span>
         </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">並び順</span>
+          <Select
+            value={sortMode}
+            onValueChange={(value) => {
+              if (isInboxSortMode(value)) setSortMode(value);
+            }}
+          >
+            <SelectTrigger
+              aria-label="並び順"
+              size="sm"
+              className="h-8 w-[12.5rem] rounded-md"
+            >
+              <ArrowDownWideNarrow className="size-3.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Desktop table */}
@@ -196,7 +353,7 @@ export function InboxList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => {
+            {sortedItems.map((item) => {
               const ownedByMe =
                 currentUserId !== null && item.assignedTo === currentUserId;
               const claimedByOther =
@@ -332,7 +489,7 @@ export function InboxList({
 
       {/* Mobile cards */}
       <ul className="md:hidden flex flex-col gap-3">
-        {items.map((item) => {
+        {sortedItems.map((item) => {
           const ownedByMe =
             currentUserId !== null && item.assignedTo === currentUserId;
           const claimedByOther =
