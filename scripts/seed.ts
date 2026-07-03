@@ -10,6 +10,7 @@ const seedAgents: NewAgent[] = [
   { id: "scout.sellersprite_research",name: "SellerSprite競合調査",            systemNo: 1, agentType: "scout",    description: "SellerSpriteでキーワード・売上・競合スコアを取得", scheduleCron: "0 4 * * *",  concurrencyLimit: 1, dailyBudgetUsd: "5", monthlyBudgetUsd: "100" },
   { id: "scout.perplexity_jp_market", name: "Perplexity国内市場リサーチ",      systemNo: 1, agentType: "scout",    description: "Perplexityで国内ニーズ・トレンド・規制をリサーチ", scheduleCron: "0 5 * * *",  concurrencyLimit: 1, dailyBudgetUsd: "3", monthlyBudgetUsd: "60"  },
   { id: "scout.scoring",              name: "発掘候補スコアリング",            systemNo: 1, agentType: "scout",    description: "上記ソースを統合しスコア付けして承認待ちInboxへ",  scheduleCron: "30 5 * * *", concurrencyLimit: 1, dailyBudgetUsd: "2", monthlyBudgetUsd: "40"  },
+  { id: "scout.deep_research",        name: "高スコア候補ディープリサーチ",    systemNo: 1, agentType: "scout",    description: "高スコア商品のターゲット・価格・Makuake可能性・輸入リスクを精査", concurrencyLimit: 1, dailyBudgetUsd: "2", monthlyBudgetUsd: "40"  },
 
   // System 2: LP
   { id: "lp.copy_writer",             name: "LPコピー生成",                    systemNo: 2, agentType: "lp",       description: "承認済み商品のLPコピー(キャッチ・ベネフィット・CTA)を生成", concurrencyLimit: 2, dailyBudgetUsd: "3", monthlyBudgetUsd: "60" },
