@@ -238,42 +238,47 @@ function AxisBars({ scores }: { scores: ScoutAxisScores | null }) {
     );
   }
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {SCOUT_AXIS_KEYS.map((key) => {
         const ax = scores[key];
         if (!ax) {
           return (
-            <div
-              key={key}
-              className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_1fr_3rem]"
-            >
-              <span className="truncate text-muted-foreground">
-                {AXIS_LABELS[key]}
-              </span>
+            <div key={key} className="space-y-1">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-medium text-muted-foreground">
+                  {AXIS_LABELS[key]}
+                </span>
+                <span className="font-mono text-muted-foreground">—</span>
+              </div>
               <div className="h-2 rounded-full bg-muted" />
-              <span className="text-right font-mono text-muted-foreground">
-                —
-              </span>
             </div>
           );
         }
         const pct = Math.round(ax.score * 100);
         return (
-          <div
-            key={key}
-            className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_1fr_3rem]"
-            title={ax.rationale}
-          >
-            <span className="truncate" title={AXIS_LABELS[key]}>
-              {AXIS_LABELS[key]}
-            </span>
+          <div key={key} className="space-y-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-medium">{AXIS_LABELS[key]}</span>
+              <span className="font-mono text-muted-foreground">{pct}</span>
+            </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className={cn("h-full rounded-full transition-all", axisBarColor(ax.score))}
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  axisBarColor(ax.score)
+                )}
                 style={{ width: `${Math.max(2, pct)}%` }}
               />
             </div>
-            <span className="text-right font-mono">{pct}</span>
+            {ax.rationale ? (
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {ax.rationale}
+              </p>
+            ) : (
+              <p className="text-[11px] italic leading-snug text-muted-foreground/70">
+                この軸の根拠は記録されていません。
+              </p>
+            )}
           </div>
         );
       })}
