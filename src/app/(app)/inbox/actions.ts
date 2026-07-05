@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { and, eq, isNull, or } from "drizzle-orm";
 import { requireCurrentUser } from "@/lib/auth/server";
 import { db } from "@/lib/db";
@@ -9,10 +10,11 @@ import {
   products,
   agentEvaluations,
 } from "@/lib/db/schema";
+import { mergeProductMetadata } from "@/lib/agent-sdk";
 import { advancePipeline } from "@/lib/agents/pipeline";
 
 export type ActionResult =
-  | { ok: true; nextStage?: string; pipelineMessage?: string }
+  | { ok: true; pipelineMessage?: string }
   | { ok: false; error: string };
 
 export async function claimItem(id: string): Promise<ActionResult> {
@@ -134,21 +136,58 @@ export async function decideItem(input: {
       });
     });
 
-    let pipelineMessage: string | undefined;
-    let nextStage: string | undefined;
-    if (approvedProductId) {
-      try {
-        const result = await advancePipeline(approvedProductId);
-        pipelineMessage = result.message;
-        nextStage = result.toStage;
-      } catch (err) {
-        pipelineMessage = `次工程の自動起動に失敗: ${(err as Error).message}`;
-      }
-    }
-
     revalidatePath("/inbox");
     revalidatePath("/pipeline");
-    return { ok: true, nextStage, pipelineMessage };
+
+    let pipelineMessage: string | undefined;
+    if (approvedProductId) {
+      const productId = approvedProductId;
+      // Advancing a stage runs several LLM-backed agents in sequence, which
+      // can take a long time and occasionally fails. Run it after this
+      // response is sent so the approval itself never hangs or reads as
+      // failed just because downstream automation did. `after()` (not a
+      // bare fire-and-forget) is required so hosts that freeze the function
+      // once the response is flushed still let this finish.
+      await mergeProductMetadata(productId, {
+        pipelineAutomation: {
+          status: "running",
+          stage: null,
+          message: "次工程を自動実行中です…",
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      after(async () => {
+        try {
+          const result = await advancePipeline(productId);
+          await mergeProductMetadata(productId, {
+            pipelineAutomation: {
+              status: "ok",
+              stage: result.toStage,
+              message: result.message,
+              updatedAt: new Date().toISOString(),
+            },
+          });
+        } catch (err) {
+          console.error("[advancePipeline] failed", err);
+          await mergeProductMetadata(productId, {
+            pipelineAutomation: {
+              status: "failed",
+              stage: null,
+              message: (err as Error).message,
+              updatedAt: new Date().toISOString(),
+            },
+          }).catch(() => {});
+        } finally {
+          revalidatePath("/inbox");
+          revalidatePath("/pipeline");
+          revalidatePath("/approved");
+        }
+      });
+      pipelineMessage =
+        "次工程を自動実行中です。完了すると「承認済み」一覧に反映されます。";
+    }
+
+    return { ok: true, pipelineMessage };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }

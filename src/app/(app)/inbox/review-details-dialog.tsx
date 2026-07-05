@@ -36,6 +36,11 @@ import type { OpenApproval } from "@/lib/db/queries";
 type Review = OpenApproval["review"];
 type Verdict = NonNullable<Review["verdict"]>;
 
+// Narrowed to just what this dialog reads, so callers with a compatible
+// shape (e.g. the approved-items list) can reuse it without needing to be
+// a full OpenApproval.
+export type ReviewableItem = { productTitle: string | null; review: Review };
+
 const VERDICT_META: Record<
   Verdict,
   { label: string; icon: typeof CheckCircle2; className: string }
@@ -534,7 +539,7 @@ export function ReviewDetailsDialog({
   item,
   onClose,
 }: {
-  item: OpenApproval | null;
+  item: ReviewableItem | null;
   onClose: () => void;
 }) {
   if (!item) return null;

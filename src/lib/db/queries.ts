@@ -380,6 +380,49 @@ export async function getOpenApprovalsCount(): Promise<number> {
   return Number(row?.c ?? 0);
 }
 
+export async function getApprovedItems() {
+  if (!hasDatabaseUrl()) return [];
+
+  const rows = await db
+    .select({
+      id: approvalQueue.id,
+      priority: approvalQueue.priority,
+      decidedAt: approvalQueue.decidedAt,
+      decidedBy: approvalQueue.decidedBy,
+      decisionNote: approvalQueue.decisionNote,
+      createdAt: approvalQueue.createdAt,
+      productId: products.id,
+      productTitle: products.title,
+      productStage: products.stage,
+      productStatus: products.status,
+      agentId: agentRuns.agentId,
+      runId: agentRuns.id,
+      productMetadata: products.metadata,
+      runInputPayload: agentRuns.inputPayload,
+      runOutputPayload: agentRuns.outputPayload,
+    })
+    .from(approvalQueue)
+    .leftJoin(agentRuns, eq(approvalQueue.agentRunId, agentRuns.id))
+    .leftJoin(products, eq(approvalQueue.productId, products.id))
+    .where(eq(approvalQueue.decision, "approve"))
+    .orderBy(desc(approvalQueue.decidedAt))
+    .limit(300);
+
+  return rows.map(
+    ({ productMetadata, runInputPayload, runOutputPayload, ...row }) => ({
+      ...row,
+      review: scoutReviewDetails(
+        productMetadata,
+        runInputPayload,
+        runOutputPayload
+      ),
+      automation: pipelineAutomationStatus(productMetadata),
+    })
+  );
+}
+
+export type ApprovedItem = Awaited<ReturnType<typeof getApprovedItems>>[number];
+
 export async function getProductsByStage() {
   const rows = await db
     .select({
@@ -401,6 +444,27 @@ export async function getProductsByStage() {
     grouped[row.stage].push(row.product);
   }
   return grouped;
+}
+
+export type PipelineAutomationStatus = {
+  status: "running" | "ok" | "failed" | null;
+  stage: string | null;
+  message: string | null;
+  updatedAt: string | null;
+};
+
+function pipelineAutomationStatus(metadataValue: unknown): PipelineAutomationStatus {
+  const automation = asRecord(asRecord(metadataValue)?.pipelineAutomation);
+  const status = stringValue(automation, "status");
+  return {
+    status:
+      status === "running" || status === "ok" || status === "failed"
+        ? status
+        : null,
+    stage: stringValue(automation, "stage"),
+    message: stringValue(automation, "message"),
+    updatedAt: stringValue(automation, "updatedAt"),
+  };
 }
 
 function pipelineSummary(metadataValue: unknown) {
@@ -447,6 +511,7 @@ function pipelineSummary(metadataValue: unknown) {
     csReady: Boolean(
       csTemplates?.inquiry || csTemplates?.complaint || csTemplates?.refund
     ),
+    automation: pipelineAutomationStatus(metadataValue),
   };
 }
 

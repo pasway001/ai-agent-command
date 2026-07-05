@@ -13,6 +13,7 @@ import {
   LogOut,
   Sparkles,
   Radar,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ function buildSections(inboxCount: number): Section[] {
       label: "オペレーション",
       items: [
         { href: "/inbox", label: "承認待ち", icon: Inbox, badge: inboxCount },
+        { href: "/approved", label: "承認済み", icon: CheckCircle2 },
         { href: "/pipeline", label: "パイプライン", icon: Kanban },
         { href: "/sales", label: "販売デスク", icon: Handshake },
       ],

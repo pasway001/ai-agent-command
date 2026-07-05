@@ -1,9 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ExternalLink, PackageOpen } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, PackageOpen } from "lucide-react";
 import { PageHeader } from "@/components/nav/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { DbErrorState } from "@/components/empty-state";
 import { ProductStatusBadge } from "@/components/status-badge";
 import { getPipelineProductsByStage, safe } from "@/lib/db/queries";
@@ -162,6 +163,29 @@ export default async function PipelinePage() {
                               <p className="mt-2 line-clamp-1 text-[10px] text-muted-foreground">
                                 確認: {summary.salesRisks[0]}
                               </p>
+                            ) : null}
+                            {summary.automation.status === "failed" ||
+                            summary.automation.status === "running" ? (
+                              <div
+                                className={cn(
+                                  "mt-2 flex items-start gap-1 rounded-md p-2 text-[10px] leading-snug",
+                                  summary.automation.status === "failed"
+                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300"
+                                    : "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+                                )}
+                              >
+                                {summary.automation.status === "failed" ? (
+                                  <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+                                ) : (
+                                  <Loader2 className="mt-0.5 size-3 shrink-0 animate-spin" />
+                                )}
+                                <span className="line-clamp-2 break-words">
+                                  {summary.automation.message ??
+                                    (summary.automation.status === "failed"
+                                      ? "次工程の自動実行に失敗しました"
+                                      : "次工程を自動実行中です")}
+                                </span>
+                              </div>
                             ) : null}
                             <div className="mt-1.5 text-[10px] text-muted-foreground/70">
                               更新{" "}

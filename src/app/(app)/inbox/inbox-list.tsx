@@ -286,7 +286,7 @@ export function InboxList({
     id: string,
     action: "claim" | "release" | "approve" | "reject",
     fn: () => Promise<
-      | { ok: true; pipelineMessage?: string; nextStage?: string }
+      | { ok: true; pipelineMessage?: string }
       | { ok: false; error: string }
     >,
     successMessage: string
